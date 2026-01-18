@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>跳繩課堂 Checkpoint 記錄系統</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>跳繩課堂 Checkpoint 記錄系統</h1>
+      <p class="subtitle">快速課堂評估 · 累積教學洞察</p>
+    </header>
+
+    <main class="main">
+      <!-- 左側：輸入表單 -->
+      <section class="form-panel">
+        <!-- 輸入面板 -->
+        <div class="panel meta-panel">
+          <h2>📋 基本資料</h2>
+          <div class="meta-grid">
+            <div class="field">
+              <label for="classDate">課堂日期 <span class="required">*</span></label>
+              <input type="date" id="classDate" required>
+            </div>
+            <div class="field">
+              <label for="className">班級名稱</label>
+              <input type="text" id="className" placeholder="例：P3A / 初級班">
+            </div>
+            <div class="field">
+              <label for="classSize">人數</label>
+              <input type="number" id="classSize" min="0" placeholder="該堂課人數">
+            </div>
+          </div>
+          <div class="field">
+            <label for="notes">備注</label>
+            <textarea id="notes" rows="3" placeholder="教練自行填寫：課堂觀察、待跟進事項、下堂預告等"></textarea>
+          </div>
+        </div>
+
+        <!-- 1. 投入度 -->
+        <div class="panel">
+          <h2>1️⃣ 投入度（Engagement）</h2>
+          <div class="field">
+            <label>開心指數 <span class="range-val" id="val-engagement">3</span>/5</label>
+            <div class="slider-row">
+              <input type="range" id="engagement" min="1" max="5" value="3">
+              <div class="quick-btns" data-target="engagement">
+                <button type="button" data-v="1">1</button>
+                <button type="button" data-v="2">2</button>
+                <button type="button" data-v="3" class="active">3</button>
+                <button type="button" data-v="4">4</button>
+                <button type="button" data-v="5">5</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>課堂氣氛</label>
+            <div class="option-btns" data-name="atmosphere">
+              <button type="button" data-v="開心">開心</button>
+              <button type="button" data-v="不開心">不開心</button>
+              <button type="button" data-v="認真學習">認真學習</button>
+              <button type="button" data-v="心散">心散</button>
+              <button type="button" data-v="一般">一般</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 技能進步 -->
+        <div class="panel">
+          <h2>2️⃣ 技能進步（Skills）</h2>
+          <div class="field">
+            <label>教學花式</label>
+            <div id="tricksList" class="tricks-list"></div>
+            <div class="trick-item add-trick">
+              <input type="text" id="trickName" placeholder="花式名稱">
+              <input type="text" id="trickDetail" placeholder="教學細節（選填）">
+              <button type="button" id="addTrick" class="btn-add">+ 新增</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>掌握比例 <span class="range-val" id="val-mastery">50</span>%</label>
+            <div class="slider-row">
+              <input type="range" id="mastery" min="0" max="100" value="50">
+              <div class="quick-btns quick-pct" data-target="mastery">
+                <button type="button" data-v="0">0%</button>
+                <button type="button" data-v="25">25%</button>
+                <button type="button" data-v="50" class="active">50%</button>
+                <button type="button" data-v="75">75%</button>
+                <button type="button" data-v="100">100%</button>
+              </div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="plannedTime">預算教學時間（分鐘）</label>
+              <input type="number" id="plannedTime" min="0" placeholder="計劃分鐘">
+            </div>
+            <div class="field">
+              <label for="actualTime">實際教學時間（分鐘）</label>
+              <input type="number" id="actualTime" min="0" placeholder="實際分鐘">
+            </div>
+          </div>
+          <div class="field">
+            <label>技巧等級進度</label>
+            <div class="option-btns" data-name="skillLevel">
+              <button type="button" data-v="初級">初級</button>
+              <button type="button" data-v="中級">中級</button>
+              <button type="button" data-v="進階">進階</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 團隊協作 -->
+        <div class="panel">
+          <h2>3️⃣ 團隊協作（Team Collaboration）</h2>
+          <div class="field">
+            <label>主動幫助他人頻率 <span class="range-val" id="val-help">50</span>%</label>
+            <div class="slider-row">
+              <input type="range" id="helpOthers" min="0" max="100" value="50">
+              <div class="quick-btns quick-pct" data-target="helpOthers">
+                <button type="button" data-v="0">0%</button>
+                <button type="button" data-v="25">25%</button>
+                <button type="button" data-v="50" class="active">50%</button>
+                <button type="button" data-v="75">75%</button>
+                <button type="button" data-v="100">100%</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>同學互動頻率 <span class="range-val" id="val-interact">50</span>%</label>
+            <div class="slider-row">
+              <input type="range" id="interaction" min="0" max="100" value="50">
+              <div class="quick-btns quick-pct" data-target="interaction">
+                <button type="button" data-v="0">0%</button>
+                <button type="button" data-v="25">25%</button>
+                <button type="button" data-v="50" class="active">50%</button>
+                <button type="button" data-v="75">75%</button>
+                <button type="button" data-v="100">100%</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>小組合作意願 <span class="range-val" id="val-teamwork">50</span>%</label>
+            <div class="slider-row">
+              <input type="range" id="teamwork" min="0" max="100" value="50">
+              <div class="quick-btns quick-pct" data-target="teamwork">
+                <button type="button" data-v="0">0%</button>
+                <button type="button" data-v="25">25%</button>
+                <button type="button" data-v="50" class="active">50%</button>
+                <button type="button" data-v="75">75%</button>
+                <button type="button" data-v="100">100%</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 心理與自信 -->
+        <div class="panel">
+          <h2>4️⃣ 心理與自信（Psychology & Confidence）</h2>
+          <div class="field">
+            <label>自發練習比例 <span class="range-val" id="val-selfPractice">50</span>%</label>
+            <div class="slider-row">
+              <input type="range" id="selfPractice" min="0" max="100" value="50">
+              <div class="quick-btns quick-pct" data-target="selfPractice">
+                <button type="button" data-v="0">0%</button>
+                <button type="button" data-v="25">25%</button>
+                <button type="button" data-v="50" class="active">50%</button>
+                <button type="button" data-v="75">75%</button>
+                <button type="button" data-v="100">100%</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>主動學習比例 <span class="range-val" id="val-activeLearn">50</span>%</label>
+            <div class="slider-row">
+              <input type="range" id="activeLearn" min="0" max="100" value="50">
+              <div class="quick-btns quick-pct" data-target="activeLearn">
+                <button type="button" data-v="0">0%</button>
+                <button type="button" data-v="25">25%</button>
+                <button type="button" data-v="50" class="active">50%</button>
+                <button type="button" data-v="75">75%</button>
+                <button type="button" data-v="100">100%</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>課堂積極性 <span class="range-val" id="val-positivity">3</span>/5</label>
+            <div class="slider-row">
+              <input type="range" id="positivity" min="1" max="5" value="3">
+              <div class="quick-btns" data-target="positivity">
+                <button type="button" data-v="1">1</button>
+                <button type="button" data-v="2">2</button>
+                <button type="button" data-v="3" class="active">3</button>
+                <button type="button" data-v="4">4</button>
+                <button type="button" data-v="5">5</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>學習熱情 <span class="range-val" id="val-enthusiasm">3</span>/5</label>
+            <div class="slider-row">
+              <input type="range" id="enthusiasm" min="1" max="5" value="3">
+              <div class="quick-btns" data-target="enthusiasm">
+                <button type="button" data-v="1">1</button>
+                <button type="button" data-v="2">2</button>
+                <button type="button" data-v="3" class="active">3</button>
+                <button type="button" data-v="4">4</button>
+                <button type="button" data-v="5">5</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 教練教學質量 -->
+        <div class="panel">
+          <h2>5️⃣ 教練教學質量（Coach Quality）</h2>
+          <div class="field">
+            <label>教學評分 <span class="range-val" id="val-teachScore">7</span>/10</label>
+            <div class="slider-row">
+              <input type="range" id="teachScore" min="1" max="10" value="7">
+              <div class="quick-btns" data-target="teachScore">
+                <button type="button" data-v="1">1</button>
+                <button type="button" data-v="5">5</button>
+                <button type="button" data-v="7" class="active">7</button>
+                <button type="button" data-v="10">10</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>學生滿意度 <span class="range-val" id="val-satisfaction">3</span>/5</label>
+            <div class="slider-row">
+              <input type="range" id="satisfaction" min="1" max="5" value="3">
+              <div class="quick-btns" data-target="satisfaction">
+                <button type="button" data-v="1">1</button>
+                <button type="button" data-v="2">2</button>
+                <button type="button" data-v="3" class="active">3</button>
+                <button type="button" data-v="4">4</button>
+                <button type="button" data-v="5">5</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="disciplineCount">課堂紀律介入次數</label>
+            <input type="number" id="disciplineCount" min="0" placeholder="次數">
+          </div>
+          <div class="field">
+            <label>教學靈活性 <span class="range-val" id="val-flexibility">7</span>/10</label>
+            <div class="slider-row">
+              <input type="range" id="flexibility" min="1" max="10" value="7">
+              <div class="quick-btns" data-target="flexibility">
+                <button type="button" data-v="1">1</button>
+                <button type="button" data-v="5">5</button>
+                <button type="button" data-v="7" class="active">7</button>
+                <button type="button" data-v="10">10</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label>個別化教學比例 <span class="range-val" id="val-individual">50</span>%</label>
+            <div class="slider-row">
+              <input type="range" id="individual" min="0" max="100" value="50">
+              <div class="quick-btns quick-pct" data-target="individual">
+                <button type="button" data-v="0">0%</button>
+                <button type="button" data-v="25">25%</button>
+                <button type="button" data-v="50" class="active">50%</button>
+                <button type="button" data-v="75">75%</button>
+                <button type="button" data-v="100">100%</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 數據管理按鈕 -->
+        <div class="panel actions-panel">
+          <h2>💾 數據管理</h2>
+          <div class="action-btns">
+            <button type="button" id="btnSave" class="btn btn-primary">儲存本堂記錄</button>
+            <button type="button" id="btnClear" class="btn btn-secondary">清空本堂輸入</button>
+            <button type="button" id="btnExport" class="btn btn-secondary">匯出全部記錄（CSV）</button>
+            <button type="button" id="btnDeleteAll" class="btn btn-danger">清除所有記錄</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右側：統計邊欄 -->
+      <aside class="stats-sidebar">
+        <h2>📊 實時統計</h2>
+        <div class="stat-cards">
+          <div class="stat-card">
+            <span class="stat-label">總記錄數</span>
+            <span class="stat-value" id="statTotal">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">本週記錄數</span>
+            <span class="stat-value" id="statWeek">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">平均評分（1–5）</span>
+            <span class="stat-value" id="statAvg">–</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">最近更新</span>
+            <span class="stat-value stat-date" id="statUpdated">–</span>
+          </div>
+        </div>
+        <div class="by-class-section">
+          <h3>按班別</h3>
+          <ul id="byClassList" class="by-class-list"></ul>
+        </div>
+        <div class="recent-section">
+          <h3>最近 10 堂課</h3>
+          <ul id="recentList" class="recent-list"></ul>
+        </div>
+        <!-- 班別細節 Modal -->
+        <div id="classDetailModal" class="modal" hidden>
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 id="classDetailTitle">班別細節</h3>
+              <button type="button" id="closeClassDetail" class="btn-close" aria-label="關閉">&times;</button>
+            </div>
+            <div id="classDetailBody" class="modal-body"></div>
+          </div>
+        </div>
+        <!-- 查看詳情Modal -->
+        <div id="detailModal" class="modal" hidden>
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 id="detailTitle">課堂詳情</h3>
+              <button type="button" id="closeDetail" class="btn-close" aria-label="關閉">&times;</button>
+            </div>
+            <div id="detailBody" class="modal-body"></div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
