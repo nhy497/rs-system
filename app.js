@@ -119,7 +119,7 @@ function bindRange(id) {
     quick?.querySelectorAll('button').forEach(b => b.classList.toggle('active', String(b.dataset.v) === r.value));
   };
   r.addEventListener('input', update);
-  quick?.addEventListener('click', (e) => { const v = e.target.dataset?.v; if (v != null) { r.value = v; update(); } });
+  quick?.addEventListener('click', (e) => { const btn = e.target.closest('button');const v = btn?.dataset?.v; if (v != null) { r.value = v; update(); } });
   update();
 }
 RANGE_IDS.forEach(bindRange);
