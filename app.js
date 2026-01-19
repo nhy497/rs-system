@@ -1,5 +1,5 @@
 /**
- * HKRSA 教練記錄系統 · 跳繩課堂 Checkpoint
+ * HKJRA 教練記錄系統 · 跳繩課堂 Checkpoint
  * 企業級介面 - 保留原有功能邏輯
  */
 
