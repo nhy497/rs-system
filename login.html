@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>教練記錄系統 · 登入</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+    }
+    
+    .login-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem;
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .login-header h1 {
+      font-size: 1.8rem;
+      margin: 0 0 0.5rem;
+      color: #1e293b;
+      font-weight: 700;
+    }
+    
+    .login-header p {
+      color: #64748b;
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    
+    .form-group label {
+      font-weight: 500;
+      color: #1e293b;
+      font-size: 0.9rem;
+    }
+    
+    .form-group input {
+      padding: 0.7rem 0.9rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-group input::placeholder {
+      color: #cbd5e1;
+    }
+    
+    .btn-login {
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 0.5rem;
+    }
+    
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-login:active {
+      transform: translateY(0);
+    }
+    
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .toggle-form {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    .toggle-form p {
+      color: #64748b;
+      margin: 0 0 0.75rem;
+      font-size: 0.9rem;
+    }
+    
+    .btn-toggle {
+      color: #667eea;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    
+    .btn-toggle:hover {
+      color: #764ba2;
+    }
+    
+    .error-msg {
+      color: #dc2626;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: #fee2e2;
+      border-radius: 6px;
+      display: none;
+    }
+    
+    .error-msg.show {
+      display: block;
+    }
+    
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .auth-info {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+    }
+    
+    .mode-indicator {
+      text-align: center;
+      color: #cbd5e1;
+      font-size: 0.8rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <h1>◇ 教練記錄系統</h1>
+      <p>HKJRA 跳繩課堂管理平臺</p>
+    </div>
+    
+    <div class="error-msg" id="errorMsg"></div>
+    
+    <!-- 登入表單 -->
+    <form class="login-form" id="loginForm">
+      <div class="form-group">
+        <label for="loginEmail">電郵帳戶</label>
+        <input type="email" id="loginEmail" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">密碼</label>
+        <input type="password" id="loginPassword" placeholder="至少 6 個字符" required>
+      </div>
+      <button type="submit" class="btn-login" id="btnLogin">登入</button>
+    </form>
+    
+    <!-- 註冊表單 -->
+    <form class="login-form" id="signupForm" style="display: none;">
+      <div class="form-group">
+        <label for="signupName">姓名</label>
+        <input type="text" id="signupName" placeholder="你的姓名" required>
+      </div>
+      <div class="form-group">
+        <label for="signupEmail">電郵帳戶</label>
+        <input type="email" id="signupEmail" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label for="signupPassword">密碼</label>
+        <input type="password" id="signupPassword" placeholder="至少 6 個字符" required>
+      </div>
+      <div class="form-group">
+        <label for="signupPasswordConfirm">確認密碼</label>
+        <input type="password" id="signupPasswordConfirm" placeholder="再輸入一次" required>
+      </div>
+      <button type="submit" class="btn-login" id="btnSignup">建立帳戶</button>
+    </form>
+    
+    <!-- 表單切換 -->
+    <div class="toggle-form">
+      <div id="toggleLogin" style="display: none;">
+        <p>已有帳戶？</p>
+        <button type="button" class="btn-toggle" id="switchToLogin">返回登入</button>
+      </div>
+      <div id="toggleSignup">
+        <p>未有帳戶？</p>
+        <button type="button" class="btn-toggle" id="switchToSignup">建立新帳戶</button>
+      </div>
+    </div>
+    
+    <!-- 本地模式提示 -->
+    <div class="mode-indicator" id="modeIndicator">
+      （Firebase 未配置 - 使用本地儲存模式）
+    </div>
+  </div>
+
+  <!-- Firebase SDK（可選 - 如未配置則使用本地儲存） -->
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
+  <script defer src="firebase-config.js"></script>
+  <script>
+    // 登入相關變數
+    let isLoginMode = true;
+    
+    const errorMsg = document.getElementById('errorMsg');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const toggleLogin = document.getElementById('toggleLogin');
+    const toggleSignup = document.getElementById('toggleSignup');
+    const switchToLogin = document.getElementById('switchToLogin');
+    const switchToSignup = document.getElementById('switchToSignup');
+    const btnLogin = document.getElementById('btnLogin');
+    const btnSignup = document.getElementById('btnSignup');
+    const modeIndicator = document.getElementById('modeIndicator');
+    
+    // 表單字段
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const signupName = document.getElementById('signupName');
+    const signupEmail = document.getElementById('signupEmail');
+    const signupPassword = document.getElementById('signupPassword');
+    const signupPasswordConfirm = document.getElementById('signupPasswordConfirm');
+    
+    // 隱藏錯誤訊息
+    function hideError() {
+      errorMsg.classList.remove('show');
+      errorMsg.textContent = '';
+    }
+    
+    // 顯示錯誤訊息
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.classList.add('show');
+    }
+    
+    // 表單模式切換
+    function toggleMode() {
+      isLoginMode = !isLoginMode;
+      if (isLoginMode) {
+        loginForm.style.display = 'flex';
+        signupForm.style.display = 'none';
+        toggleLogin.style.display = 'none';
+        toggleSignup.style.display = 'block';
+      } else {
+        loginForm.style.display = 'none';
+        signupForm.style.display = 'flex';
+        toggleLogin.style.display = 'block';
+        toggleSignup.style.display = 'none';
+      }
+      hideError();
+    }
+    
+    // 登入處理
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+      
+      const email = loginEmail.value.trim();
+      const password = loginPassword.value;
+      
+      if (!email || !password) {
+        showError('請填寫所有欄位');
+        return;
+      }
+      
+      try {
+        btnLogin.disabled = true;
+        btnLogin.textContent = '登入中...';
+        
+        // 使用 Firebase 或本地驗證
+        if (typeof Auth !== 'undefined' && window.firebaseEnabled) {
+          await Auth.signIn(email, password);
+        } else {
+          // 本地模式：簡單驗證（實際應用需更安全的方式）
+          const users = JSON.parse(localStorage.getItem('rope-skip-users') || '[]');
+          const user = users.find(u => u.email === email && u.password === password);
+          if (!user) throw new Error('電郵或密碼不正確');
+          localStorage.setItem('current-user', JSON.stringify(user));
+        }
+        
+        // 登入成功，導向主應用
+        window.location.href = 'index.html';
+      } catch (error) {
+        showError(`登入失敗：${error.message}`);
+        btnLogin.disabled = false;
+        btnLogin.textContent = '登入';
+      }
+    });
+    
+    // 註冊處理
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+      
+      const name = signupName.value.trim();
+      const email = signupEmail.value.trim();
+      const password = signupPassword.value;
+      const passwordConfirm = signupPasswordConfirm.value;
+      
+      if (!name || !email || !password || !passwordConfirm) {
+        showError('請填寫所有欄位');
+        return;
+      }
+      
+      if (password !== passwordConfirm) {
+        showError('兩次密碼輸入不一致');
+        return;
+      }
+      
+      if (password.length < 6) {
+        showError('密碼至少需要 6 個字符');
+        return;
+      }
+      
+      try {
+        btnSignup.disabled = true;
+        btnSignup.textContent = '建立中...';
+        
+        // 使用 Firebase 或本地註冊
+        if (typeof Auth !== 'undefined' && window.firebaseEnabled) {
+          await Auth.signUp(email, password, name);
+        } else {
+          // 本地模式
+          const users = JSON.parse(localStorage.getItem('rope-skip-users') || '[]');
+          if (users.find(u => u.email === email)) {
+            throw new Error('此電郵已被註冊');
+          }
+          const newUser = {
+            id: Date.now().toString(),
+            name,
+            email,
+            password // 注意：實際應用應使用加密密碼
+          };
+          users.push(newUser);
+          localStorage.setItem('rope-skip-users', JSON.stringify(users));
+          localStorage.setItem('current-user', JSON.stringify(newUser));
+        }
+        
+        // 註冊成功，導向主應用
+        window.location.href = 'index.html';
+      } catch (error) {
+        showError(`註冊失敗：${error.message}`);
+        btnSignup.disabled = false;
+        btnSignup.textContent = '建立帳戶';
+      }
+    });
+    
+    // 表單切換事件
+    switchToSignup.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleMode();
+    });
+    
+    switchToLogin.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleMode();
+    });
+    
+    // Firebase 初始化（如有 SDK）
+    window.addEventListener('load', () => {
+      if (typeof initializeFirebase === 'function') {
+        const result = initializeFirebase();
+        if (result) {
+          modeIndicator.textContent = '（已連接 Firebase - 雲端同步模式）';
+          modeIndicator.style.color = '#10b981';
+        }
+      }
+    });
+    
+    // 初始聚焦
+    loginEmail.focus();
+  </script>
+</body>
+</html>

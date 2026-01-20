@@ -145,6 +145,37 @@ function todayStr() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+
+// 計算並更新課堂時長顯示
+function updateClassDuration() {
+  const startTime = ($('classStartTime')?.value || '').trim();
+  const endTime = ($('classEndTime')?.value || '').trim();
+  const durationEl = $('classDuration');
+  
+  if (!durationEl) return;
+  
+  if (startTime && endTime) {
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    const startMins = sh * 60 + sm;
+    const endMins = eh * 60 + em;
+    
+    if (endMins > startMins) {
+      const mins = endMins - startMins;
+      const hours = Math.floor(mins / 60);
+      const remainMins = mins % 60;
+      let duration = '';
+      if (hours > 0) duration += `${hours}小時`;
+      if (remainMins > 0) duration += `${remainMins}分鐘`;
+      durationEl.textContent = `課堂時長：${duration}`;
+    } else {
+      durationEl.textContent = '課堂時長：結束時間須晚於開始時間';
+    }
+  } else {
+    durationEl.textContent = '課堂時長：—';
+  }
+}
+
 function parseRecords() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -187,6 +218,8 @@ function setPage(name) {
 
 // --- 教學花式
 let tricks = [];
+const TRICK_LEVELS = ['初級', '中級', '進階'];
+
 function renderTricks() {
   const el = $('tricksList');
   if (!el) return;
@@ -194,9 +227,25 @@ function renderTricks() {
     `<div class="trick-tag" data-i="${i}">
       <span class="name">${escapeHtml(t.name)}</span>
       ${t.detail ? `<span class="detail"> · ${escapeHtml(t.detail)}</span>` : ''}
+      <div class="trick-level-select">
+        <select class="trick-level" data-i="${i}" aria-label="等級">
+          <option value="">無等級</option>
+          ${TRICK_LEVELS.map(lvl => `<option value="${lvl}" ${(t.level || '') === lvl ? 'selected' : ''}>${lvl}</option>`).join('')}
+        </select>
+      </div>
       <button type="button" class="remove-trick" data-i="${i}" aria-label="移除">×</button>
     </div>`
   ).join('');
+  
+  // 等級選擇事件
+  $qa('.trick-level').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const idx = +e.target.dataset.i;
+      tricks[idx].level = e.target.value;
+    });
+  });
+  
+  // 移除花式事件
   $qa('.remove-trick').forEach(btn => {
     btn.onclick = () => { tricks.splice(+btn.dataset.i, 1); renderTricks(); };
   });
@@ -232,22 +281,44 @@ $('addTrick')?.addEventListener('click', () => {
   const name = ($('trickName')?.value || '').trim();
   if (!name) return;
   const detail = ($('trickDetail')?.value || '').trim();
-  tricks.push({ name, detail });
+  tricks.push({ name, detail, level: '' });
   $('trickName').value = ''; $('trickDetail').value = ''; $('trickName').focus();
   renderTricks();
 });
 
+// --- 課堂時間監聽器
+$('classStartTime')?.addEventListener('change', updateClassDuration);
+$('classEndTime')?.addEventListener('change', updateClassDuration);
+
 // --- 表單數據
 function getFormData() {
   const date = ($('classDate')?.value || '').trim();
+  const startTime = ($('classStartTime')?.value || '').trim();
+  const endTime = ($('classEndTime')?.value || '').trim();
+  
+  // 計算課堂時長（分鐘）
+  let classDurationMins = null;
+  if (startTime && endTime) {
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    const startMins = sh * 60 + sm;
+    const endMins = eh * 60 + em;
+    classDurationMins = endMins > startMins ? endMins - startMins : null;
+  }
+  
   return {
     classDate: date,
     className: ($('className')?.value || '').trim(),
     classSize: ($('classSize')?.value || '').trim() ? parseInt($('classSize').value, 10) : null,
+    classLocation: ($('classLocation')?.value || '').trim(),
+    teachingRole: ($('teachingRole')?.value || '').trim(),
+    classStartTime: startTime,
+    classEndTime: endTime,
+    classDurationMins: classDurationMins,
     notes: ($('notes')?.value || '').trim(),
     engagement: parseInt($('engagement')?.value || '3', 10),
     atmosphere: $q('[data-name="atmosphere"] .selected')?.textContent?.trim() || '',
-    tricks: tricks.map(t => ({ ...t })),
+    tricks: tricks.map(t => ({ name: t.name || '', detail: t.detail || '', level: t.level || '' })),
     mastery: parseInt($('mastery')?.value || '50', 10),
     plannedTime: ($('plannedTime')?.value || '').trim() ? parseInt($('plannedTime').value, 10) : null,
     actualTime: ($('actualTime')?.value || '').trim() ? parseInt($('actualTime').value, 10) : null,
@@ -272,12 +343,17 @@ function loadIntoForm(rec) {
   $('classDate').value = rec.classDate || todayStr();
   $('className').value = rec.className || '';
   $('classSize').value = rec.classSize != null ? rec.classSize : '';
+  $('classLocation').value = rec.classLocation || '';
+  $('teachingRole').value = rec.teachingRole || '';
+  $('classStartTime').value = rec.classStartTime || '';
+  $('classEndTime').value = rec.classEndTime || '';
+  updateClassDuration();
   $('notes').value = rec.notes || '';
   if ($('engagement')) $('engagement').value = rec.engagement ?? 3;
   document.querySelectorAll('[data-name="atmosphere"] button').forEach(b => {
     b.classList.toggle('selected', b.textContent.trim() === (rec.atmosphere || ''));
   });
-  tricks = Array.isArray(rec.tricks) ? rec.tricks.map(t => ({ name: t.name || '', detail: t.detail || '' })) : [];
+  tricks = Array.isArray(rec.tricks) ? rec.tricks.map(t => ({ name: t.name || '', detail: t.detail || '', level: t.level || '' })) : [];
   renderTricks();
   if ($('mastery')) $('mastery').value = rec.mastery ?? 50;
   $('plannedTime').value = rec.plannedTime != null ? rec.plannedTime : '';
@@ -310,7 +386,11 @@ function loadIntoForm(rec) {
 // --- 清空表單
 function clearForm() {
   $('classDate').value = todayStr();
-  $('className').value = ''; $('classSize').value = ''; $('notes').value = '';
+  $('className').value = ''; $('classSize').value = '';
+  $('classLocation').value = ''; $('teachingRole').value = '';
+  $('classStartTime').value = ''; $('classEndTime').value = '';
+  updateClassDuration();
+  $('notes').value = '';
   $('engagement').value = '3';
   $q('[data-name="atmosphere"] .selected')?.classList.remove('selected');
   tricks = []; renderTricks();
@@ -627,9 +707,16 @@ function showClassDetail(classKey) {
   const title = (classKey === '—' ? '未填寫班別' : classKey) + ' － 班別細節';
   if ($('classDetailTitle')) $('classDetailTitle').textContent = title;
   if ($('classDetailBody')) {
-    $('classDetailBody').innerHTML = recs.length === 0 ? '<p class="empty">此班別尚無課堂記錄。</p>' : '<ul class="class-session-list">' + recs.map(r => `<li class="class-session-item" data-date="${escapeHtml(r.classDate || '')}" data-class="${escapeHtml(r.className || '')}"><span class="date">${r.classDate || '–'}</span>${r.classSize != null ? `<span class="meta">人數 ${r.classSize}</span>` : ''}<span class="hint">點擊查看詳情</span></li>`).join('') + '</ul>';
+    $('classDetailBody').innerHTML = recs.length === 0 ? '<p class="empty">此班別尚無課堂記錄。</p>' : '<ul class="class-session-list">' + recs.map(r => `<li class="class-session-item" data-date="${escapeHtml(r.classDate || '')}" data-class="${escapeHtml(r.className || '')}"><span class="date">${r.classDate || '–'}</span>${r.classSize != null ? `<span class="meta">人數 ${r.classSize}</span>` : ''}<span class="hint">點擊查看詳情</span><button type="button" class="delete-session-btn" aria-label="刪除此堂課">×</button></li>`).join('') + '</ul>';
     $('classDetailBody').querySelectorAll('.class-session-item').forEach(li => {
-      li.onclick = () => { const rec = list.find(r => r.classDate === li.dataset.date && r.className === li.dataset.class); if (rec) { $('classDetailModal').hidden = true; showDetail(rec); } };
+      li.onclick = (e) => { if (e.target.classList.contains('delete-session-btn')) return; const rec = list.find(r => r.classDate === li.dataset.date && r.className === li.dataset.class); if (rec) { $('classDetailModal').hidden = true; showDetail(rec); } };
+      li.querySelector('.delete-session-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dateStr = li.dataset.date;
+        const classStr = li.dataset.class;
+        deleteRecord(dateStr, classStr);
+        setTimeout(() => showClassDetail(classKey), 300);
+      });
     });
   }
   $('classDetailModal').hidden = false;
@@ -637,12 +724,31 @@ function showClassDetail(classKey) {
 
 // --- 課堂詳情 Modal
 function showDetail(rec) {
-  const tricksStr = Array.isArray(rec.tricks) && rec.tricks.length ? rec.tricks.map(t => escapeHtml(t.name) + (t.detail ? `（${escapeHtml(t.detail)}）` : '')).join('、') : '—';
+  const tricksStr = Array.isArray(rec.tricks) && rec.tricks.length ? rec.tricks.map(t => {
+    let str = escapeHtml(t.name);
+    if (t.detail) str += `（${escapeHtml(t.detail)}）`;
+    if (t.level) str += ` [${escapeHtml(t.level)}]`;
+    return str;
+  }).join('、') : '—';
+  
+  let durationStr = '—';
+  if (rec.classStartTime && rec.classEndTime) {
+    durationStr = `${rec.classStartTime} - ${rec.classEndTime}`;
+    if (rec.classDurationMins) {
+      const h = Math.floor(rec.classDurationMins / 60);
+      const m = rec.classDurationMins % 60;
+      durationStr += ` (${h ? `${h}小時` : ''}${m ? `${m}分鐘` : ''})`;
+    }
+  }
+  
   if ($('detailTitle')) $('detailTitle').textContent = `課堂詳情 · ${rec.classDate || '–'}`;
   if ($('detailBody')) {
     $('detailBody').innerHTML = `
       <dl>
         <dt>基本資料</dt><dd>${rec.classDate || '–'} | ${escapeHtml(rec.className || '–')} | 人數 ${rec.classSize ?? '–'}</dd>
+        ${rec.classLocation ? `<dt>課堂位置</dt><dd>${escapeHtml(rec.classLocation)}</dd>` : ''}
+        ${rec.teachingRole ? `<dt>教學角色</dt><dd>${escapeHtml(rec.teachingRole)}</dd>` : ''}
+        <dt>課堂時間</dt><dd>${durationStr}</dd>
         <dt>備注</dt><dd>${rec.notes ? escapeHtml(rec.notes).replace(/\n/g, '<br>') : '—'}</dd>
         <dt>投入度</dt><dd>開心指數 ${rec.engagement ?? '–'}/5 · 課堂氣氛 ${escapeHtml(rec.atmosphere || '–')}</dd>
         <dt>技能進步</dt><dd>教學花式：${tricksStr} · 掌握 ${rec.mastery ?? '–'}% · 預算/實際 ${rec.plannedTime ?? '–'}/${rec.actualTime ?? '–'} 分鐘 · 技巧等級 ${escapeHtml(rec.skillLevel || '–')}</dd>

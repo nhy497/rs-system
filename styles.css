@@ -352,6 +352,24 @@ input[type="range"]::-moz-range-thumb {
 }
 .trick-tag .name { color: var(--accent); font-weight: 500; }
 .trick-tag .detail { color: var(--text-muted); font-size: 0.82rem; }
+.trick-level-select {
+  display: flex;
+  align-items: center;
+}
+.trick-level-select select {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+  border: 1px solid rgba(2,132,199,0.3);
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  color: var(--text);
+}
+.trick-level-select select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(2,132,199,0.1);
+}
 .trick-tag button {
   background: none; border: none; color: var(--text-muted);
   cursor: pointer; padding: 0 0.2rem; font-size: 1rem; line-height: 1;
@@ -372,6 +390,20 @@ input[type="range"]::-moz-range-thumb {
   transition: all var(--transition);
 }
 .btn-add:hover { background: var(--accent-soft); }
+
+.delete-session-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  transition: color var(--transition);
+  margin-left: auto;
+}
+.delete-session-btn:hover {
+  color: var(--danger);
+}
 
 /* ========== 按鈕 ========== */
 .btn {
@@ -623,7 +655,7 @@ input[type="range"]::-moz-range-thumb {
 }
 .modal-body .class-session-item .date { font-weight: 500; }
 .modal-body .class-session-item .meta { color: var(--text-muted); font-size: 0.9em; }
-.modal-body .class-session-item .hint { margin-left: auto; color: var(--accent); font-size: 0.8em; }
+.modal-body .class-session-item .hint { color: var(--accent); font-size: 0.8em; margin-right: 0.5rem; }
 .modal-body .empty { color: var(--text-faint); font-style: italic; }
 
 /* ========== Toast ========== */
