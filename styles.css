@@ -918,3 +918,45 @@ input[type="range"]::-moz-range-thumb {
   font-weight: 600;
   color: var(--accent);
 }
+
+/* 課堂時長顯示樣式 */
+.time-duration-display {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  background: #e0f2fe;
+  border-radius: 6px;
+  color: #0284c7;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border-left: 3px solid #0284c7;
+}
+
+/* 確保移動設備上的觸摸目標大小 ≥ 44px */
+@media (max-width: 768px) {
+  .topbar-menu {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .quick-btns button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .modal-close {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .btn {
+    min-height: 44px;
+    padding: 0.65rem 1rem;
+  }
+}

@@ -87,6 +87,35 @@
               </div>
               <!-- 班級預設按鈕容器（由JS添加） -->
               <div id="classPresetsContainer" class="class-presets" style="display: none;"></div>
+              
+              <!-- 課堂時間 -->
+              <div class="field-row">
+                <div class="field">
+                  <label for="classStartTime">開始時間</label>
+                  <input type="time" id="classStartTime">
+                </div>
+                <div class="field">
+                  <label for="classEndTime">結束時間</label>
+                  <input type="time" id="classEndTime">
+                </div>
+              </div>
+              
+              <!-- 課堂時長顯示 -->
+              <div id="classDuration" class="time-duration-display">課堂時長：—</div>
+              
+              <!-- 課堂位置與教學角色 -->
+              <div class="field-row">
+                <div class="field">
+                  <label for="classLocation">課堂位置</label>
+                  <input type="text" id="classLocation" placeholder="例：操場、體育館">
+                </div>
+                <div class="field">
+                  <label for="teachingRole">教學角色</label>
+                  <input type="text" id="teachingRole" placeholder="例：主教練、助教">
+                </div>
+              </div>
+              
+              <!-- 備注 -->
               <div class="field" style="padding: 0 1.25rem 1.25rem;">
                 <label for="notes">備注</label>
                 <textarea id="notes" rows="2" placeholder="課堂觀察、待跟進、下堂預告…"></textarea>

@@ -49,21 +49,47 @@ function removeClassPreset(className) {
   }
 }
 
-// 新增功能：數據驗證
+// 新增功能：數據驗證（增強版本）
 function validateFormData(d) {
   const issues = [];
-  if (!d.classDate) issues.push('⚠ 課堂日期為必填');
-  if (d.tricks && d.tricks.length === 0) issues.push('⚠ 未記錄任何教學花式');
-  if (d.classSize === null || d.classSize === '') issues.push('⚠ 人數未填寫');
-  if (d.atmosphere === '') issues.push('⚠ 課堂氣氛未選擇');
-  if (d.skillLevel === '') issues.push('⚠ 技巧等級未選擇');
+  if (!d.classDate) issues.push({ field: 'classDate', message: '課堂日期為必填' });
+  if (d.tricks && d.tricks.length === 0) issues.push({ field: 'tricks', message: '未記錄任何教學花式' });
+  if (d.classSize === null || d.classSize === '') issues.push({ field: 'classSize', message: '人數未填寫' });
+  if (d.atmosphere === '') issues.push({ field: 'atmosphere', message: '課堂氣氛未選擇' });
+  if (d.skillLevel === '') issues.push({ field: 'skillLevel', message: '技巧等級未選擇' });
+  
+  // 驗證滑桿值範圍
+  if (d.engagement && (d.engagement < 1 || d.engagement > 5)) {
+    issues.push({ field: 'engagement', message: '開心指數必須在 1-5 之間' });
+  }
+  
   return issues;
 }
 
-// 新增功能：檢查日期重複
-function checkDateDuplicate(dateStr, className) {
+// 新增功能：檢查日期重複（考慮時間）
+function timeToMinutes(timeStr) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function checkDateDuplicate(dateStr, className, startTime = '') {
   const list = parseRecords();
-  return list.filter(r => r.classDate === dateStr && r.className === className);
+  
+  // 篩選相同日期和班級的記錄
+  const sameDay = list.filter(r => r.classDate === dateStr && r.className === className);
+  
+  if (sameDay.length === 0) return [];
+  
+  // 如果沒有提供時間，返回所有同天記錄（相容舊行為）
+  if (!startTime) return sameDay;
+  
+  // 如果提供時間，只標記在1小時時間窗內的記錄為重複
+  const currentMins = timeToMinutes(startTime);
+  return sameDay.filter(r => {
+    const recordMins = timeToMinutes(r.classStartTime || '');
+    return Math.abs(recordMins - currentMins) < 60; // 在1小時內
+  });
 }
 
 // 新增功能：獲取上堂課記錄
@@ -178,12 +204,34 @@ function updateClassDuration() {
 
 function parseRecords() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+    const encoded = localStorage.getItem(STORAGE_KEY);
+    if (!encoded) return [];
+    // 簡單的Base64解碼（基礎保護）
+    try {
+      return JSON.parse(atob(encoded));
+    } catch {
+      // 如果解碼失敗，嘗試直接解析（向後相容）
+      return JSON.parse(encoded);
+    }
+  } catch (e) {
+    console.warn('Failed to parse records from storage:', e);
+    return [];
+  }
 }
+
 function saveRecords(arr) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+  try {
+    // 簡單的Base64編碼（基礎保護）
+    const encoded = btoa(JSON.stringify(arr));
+    localStorage.setItem(STORAGE_KEY, encoded);
+  } catch (e) {
+    console.error('Failed to save records:', e);
+    if (e.name === 'QuotaExceededError') {
+      toast('❌ 存儲空間已滿，請清除舊記錄');
+    } else {
+      toast('❌ 無法保存數據：' + e.message);
+    }
+  }
 }
 function escapeHtml(s) {
   if (s == null) return '';
@@ -416,19 +464,37 @@ function clearForm() {
 $('btnSave')?.addEventListener('click', () => {
   const d = getFormData();
   
+  // 清除之前的錯誤標記
+  document.querySelectorAll('[aria-invalid="true"]').forEach(el => {
+    el.removeAttribute('aria-invalid');
+    el.style.borderColor = '';
+  });
+  
   // 驗證數據
   const issues = validateFormData(d);
   if (issues.length > 0) {
-    toast('⚠ ' + issues[0]); // 顯示第一個問題
+    // 標記無效欄位
+    issues.forEach(issue => {
+      const field = $(issue.field);
+      if (field) {
+        field.setAttribute('aria-invalid', 'true');
+        field.style.borderColor = 'var(--danger)';
+      }
+    });
+    
+    // 顯示所有錯誤
+    const messages = issues.map(i => i.message).join('\n');
+    toast('❌ 請修正以下問題:\n' + messages);
     return;
   }
   
   if (!d.classDate) { toast('請填寫課堂日期'); return; }
   
-  // 檢查日期重複
-  const dupes = checkDateDuplicate(d.classDate, d.className);
+  // 檢查日期重複（考慮時間）
+  const dupes = checkDateDuplicate(d.classDate, d.className, d.classStartTime);
   if (dupes.length > 0) {
-    if (!confirm(`⚠ 已存在 ${d.classDate} 的記錄 (${d.className || '未設定班級'})。\n\n確定要覆蓋嗎？`)) {
+    const timeInfo = d.classStartTime ? ` (${d.classStartTime})` : '';
+    if (!confirm(`⚠ 已存在 ${d.classDate}${timeInfo} 的記錄 (${d.className || '未設定班級'})。\n\n確定要覆蓋嗎？`)) {
       return;
     }
   }
@@ -484,19 +550,32 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- 匯出 CSV
+// CSV 公式注入防護函數
+function escapeCsvValue(val) {
+  const str = String(val || '');
+  // 為公式觸發字符添加前綴引號
+  if (/^[=@+\-]/.test(str)) {
+    return `'${str}`;
+  }
+  // 轉義引號
+  return str.replace(/"/g, '""');
+}
+
 function doExportCsv() {
   const list = parseRecords();
   if (list.length === 0) { toast('尚無記錄可匯出'); return; }
   const headers = ['課堂日期','班級名稱','人數','備注','開心指數','課堂氣氛','教學花式','掌握比例','預算教學時間','實際教學時間','技巧等級進度','主動幫助他人','同學互動','小組合作意願','自發練習','主動學習','課堂積極性','學習熱情','教學評分','學生滿意度','紀律介入次數','教學靈活性','個別化教學比例'];
   const rows = list.map(r => [
-    r.classDate, r.className, r.classSize ?? '', r.notes ?? '',
-    r.engagement ?? '', r.atmosphere ?? '',
-    (Array.isArray(r.tricks) ? r.tricks.map(t => t.name + (t.detail ? `(${t.detail})` : '')).join('；') : ''),
-    r.mastery ?? '', r.plannedTime ?? '', r.actualTime ?? '', r.skillLevel ?? '',
+    r.classDate, escapeCsvValue(r.className), r.classSize ?? '', escapeCsvValue(r.notes ?? ''),
+    r.engagement ?? '', escapeCsvValue(r.atmosphere ?? ''),
+    (Array.isArray(r.tricks) ? r.tricks.map(t => 
+      escapeCsvValue(t.name) + (t.detail ? `(${escapeCsvValue(t.detail)})` : '')
+    ).join('；') : ''),
+    r.mastery ?? '', r.plannedTime ?? '', r.actualTime ?? '', escapeCsvValue(r.skillLevel ?? ''),
     r.helpOthers ?? '', r.interaction ?? '', r.teamwork ?? '',
     r.selfPractice ?? '', r.activeLearn ?? '', r.positivity ?? '', r.enthusiasm ?? '',
     r.teachScore ?? '', r.satisfaction ?? '', r.disciplineCount ?? '', r.flexibility ?? '', r.individual ?? ''
-  ].map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
+  ].map(c => `"${escapeCsvValue(c)}"`).join(','));
   const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);

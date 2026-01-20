@@ -2,9 +2,13 @@
  * Firebase 配置和初始化
  * 支援多用戶認證和實時數據同步
  * v3.0: 多用戶系統準備中
+ * 
+ * 注意：請根據實際的 Firebase 項目配置更新以下值
+ * 或將 firebaseEnabled 設置為 false 以禁用 Firebase 功能
  */
 
 // Firebase 配置（請根據 Firebase 項目更新）
+// 如未配置，系統將自動降級至 localStorage 本地存儲
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -16,7 +20,9 @@ const firebaseConfig = {
 
 // Firebase 初始化標誌
 let firebaseInitialized = false;
-let firebaseEnabled = false;
+// 設置為 false 以禁用 Firebase（使用本地存儲）
+// 設置為 true 以啟用 Firebase（需配置 firebaseConfig）
+let firebaseEnabled = false; // ⚠️ 默認禁用，請配置後啟用
 
 /**
  * 初始化 Firebase
