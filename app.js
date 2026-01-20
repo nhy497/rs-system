@@ -244,7 +244,7 @@ $('btnSave')?.addEventListener('click', () => {
   const d = getFormData();
   if (!d.classDate) { toast('請填寫課堂日期'); return; }
   const list = parseRecords();
-  const i = list.findIndex(r => r.classDate === d.classDate);
+  const i = list.findIndex(r => r.classDate === d.classDate && r.className === d.className);
   if (i >= 0) list[i] = d; else list.push(d);
   list.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
   saveRecords(list);
