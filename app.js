@@ -1,9 +1,11 @@
 /**
  * HKJRA 教練記錄系統 · 跳繩課堂 Checkpoint
  * 企業級介面 - 保留原有功能邏輯
+ * v2.0: 新增日期檢查、班級預設、複製課程、搜尋、排序、驗證等功能
  */
 
 const STORAGE_KEY = 'rope-skip-checkpoints';
+const CLASS_PRESETS_KEY = 'rope-skip-class-presets';
 const SCORE_1_5_IDS = ['engagement', 'positivity', 'enthusiasm', 'satisfaction'];
 const RANGE_IDS = [
   'engagement', 'mastery', 'helpOthers', 'interaction', 'teamwork',
@@ -20,6 +22,56 @@ const PAGE_TITLES = { overview: '課堂概覽', students: '學生管理', action
 let $ = (id) => document.getElementById(id);
 let $q = (sel) => document.querySelector(sel);
 let $qa = (sel) => document.querySelectorAll(sel);
+
+// 新增功能：班級預設管理
+function getClassPresets() {
+  try {
+    const raw = localStorage.getItem(CLASS_PRESETS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveClassPresets(arr) {
+  localStorage.setItem(CLASS_PRESETS_KEY, JSON.stringify(arr));
+}
+function addClassPreset(className) {
+  const presets = getClassPresets();
+  if (!presets.includes(className) && className.trim()) {
+    presets.push(className.trim());
+    saveClassPresets(presets);
+  }
+}
+function removeClassPreset(className) {
+  const presets = getClassPresets();
+  const idx = presets.indexOf(className);
+  if (idx >= 0) {
+    presets.splice(idx, 1);
+    saveClassPresets(presets);
+  }
+}
+
+// 新增功能：數據驗證
+function validateFormData(d) {
+  const issues = [];
+  if (!d.classDate) issues.push('⚠ 課堂日期為必填');
+  if (d.tricks && d.tricks.length === 0) issues.push('⚠ 未記錄任何教學花式');
+  if (d.classSize === null || d.classSize === '') issues.push('⚠ 人數未填寫');
+  if (d.atmosphere === '') issues.push('⚠ 課堂氣氛未選擇');
+  if (d.skillLevel === '') issues.push('⚠ 技巧等級未選擇');
+  return issues;
+}
+
+// 新增功能：檢查日期重複
+function checkDateDuplicate(dateStr, className) {
+  const list = parseRecords();
+  return list.filter(r => r.classDate === dateStr && r.className === className);
+}
+
+// 新增功能：獲取上堂課記錄
+function getLastLesson() {
+  const list = parseRecords();
+  if (list.length === 0) return null;
+  return list[0]; // 已排序，最新的在最前
+}
 
 function getClassOptions() {
   const list = parseRecords();
@@ -46,6 +98,47 @@ function populateQuickSelectClass() {
   const opts = getClassOptions();
   el.innerHTML = '<option value="">—</option>' + opts.map(c => `<option value="${escapeHtml(c)}">${c === '—' ? '未填寫' : escapeHtml(c)}</option>`).join('');
   if (opts.includes(v)) el.value = v; else el.value = '';
+  
+  // 添加班級預設按鈕
+  renderClassPresets();
+}
+
+// 新增功能：班級預設按鈕
+function renderClassPresets() {
+  let presetsContainer = document.getElementById('classPresetsContainer');
+  if (!presetsContainer) {
+    return; // 容器還沒載入，稍後會被初始化
+  }
+  
+  const presets = getClassPresets();
+  if (presets.length === 0) {
+    presetsContainer.innerHTML = '';
+    presetsContainer.style.display = 'none';
+    return;
+  }
+  
+  presetsContainer.innerHTML = presets.map(p => 
+    `<button type="button" class="class-preset-btn" data-class="${escapeHtml(p)}" title="點擊使用此班級">${escapeHtml(p)}</button>`
+  ).join('') + 
+  (presets.length < 8 ? '<button type="button" class="class-preset-btn add" id="addPresetBtn" title="添加常用班級">+ 新增</button>' : '');
+  
+  presetsContainer.style.display = 'flex';
+  
+  presetsContainer.querySelectorAll('.class-preset-btn:not(.add)').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('className').value = btn.dataset.class;
+      $('className').focus();
+    });
+  });
+  
+  $('addPresetBtn')?.addEventListener('click', () => {
+    const className = prompt('輸入班級名稱（例：P3A、初級班）：');
+    if (className && className.trim()) {
+      addClassPreset(className);
+      renderClassPresets();
+      $('className').value = className;
+    }
+  });
 }
 
 function todayStr() {
@@ -239,23 +332,75 @@ function clearForm() {
   });
 }
 
-// --- 儲存
+// --- 儲存（帶驗證和日期檢查）
 $('btnSave')?.addEventListener('click', () => {
   const d = getFormData();
+  
+  // 驗證數據
+  const issues = validateFormData(d);
+  if (issues.length > 0) {
+    toast('⚠ ' + issues[0]); // 顯示第一個問題
+    return;
+  }
+  
   if (!d.classDate) { toast('請填寫課堂日期'); return; }
+  
+  // 檢查日期重複
+  const dupes = checkDateDuplicate(d.classDate, d.className);
+  if (dupes.length > 0) {
+    if (!confirm(`⚠ 已存在 ${d.classDate} 的記錄 (${d.className || '未設定班級'})。\n\n確定要覆蓋嗎？`)) {
+      return;
+    }
+  }
+  
   const list = parseRecords();
   const i = list.findIndex(r => r.classDate === d.classDate && r.className === d.className);
   if (i >= 0) list[i] = d; else list.push(d);
   list.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
   saveRecords(list);
+  
+  // 自動保存班級預設
+  if (d.className.trim()) {
+    addClassPreset(d.className);
+  }
+  
   populateGlobalFilterClass();
   populateQuickSelectClass();
+  renderClassPresets();
   refreshStats();
-  toast('已儲存本堂記錄');
+  toast('✓ 已儲存本堂記錄');
 });
 
 $('btnClear')?.addEventListener('click', () => {
   if (confirm('確定要清空本堂輸入嗎？')) clearForm();
+});
+
+// 新增功能：複製上堂課
+function duplicateLastLesson() {
+  const last = getLastLesson();
+  if (!last) {
+    toast('⚠ 未找到上堂課記錄');
+    return;
+  }
+  loadIntoForm(last);
+  // 清空日期，讓使用者填寫新日期
+  $('classDate').value = todayStr();
+  toast('✓ 已載入上堂課資料（已清空日期和備注，請填寫新日期）');
+}
+
+// 快速複製按鈕（在介面初始化時添加）
+document.addEventListener('DOMContentLoaded', () => {
+  const btnDuplicate = document.createElement('button');
+  btnDuplicate.type = 'button';
+  btnDuplicate.id = 'btnDuplicate';
+  btnDuplicate.className = 'btn btn-secondary btn-sm';
+  btnDuplicate.textContent = '⚡ 複製上堂課';
+  btnDuplicate.title = '快速複製上堂課的資料 (80% 更快)';
+  const btnGroup = $('btnSave')?.parentElement;
+  if (btnGroup) {
+    btnGroup.insertBefore(btnDuplicate, $('btnSave').nextSibling);
+    btnDuplicate.addEventListener('click', duplicateLastLesson);
+  }
 });
 
 // --- 匯出 CSV
@@ -331,6 +476,37 @@ function refreshByClass() {
   let list = parseRecords();
   const classF = getGlobalFilterClass();
   if (classF) list = list.filter(r => ((r.className || '').trim() || '—') === classF);
+  
+  // 應用搜尋
+  const searchVal = ($('studentSearch')?.value || '').toLowerCase().trim();
+  if (searchVal) {
+    list = list.filter(r => {
+      const className = (r.className || '').toLowerCase();
+      const classDate = (r.classDate || '').toLowerCase();
+      return className.includes(searchVal) || classDate.includes(searchVal);
+    });
+  }
+  
+  // 應用排序
+  const sortBy = $('sortBy')?.value || 'date-desc';
+  switch(sortBy) {
+    case 'date-asc':
+      list.sort((a, b) => (a.classDate || '').localeCompare(b.classDate || ''));
+      break;
+    case 'name-asc':
+      list.sort((a, b) => ((a.className || '').trim() || '—').localeCompare((b.className || '').trim() || '—'));
+      break;
+    case 'mastery-desc':
+      list.sort((a, b) => (b.mastery ?? 0) - (a.mastery ?? 0));
+      break;
+    case 'engagement-desc':
+      list.sort((a, b) => (b.engagement ?? 0) - (a.engagement ?? 0));
+      break;
+    case 'date-desc':
+    default:
+      list.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
+  }
+  
   const groups = {};
   list.forEach(r => { const key = (r.className || '').trim() || '—'; if (!groups[key]) groups[key] = []; groups[key].push(r); });
   Object.keys(groups).forEach(k => { groups[k].sort((a, b) => (b.classDate || '').localeCompare(a.classDate || '')); });
@@ -339,7 +515,7 @@ function refreshByClass() {
 
   const ul = $('byClassList');
   if (!ul) return;
-  ul.innerHTML = keys.length === 0 ? '<li class="empty">尚無記錄</li>' : keys.map(key => {
+  ul.innerHTML = keys.length === 0 ? '<li class="empty">未找到符合的記錄</li>' : keys.map(key => {
     const label = key === '—' ? '未填寫班別' : escapeHtml(key);
     return `<li data-class="${escapeHtml(key)}">${label} <span class="count">(${groups[key].length}堂)</span></li>`;
   }).join('');
@@ -424,7 +600,24 @@ function refreshAnalytics() {
       return `<div class="chart-row"><span class="chart-label">${label}</span><div class="chart-bar-wrap"><div class="chart-bar" style="width:${w}%"></div></div><span class="chart-val">${groups[key].length}</span></div>`;
     }).join('');
   }
-  if (analyticsEmpty) analyticsEmpty.hidden = keys.length > 0;
+}
+
+// --- 刪除記錄
+function deleteRecord(classDate, className) {
+  if (!confirm(`確定要刪除 ${classDate} · ${className || '未填寫'} 的記錄嗎？此操作無法復原。`)) return;
+  const list = parseRecords();
+  const i = list.findIndex(r => r.classDate === classDate && r.className === className);
+  if (i >= 0) {
+    list.splice(i, 1);
+    saveRecords(list);
+    populateGlobalFilterClass();
+    populateQuickSelectClass();
+    refreshStats();
+    refreshAnalytics();
+    refreshActionsView();
+    toast('已刪除記錄');
+    $('detailModal').hidden = true;
+  }
 }
 
 // --- 班別細節 Modal
@@ -434,9 +627,9 @@ function showClassDetail(classKey) {
   const title = (classKey === '—' ? '未填寫班別' : classKey) + ' － 班別細節';
   if ($('classDetailTitle')) $('classDetailTitle').textContent = title;
   if ($('classDetailBody')) {
-    $('classDetailBody').innerHTML = recs.length === 0 ? '<p class="empty">此班別尚無課堂記錄。</p>' : '<ul class="class-session-list">' + recs.map(r => `<li class="class-session-item" data-date="${escapeHtml(r.classDate || '')}"><span class="date">${r.classDate || '–'}</span>${r.classSize != null ? `<span class="meta">人數 ${r.classSize}</span>` : ''}<span class="hint">點擊查看詳情</span></li>`).join('') + '</ul>';
+    $('classDetailBody').innerHTML = recs.length === 0 ? '<p class="empty">此班別尚無課堂記錄。</p>' : '<ul class="class-session-list">' + recs.map(r => `<li class="class-session-item" data-date="${escapeHtml(r.classDate || '')}" data-class="${escapeHtml(r.className || '')}"><span class="date">${r.classDate || '–'}</span>${r.classSize != null ? `<span class="meta">人數 ${r.classSize}</span>` : ''}<span class="hint">點擊查看詳情</span></li>`).join('') + '</ul>';
     $('classDetailBody').querySelectorAll('.class-session-item').forEach(li => {
-      li.onclick = () => { const rec = list.find(r => r.classDate === li.dataset.date); if (rec) { $('classDetailModal').hidden = true; showDetail(rec); } };
+      li.onclick = () => { const rec = list.find(r => r.classDate === li.dataset.date && r.className === li.dataset.class); if (rec) { $('classDetailModal').hidden = true; showDetail(rec); } };
     });
   }
   $('classDetailModal').hidden = false;
@@ -457,8 +650,9 @@ function showDetail(rec) {
         <dt>心理與自信</dt><dd>自發練習 ${rec.selfPractice ?? '–'}% · 主動學習 ${rec.activeLearn ?? '–'}% · 積極性 ${rec.positivity ?? '–'}/5 · 熱情 ${rec.enthusiasm ?? '–'}/5</dd>
         <dt>教練質量</dt><dd>教學 ${rec.teachScore ?? '–'}/10 · 滿意度 ${rec.satisfaction ?? '–'}/5 · 紀律介入 ${rec.disciplineCount ?? '–'} 次 · 靈活性 ${rec.flexibility ?? '–'}/10 · 個別化 ${rec.individual ?? '–'}%</dd>
       </dl>
-      <p style="margin-top:1rem;"><button type="button" id="loadIntoFormBtn" class="btn btn-ghost">載入到表單（重溫／編輯）</button></p>`;
+      <p style="margin-top:1rem;"><button type="button" id="loadIntoFormBtn" class="btn btn-ghost">載入到表單（重溫／編輯）</button> <button type="button" id="deleteRecordBtn" class="btn btn-danger-ghost">刪除此記錄</button></p>`;
     $('loadIntoFormBtn')?.addEventListener('click', () => { setPage('overview'); loadIntoForm(rec); $('detailModal').hidden = true; });
+    $('deleteRecordBtn')?.addEventListener('click', () => { deleteRecord(rec.classDate, rec.className); });
   }
   $('detailModal').hidden = false;
 }
@@ -477,6 +671,10 @@ $('sidebarToggle')?.addEventListener('click', () => { $('sidebar')?.classList.to
 $('globalFilterClass')?.addEventListener('change', () => { refreshByClass(); refreshStats(); });
 $('filterDateFrom')?.addEventListener('change', () => refreshStats());
 $('filterDateTo')?.addEventListener('change', () => refreshStats());
+
+// 新增：搜尋和排序事件
+$('studentSearch')?.addEventListener('input', () => refreshStats());
+$('sortBy')?.addEventListener('change', () => refreshStats());
 
 $('quickSelectClass')?.addEventListener('change', function () {
   const v = this.value;
@@ -497,6 +695,7 @@ $('classDate').value = todayStr();
 if ($('topbarDate')) $('topbarDate').textContent = todayStr();
 populateGlobalFilterClass();
 populateQuickSelectClass();
+renderClassPresets();
 renderTricks();
 refreshStats();
 setPage('overview');

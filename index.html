@@ -64,7 +64,7 @@
           <div class="page-inner overview-grid">
             <!-- 基本資料 -->
             <div class="card">
-              <h2 class="card-title">基本資料</h2>
+              <h2 class="card-title">📋 基本資料</h2>
               <div class="card-body form-grid-3">
                 <div class="field">
                   <label for="classDate">課堂日期 <span class="required">*</span></label>
@@ -81,19 +81,21 @@
                   </div>
                 </div>
                 <div class="field">
-                  <label for="classSize">人數</label>
+                  <label for="classSize">人數 <span class="required">*</span></label>
                   <input type="number" id="classSize" min="0" placeholder="人數">
                 </div>
               </div>
-              <div class="field">
+              <!-- 班級預設按鈕容器（由JS添加） -->
+              <div id="classPresetsContainer" class="class-presets" style="display: none;"></div>
+              <div class="field" style="padding: 0 1.25rem 1.25rem;">
                 <label for="notes">備注</label>
                 <textarea id="notes" rows="2" placeholder="課堂觀察、待跟進、下堂預告…"></textarea>
               </div>
             </div>
 
             <!-- 投入度 -->
-            <div class="card">
-              <h2 class="card-title">投入度</h2>
+            <div class="card card-engagement">
+              <h2 class="card-title">😊 投入度</h2>
               <div class="card-body">
                 <div class="field">
                   <label>開心指數 <span class="range-val" id="val-engagement">3</span>/5</label>
@@ -109,7 +111,7 @@
                   </div>
                 </div>
                 <div class="field">
-                  <label>課堂氣氛</label>
+                  <label>課堂氣氛 <span class="required">*</span></label>
                   <div class="option-btns" data-name="atmosphere">
                     <button type="button" data-v="開心">開心</button>
                     <button type="button" data-v="不開心">不開心</button>
@@ -122,11 +124,11 @@
             </div>
 
             <!-- 技能進步 -->
-            <div class="card">
-              <h2 class="card-title">技能進步</h2>
+            <div class="card card-skills">
+              <h2 class="card-title">🎯 技能進步</h2>
               <div class="card-body">
                 <div class="field">
-                  <label>教學花式</label>
+                  <label>教學花式 <span class="required">*</span></label>
                   <div id="tricksList" class="tricks-list"></div>
                   <div class="trick-item add-trick">
                     <input type="text" id="trickName" placeholder="花式名稱">
@@ -169,8 +171,8 @@
             </div>
 
             <!-- 團隊協作 -->
-            <div class="card">
-              <h2 class="card-title">團隊協作</h2>
+            <div class="card card-team">
+              <h2 class="card-title">🤝 團隊協作</h2>
               <div class="card-body">
                 <div class="field">
                   <label>主動幫助他人 <span class="range-val" id="val-helpOthers">50</span>%</label>
@@ -215,8 +217,8 @@
             </div>
 
             <!-- 心理與自信 -->
-            <div class="card">
-              <h2 class="card-title">心理與自信</h2>
+            <div class="card card-psych">
+              <h2 class="card-title">💡 心理與自信</h2>
               <div class="card-body">
                 <div class="field">
                   <label>自發練習 <span class="range-val" id="val-selfPractice">50</span>%</label>
@@ -347,8 +349,30 @@
         <!-- 頁面：學生管理 -->
         <section id="page-students" class="page">
           <div class="page-inner">
+            <!-- 搜尋和排序工具 -->
             <div class="card">
-              <h2 class="card-title">篩選</h2>
+              <h2 class="card-title">🔍 搜尋和排序</h2>
+              <div class="card-body">
+                <div class="search-box" style="margin-bottom: 1rem;">
+                  <input type="text" id="studentSearch" placeholder="搜尋班級名稱或日期（例：P3A、2025-01-20）...">
+                </div>
+                <div class="sort-toolbar">
+                  <label for="sortBy">排序方式：</label>
+                  <select id="sortBy">
+                    <option value="date-desc">最新課程優先</option>
+                    <option value="date-asc">最舊課程優先</option>
+                    <option value="name-asc">班級名稱 (A→Z)</option>
+                    <option value="mastery-desc">掌握度 (高→低)</option>
+                    <option value="engagement-desc">開心指數 (高→低)</option>
+                  </select>
+                  <span class="sort-icon">⚙</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 篩選 -->
+            <div class="card">
+              <h2 class="card-title">📅 日期篩選</h2>
               <div class="filter-row">
                 <div class="field-inline">
                   <label for="filterDateFrom">日期起</label>
@@ -360,15 +384,16 @@
                 </div>
               </div>
             </div>
+            
             <div class="students-grid">
             <div class="card">
-              <h2 class="card-title">按班別</h2>
+              <h2 class="card-title">📚 按班別</h2>
               <div class="card-body">
                 <ul id="byClassList" class="by-class-list"></ul>
               </div>
             </div>
             <div class="card">
-              <h2 class="card-title">最近 10 堂課</h2>
+              <h2 class="card-title">⏱ 最近 10 堂課</h2>
               <div class="card-body">
                 <ul id="recentList" class="recent-list"></ul>
               </div>
