@@ -228,6 +228,13 @@
         <label for="signupPasswordConfirm">確認密碼</label>
         <input type="password" id="signupPasswordConfirm" placeholder="再輸入一次" required>
       </div>
+      <div class="form-group">
+        <label for="signupRole">身份</label>
+        <select id="signupRole">
+          <option value="user">一般用戶</option>
+          <option value="creator">系統創建者</option>
+        </select>
+      </div>
       <button type="submit" class="btn-login" id="btnSignup">建立帳戶</button>
     </form>
     
@@ -306,100 +313,12 @@
       hideError();
     }
     
-    // 登入處理
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      hideError();
-      
-      const email = loginEmail.value.trim();
-      const password = loginPassword.value;
-      
-      if (!email || !password) {
-        showError('請填寫所有欄位');
-        return;
-      }
-      
-      try {
-        btnLogin.disabled = true;
-        btnLogin.textContent = '登入中...';
-        
-        // 使用 Firebase 或本地驗證
-        if (typeof Auth !== 'undefined' && window.firebaseEnabled) {
-          await Auth.signIn(email, password);
-        } else {
-          // 本地模式：簡單驗證（實際應用需更安全的方式）
-          const users = JSON.parse(localStorage.getItem('rope-skip-users') || '[]');
-          const user = users.find(u => u.email === email && u.password === password);
-          if (!user) throw new Error('電郵或密碼不正確');
-          localStorage.setItem('current-user', JSON.stringify(user));
-        }
-        
-        // 登入成功，導向主應用
-        window.location.href = 'index.html';
-      } catch (error) {
-        showError(`登入失敗：${error.message}`);
-        btnLogin.disabled = false;
-        btnLogin.textContent = '登入';
-      }
-    });
+    // 登入處理（此函數將被下面的 DOMContentLoaded 覆蓋）
+    // 保留基本結構供備用
     
-    // 註冊處理
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      hideError();
-      
-      const name = signupName.value.trim();
-      const email = signupEmail.value.trim();
-      const password = signupPassword.value;
-      const passwordConfirm = signupPasswordConfirm.value;
-      
-      if (!name || !email || !password || !passwordConfirm) {
-        showError('請填寫所有欄位');
-        return;
+    // 註冊處理（此函數將被下面的 DOMContentLoaded 覆蓋）
+    // 保留基本結構供備用
       }
-      
-      if (password !== passwordConfirm) {
-        showError('兩次密碼輸入不一致');
-        return;
-      }
-      
-      if (password.length < 6) {
-        showError('密碼至少需要 6 個字符');
-        return;
-      }
-      
-      try {
-        btnSignup.disabled = true;
-        btnSignup.textContent = '建立中...';
-        
-        // 使用 Firebase 或本地註冊
-        if (typeof Auth !== 'undefined' && window.firebaseEnabled) {
-          await Auth.signUp(email, password, name);
-        } else {
-          // 本地模式
-          const users = JSON.parse(localStorage.getItem('rope-skip-users') || '[]');
-          if (users.find(u => u.email === email)) {
-            throw new Error('此電郵已被註冊');
-          }
-          const newUser = {
-            id: Date.now().toString(),
-            name,
-            email,
-            password // 注意：實際應用應使用加密密碼
-          };
-          users.push(newUser);
-          localStorage.setItem('rope-skip-users', JSON.stringify(users));
-          localStorage.setItem('current-user', JSON.stringify(newUser));
-        }
-        
-        // 註冊成功，導向主應用
-        window.location.href = 'index.html';
-      } catch (error) {
-        showError(`註冊失敗：${error.message}`);
-        btnSignup.disabled = false;
-        btnSignup.textContent = '建立帳戶';
-      }
-    });
     
     // 表單切換事件
     switchToSignup.addEventListener('click', (e) => {
@@ -443,88 +362,103 @@
       }
     });
 
-    // 修改登入按鈕事件
+    // 修改登入按鈕事件 - 使用 authManager
     document.getElementById('btnLogin').addEventListener('click', async function(e) {
       e.preventDefault();
+      const errorMsg = document.getElementById('errorMsg');
       
-      const username = document.getElementById('loginEmail').value;
+      const username = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       
       if (!username || !password) {
-        alert('請填寫使用者名稱和密碼');
+        errorMsg.textContent = '請填寫使用者名稱和密碼';
+        errorMsg.classList.add('show');
         return;
       }
       
       try {
         this.disabled = true;
         this.textContent = '登入中...';
+        errorMsg.classList.remove('show');
         
-        // 使用 PouchDB 認證系統登入
+        // 使用 authManager 登入
         const result = await authManager.login(username, password);
         
         if (result.success) {
-          alert('✅ 登入成功！');
-          // 導向主應用
+          // 登入成功 - 導向主應用
           window.location.href = 'index.html';
         } else {
-          alert('❌ 登入失敗：' + result.error);
+          errorMsg.textContent = '❌ 登入失敗：' + result.error;
+          errorMsg.classList.add('show');
           this.disabled = false;
           this.textContent = '登入';
         }
       } catch (error) {
-        alert('❌ 錯誤：' + error.message);
+        errorMsg.textContent = '❌ 錯誤：' + error.message;
+        errorMsg.classList.add('show');
         this.disabled = false;
         this.textContent = '登入';
       }
     });
 
-    // 修改註冊按鈕事件
+    // 修改註冊按鈕事件 - 使用 authManager
     document.getElementById('btnSignup').addEventListener('click', async function(e) {
       e.preventDefault();
+      const errorMsg = document.getElementById('errorMsg');
       
-      const username = document.getElementById('signupName').value;
-      const email = document.getElementById('signupEmail').value;
+      const username = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
       const password = document.getElementById('signupPassword').value;
       const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+      const role = document.getElementById('signupRole').value;
       
       if (!username || !email || !password || !passwordConfirm) {
-        alert('請填寫所有欄位');
+        errorMsg.textContent = '請填寫所有欄位';
+        errorMsg.classList.add('show');
         return;
       }
       
       if (password !== passwordConfirm) {
-        alert('兩次密碼輸入不一致');
+        errorMsg.textContent = '兩次密碼輸入不一致';
+        errorMsg.classList.add('show');
         return;
       }
       
       if (password.length < 4) {
-        alert('密碼至少需要 4 個字符');
+        errorMsg.textContent = '密碼至少需要 4 個字符';
+        errorMsg.classList.add('show');
         return;
       }
       
       try {
         this.disabled = true;
         this.textContent = '建立中...';
+        errorMsg.classList.remove('show');
         
-        // 使用 PouchDB 認證系統註冊
-        const result = await authManager.register(username, password, email);
+        // 使用 authManager 註冊 - 傳遞角色
+        const result = await authManager.register(username, password, email, role);
         
         if (result.success) {
-          alert('✅ 帳號建立成功！請登入');
+          errorMsg.textContent = `✅ 帳號建立成功！(${role === 'creator' ? '系統創建者' : '一般用戶'}) 請登入`;
+          errorMsg.classList.add('show');
           // 切換回登入表單
-          document.getElementById('loginMode').style.display = 'block';
-          document.getElementById('signupMode').style.display = 'none';
+          document.getElementById('loginForm').style.display = 'flex';
+          document.getElementById('signupForm').style.display = 'none';
+          document.getElementById('toggleLogin').style.display = 'none';
+          document.getElementById('toggleSignup').style.display = 'block';
           document.getElementById('loginEmail').value = username;
           document.getElementById('loginPassword').focus();
           this.disabled = false;
           this.textContent = '建立帳戶';
         } else {
-          alert('❌ 註冊失敗：' + result.error);
+          errorMsg.textContent = '❌ 註冊失敗：' + result.error;
+          errorMsg.classList.add('show');
           this.disabled = false;
           this.textContent = '建立帳戶';
         }
       } catch (error) {
-        alert('❌ 錯誤：' + error.message);
+        errorMsg.textContent = '❌ 錯誤：' + error.message;
+        errorMsg.classList.add('show');
         this.disabled = false;
         this.textContent = '建立帳戶';
       }

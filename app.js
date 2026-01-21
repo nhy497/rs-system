@@ -813,17 +813,25 @@ function refreshAnalytics() {
   const groups = {};
   list.forEach(r => { const key = (r.className || '').trim() || '—'; if (!groups[key]) groups[key] = []; groups[key].push(r); });
   const keys = Object.keys(groups).sort((a, b) => (groups[b][0]?.classDate || '').localeCompare(groups[a][0]?.classDate || ''));
-  const maxCount = keys.length ? Math.max(...keys.map(k => groups[k].length)) : 0;
 
   const chart = $('analyticsChart');
   const analyticsEmpty = $('analyticsEmpty');
   if (chart) {
-    if (keys.length === 0) chart.innerHTML = '';
-    else chart.innerHTML = keys.map(key => {
-      const label = key === '—' ? '未填寫班別' : escapeHtml(key);
-      const w = maxCount > 0 ? (groups[key].length / maxCount) * 100 : 0;
-      return `<div class="chart-row"><span class="chart-label">${label}</span><div class="chart-bar-wrap"><div class="chart-bar" style="width:${w}%"></div></div><span class="chart-val">${groups[key].length}</span></div>`;
-    }).join('');
+    if (keys.length === 0) {
+      chart.innerHTML = '';
+    } else {
+      // 簡化為簡單的表格格式（非圖表）
+      chart.innerHTML = '<table class="simple-table">' +
+        '<thead><tr><th>班別</th><th>堂數</th></tr></thead>' +
+        '<tbody>' +
+        keys.map(key => {
+          const label = key === '—' ? '未填寫班別' : escapeHtml(key);
+          const count = groups[key].length;
+          return `<tr><td>${label}</td><td class="text-right"><strong>${count}</strong></td></tr>`;
+        }).join('') +
+        '</tbody>' +
+        '</table>';
+    }
   }
 }
 

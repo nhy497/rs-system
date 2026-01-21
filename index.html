@@ -562,11 +562,11 @@
               <span class="sep">|</span>
               <span>最近 <strong id="statUpdated">–</strong></span>
             </div>
-            <!-- 圖表：按班別堂數 -->
+            <!-- 班別統計（簡化為表格） -->
             <div class="card">
-              <h2 class="card-title">各班別堂數</h2>
+              <h2 class="card-title">班別統計</h2>
               <div class="card-body">
-                <div id="analyticsChart" class="chart-bars"></div>
+                <div id="analyticsChart" class="analytics-table"></div>
                 <p id="analyticsEmpty" class="empty-hint" hidden>尚無記錄</p>
               </div>
             </div>
@@ -576,6 +576,41 @@
               <div class="card-body flex-row gap-m">
                 <button type="button" id="btnExport" class="btn btn-ghost">匯出全部記錄（CSV）</button>
                 <button type="button" id="btnDeleteAll" class="btn btn-danger-ghost">清除所有記錄</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 頁面：用戶管理（僅 Creator 可見） -->
+        <section id="page-data" class="page" hidden>
+          <div class="page-inner">
+            <!-- 用戶列表 -->
+            <div class="card">
+              <h2 class="card-title">👥 系統用戶</h2>
+              <div class="card-body">
+                <div id="usersList" class="users-list"></div>
+                <p id="usersEmpty" class="empty-hint" hidden>尚無用戶</p>
+              </div>
+            </div>
+
+            <!-- 系統統計 -->
+            <div class="card">
+              <h2 class="card-title">📊 系統統計</h2>
+              <div class="card-body">
+                <div class="stats-grid">
+                  <div class="stat-card">
+                    <div class="stat-label">總用戶數</div>
+                    <div class="stat-number" id="statTotalUsers">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Creator 數</div>
+                    <div class="stat-number" id="statCreatorCount">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">普通用戶</div>
+                    <div class="stat-number" id="statUserCount">0</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -625,6 +660,14 @@
     // 應用啟動
     document.addEventListener('DOMContentLoaded', async function() {
       console.log('🚀 應用啟動中...');
+      
+      // 檢查用戶是否已登錄
+      const session = localStorage.getItem('rs-system-session');
+      if (!session) {
+        console.warn('⚠️ 用戶未登錄，重定向到登錄頁面');
+        window.location.href = 'login.html';
+        return;
+      }
       
       // 初始化儲存系統
       const success = await initializeApp();

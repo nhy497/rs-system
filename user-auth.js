@@ -155,8 +155,9 @@ class AuthenticationManager {
    * @param {string} username - 使用者名稱
    * @param {string} password - 密碼
    * @param {string} email - 電子郵件（可選）
+   * @param {string} role - 用戶角色（'user' 或 'creator'，預設為 'user'）
    */
-  async register(username, password, email = '') {
+  async register(username, password, email = '', role = 'user') {
     try {
       // 驗證輸入
       if (!username || !password) {
@@ -172,6 +173,12 @@ class AuthenticationManager {
         throw new Error('使用者名稱已存在');
       }
 
+      // 驗證角色
+      const validRoles = ['user', 'creator'];
+      if (!validRoles.includes(role)) {
+        role = 'user';
+      }
+
       // 建立新用戶
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const passwordHash = this._hashPassword(password);
@@ -180,18 +187,20 @@ class AuthenticationManager {
         userId,
         username,
         email,
+        role,
         passwordHash,
         createdAt: new Date().toISOString(),
         lastLogin: null
       };
 
       this._saveUsers();
-      console.log('✅ 用戶已註冊:', username);
+      console.log('✅ 用戶已註冊:', username, `(${role})`);
 
       return {
         success: true,
         userId,
-        username
+        username,
+        role
       };
     } catch (error) {
       console.error('❌ 註冊失敗:', error.message);
@@ -225,7 +234,8 @@ class AuthenticationManager {
       this.currentUser = {
         userId: user.userId,
         username: user.username,
-        email: user.email
+        email: user.email,
+        role: user.role || 'user'
       };
       this.sessionId = this._createSessionId();
 
@@ -413,6 +423,24 @@ function requireAuth() {
 }
 
 /**
+ * 工具函數：檢查用戶是否為 creator（系統創建者）
+ */
+function isCreator() {
+  const user = authManager.getCurrentUser();
+  return user && user.role === 'creator';
+}
+
+/**
+ * 工具函數：確保用戶為 creator（用於保護管理功能）
+ */
+function requireCreator() {
+  if (!isCreator()) {
+    throw new Error('此功能僅限系統創建者使用');
+  }
+  return authManager.getCurrentUser();
+}
+
+/**
  * 工具函數：取得當前用戶 ID（使用者不登入會報錯）
  */
 function getCurrentUserId() {
@@ -427,6 +455,8 @@ if (typeof module !== 'undefined' && module.exports) {
     AuthenticationManager,
     AUTH_CONFIG,
     requireAuth,
+    requireCreator,
+    isCreator,
     getCurrentUserId
   };
 }
