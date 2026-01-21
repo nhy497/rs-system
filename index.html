@@ -674,12 +674,13 @@
         hasCurrentUser: !!currentUser
       });
       
+      // 兩個條件都必須存在
       if (!session || !currentUser) {
         console.warn('⚠️ 用戶未登錄，重定向到登錄頁面');
         console.log('   session:', session ? '✓ 存在' : '✗ 缺失');
         console.log('   current-user:', currentUser ? '✓ 存在' : '✗ 缺失');
         
-        // 清除任何殘留會話
+        // 清除任何殘留的損壞會話
         localStorage.removeItem('rs-system-session');
         localStorage.removeItem('current-user');
         
@@ -687,8 +688,9 @@
         return;
       }
       
+      // 驗證會話數據格式（但不要因為格式錯誤就自動登出）
+      let sessionValid = true;
       try {
-        // 驗證會話數據格式
         const sessionData = JSON.parse(session);
         const userData = JSON.parse(currentUser);
         
@@ -696,28 +698,80 @@
         console.log('   用戶:', sessionData.username);
         console.log('   登入時間:', sessionData.loginTime);
       } catch (e) {
-        console.error('❌ 會話數據格式錯誤:', e.message);
-        localStorage.removeItem('rs-system-session');
-        localStorage.removeItem('current-user');
-        window.location.href = 'login.html';
-        return;
+        console.error('⚠️ 會話數據格式有問題，但嘗試修復:', e.message);
+        sessionValid = false;
+        
+        // 嘗試修復：重新解析
+        try {
+          const userData = JSON.parse(currentUser);
+          // 重建會話對象
+          const fixedSession = {
+            userId: userData.id,
+            username: userData.username,
+            loginTime: userData.loginTime || new Date().toISOString()
+          };
+          localStorage.setItem('rs-system-session', JSON.stringify(fixedSession));
+          console.log('✅ 會話已自動修復');
+          sessionValid = true;
+        } catch (e2) {
+          console.error('❌ 無法修復會話，執行登出');
+          localStorage.removeItem('rs-system-session');
+          localStorage.removeItem('current-user');
+          window.location.href = 'login.html';
+          return;
+        }
       }
       
-      // 初始化儲存系統
-      const success = await initializeApp();
-      if (!success) {
-        console.error('❌ 儲存系統初始化失敗，應用將在離線模式運行');
+      // 初始化儲存系統（即使可能失敗，也不要自動登出用戶）
+      let initSuccess = false;
+      try {
+        const success = await initializeApp();
+        initSuccess = success;
+        if (!success) {
+          console.warn('⚠️ 儲存系統初始化失敗，應用將在離線模式運行');
+        }
+      } catch (err) {
+        console.error('⚠️ 初始化應用出錯，但用戶會話保持有效:', err.message);
+        // 不要因為初始化失敗就登出用戶
       }
       
-      // 更新側邊欄用戶信息
+      // 更新側邊欄用戶信息（但失敗不影響登入）
       try {
         const userData = JSON.parse(currentUser);
         const userNameEl = document.getElementById('sidebarUserName');
         if (userNameEl) {
           userNameEl.textContent = userData.username || '未知用戶';
+          console.log('✅ 用戶信息已更新:', userData.username);
         }
       } catch (e) {
-        console.warn('⚠️ 無法更新用戶信息:', e.message);
+        console.warn('⚠️ 無法更新用戶信息顯示，但用戶已正常登入');
+      }
+      
+      // 會話保活機制：定期檢查和更新會話以防止無意中被清除
+      setInterval(() => {
+        const s = localStorage.getItem('rs-system-session');
+        const u = localStorage.getItem('current-user');
+        
+        // 如果會話丟失但頁面仍在運行，嘗試恢復
+        if (!s || !u) {
+          console.warn('⚠️ 檢測到會話丟失，嘗試恢復...');
+          
+          // 只有在兩個都丟失時才重定向（防止誤操作）
+          if (!s && !u) {
+            console.log('🔓 會話完全丟失，執行登出');
+            window.location.href = 'login.html';
+          }
+        } else {
+          // 會話仍然有效，更新最後活動時間
+          try {
+            const session = JSON.parse(s);
+            session.lastActivity = new Date().toISOString();
+            localStorage.setItem('rs-system-session', JSON.stringify(session));
+          } catch (e) {
+            console.warn('⚠️ 無法更新會話時間戳，但會話仍有效');
+          }
+        }
+      }, 30000); // 每30秒檢查一次
       }
     });
   </script>

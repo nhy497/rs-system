@@ -619,12 +619,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
       if (confirm('確定要登出嗎？')) {
-        // 清除會話信息
+        // 清除所有會話信息（必須同時清除兩個鍵以保持一致性）
+        console.log('🔓 執行登出操作...');
         localStorage.removeItem('rs-system-session');
-        updateUserInfo();
-        updateSidebarStats();
-        // 重定向到登錄頁面
-        window.location.href = 'login.html';
+        localStorage.removeItem('current-user');
+        localStorage.removeItem('users');  // 清除用戶列表
+        console.log('✅ 會話已清除');
+        
+        // 強制頁面重載以確保清潔狀態
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 100);
       }
     });
   }
