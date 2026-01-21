@@ -983,3 +983,46 @@ window.systemDiagnosis = () => {
   Object.entries(tests).forEach(([name, fn]) => console.log(`${name}: ${fn()}`));
   return tests;
 };
+
+// === PouchDB 高級診斷 ===
+window.pouchdbDiagnosis = async () => {
+  const results = {};
+  
+  try {
+    // 1. 檢查數據庫連接
+    results.dbConnection = typeof storageService !== 'undefined' && storageService.db
+      ? '✅ 數據庫已連接'
+      : '⚠️ 數據庫未初始化';
+    
+    // 2. 測試數據寫入
+    if (storageService && storageService.db) {
+      try {
+        const testDoc = {
+          type: 'test',
+          timestamp: Date.now()
+        };
+        const writeResult = await storageService.db.post(testDoc);
+        await storageService.db.remove(writeResult.id, writeResult.rev);
+        results.writeTest = '✅ 數據寫入測試成功';
+      } catch (e) {
+        results.writeTest = `❌ 寫入測試失敗: ${e.message}`;
+      }
+    }
+    
+    // 3. 統計記錄數量
+    const records = parseRecords();
+    results.recordCount = `✅ 共 ${records.length} 筆記錄`;
+    
+    // 4. 檢查索引
+    results.indexStatus = typeof storageService.db.query !== 'undefined'
+      ? '✅ 查詢索引已啟用'
+      : '⚠️ 查詢索引未啟用';
+    
+  } catch (err) {
+    results.error = `❌ 診斷失敗: ${err.message}`;
+  }
+  
+  console.log('=== PouchDB 診斷報告 ===');
+  Object.entries(results).forEach(([key, val]) => console.log(`${key}: ${val}`));
+  return results;
+};
