@@ -665,10 +665,40 @@
     document.addEventListener('DOMContentLoaded', async function() {
       console.log('🚀 應用啟動中...');
       
-      // 檢查用戶是否已登錄
+      // 檢查用戶是否已登錄（加強驗證）
       const session = localStorage.getItem('rs-system-session');
-      if (!session) {
+      const currentUser = localStorage.getItem('current-user');
+      
+      console.log('📋 會話檢查:', {
+        hasSession: !!session,
+        hasCurrentUser: !!currentUser
+      });
+      
+      if (!session || !currentUser) {
         console.warn('⚠️ 用戶未登錄，重定向到登錄頁面');
+        console.log('   session:', session ? '✓ 存在' : '✗ 缺失');
+        console.log('   current-user:', currentUser ? '✓ 存在' : '✗ 缺失');
+        
+        // 清除任何殘留會話
+        localStorage.removeItem('rs-system-session');
+        localStorage.removeItem('current-user');
+        
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      try {
+        // 驗證會話數據格式
+        const sessionData = JSON.parse(session);
+        const userData = JSON.parse(currentUser);
+        
+        console.log('✅ 會話驗證成功');
+        console.log('   用戶:', sessionData.username);
+        console.log('   登入時間:', sessionData.loginTime);
+      } catch (e) {
+        console.error('❌ 會話數據格式錯誤:', e.message);
+        localStorage.removeItem('rs-system-session');
+        localStorage.removeItem('current-user');
         window.location.href = 'login.html';
         return;
       }
@@ -677,6 +707,17 @@
       const success = await initializeApp();
       if (!success) {
         console.error('❌ 儲存系統初始化失敗，應用將在離線模式運行');
+      }
+      
+      // 更新側邊欄用戶信息
+      try {
+        const userData = JSON.parse(currentUser);
+        const userNameEl = document.getElementById('sidebarUserName');
+        if (userNameEl) {
+          userNameEl.textContent = userData.username || '未知用戶';
+        }
+      } catch (e) {
+        console.warn('⚠️ 無法更新用戶信息:', e.message);
       }
     });
   </script>

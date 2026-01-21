@@ -345,9 +345,25 @@
           }));
           
           showSuccess('✅ 登入成功！正在導向主應用...');
+          // 確保localStorage已同步
           setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 1000);
+            // 驗證會話已保存
+            const savedSession = localStorage.getItem('rs-system-session');
+            if (savedSession) {
+              console.log('✅ 會話已驗證，開始導向...');
+              window.location.href = 'index.html';
+            } else {
+              console.error('❌ 會話保存失敗，重試中...');
+              localStorage.setItem('rs-system-session', JSON.stringify({
+                userId: user.id,
+                username: user.username,
+                loginTime: new Date().toISOString()
+              }));
+              setTimeout(() => {
+                window.location.href = 'index.html';
+              }, 500);
+            }
+          }, 800);
         } else {
           showError('❌ 使用者名稱或密碼不正確');
           btnLogin.disabled = false;
