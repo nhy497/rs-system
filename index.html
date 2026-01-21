@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- PouchDB 核心庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+  <!-- PouchDB 相容索引外掛 -->
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb-find@8.0.1/dist/pouchdb.find.min.js"></script>
 </head>
 <body>
   <div class="app">
@@ -561,6 +566,28 @@
   <!-- Toast -->
   <div id="toast" class="toast" hidden></div>
 
+  <!-- PouchDB 模組 -->
+  <script src="pouchdb-config.js"></script>
+  <script src="pouchdb-storage.js"></script>
+  <script src="user-auth.js"></script>
+  <script src="pouchdb-integration.js"></script>
+  <script src="pouchdb-app-compat.js"></script>
+  
+  <!-- 主應用 -->
   <script src="app.js"></script>
+  
+  <!-- 初始化腳本 -->
+  <script>
+    // 應用啟動
+    document.addEventListener('DOMContentLoaded', async function() {
+      console.log('🚀 應用啟動中...');
+      
+      // 初始化儲存系統
+      const success = await initializeApp();
+      if (!success) {
+        console.error('❌ 儲存系統初始化失敗，應用將在離線模式運行');
+      }
+    });
+  </script>
 </body>
 </html>

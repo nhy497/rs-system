@@ -8,6 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- PouchDB 核心庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+  <!-- PouchDB 相容索引外掛 -->
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb-find@8.0.1/dist/pouchdb.find.min.js"></script>
   <style>
     body {
       display: flex;
@@ -420,6 +425,109 @@
     
     // 初始聚焦
     loginEmail.focus();
+  </script>
+
+  <!-- PouchDB 認證模組 -->
+  <script src="user-auth.js"></script>
+  
+  <!-- 登入邏輯 -->
+  <script>
+    // 覆蓋登入邏輯以使用 PouchDB 認證
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('✅ PouchDB 認證系統已載入');
+      
+      // 檢查是否已登入
+      if (authManager.isLoggedIn()) {
+        window.location.href = 'index.html';
+      }
+    });
+
+    // 修改登入按鈕事件
+    document.getElementById('btnLogin').addEventListener('click', async function(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      if (!username || !password) {
+        alert('請填寫使用者名稱和密碼');
+        return;
+      }
+      
+      try {
+        this.disabled = true;
+        this.textContent = '登入中...';
+        
+        // 使用 PouchDB 認證系統登入
+        const result = await authManager.login(username, password);
+        
+        if (result.success) {
+          alert('✅ 登入成功！');
+          // 導向主應用
+          window.location.href = 'index.html';
+        } else {
+          alert('❌ 登入失敗：' + result.error);
+          this.disabled = false;
+          this.textContent = '登入';
+        }
+      } catch (error) {
+        alert('❌ 錯誤：' + error.message);
+        this.disabled = false;
+        this.textContent = '登入';
+      }
+    });
+
+    // 修改註冊按鈕事件
+    document.getElementById('btnSignup').addEventListener('click', async function(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('signupName').value;
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+      
+      if (!username || !email || !password || !passwordConfirm) {
+        alert('請填寫所有欄位');
+        return;
+      }
+      
+      if (password !== passwordConfirm) {
+        alert('兩次密碼輸入不一致');
+        return;
+      }
+      
+      if (password.length < 4) {
+        alert('密碼至少需要 4 個字符');
+        return;
+      }
+      
+      try {
+        this.disabled = true;
+        this.textContent = '建立中...';
+        
+        // 使用 PouchDB 認證系統註冊
+        const result = await authManager.register(username, password, email);
+        
+        if (result.success) {
+          alert('✅ 帳號建立成功！請登入');
+          // 切換回登入表單
+          document.getElementById('loginMode').style.display = 'block';
+          document.getElementById('signupMode').style.display = 'none';
+          document.getElementById('loginEmail').value = username;
+          document.getElementById('loginPassword').focus();
+          this.disabled = false;
+          this.textContent = '建立帳戶';
+        } else {
+          alert('❌ 註冊失敗：' + result.error);
+          this.disabled = false;
+          this.textContent = '建立帳戶';
+        }
+      } catch (error) {
+        alert('❌ 錯誤：' + error.message);
+        this.disabled = false;
+        this.textContent = '建立帳戶';
+      }
+    });
   </script>
 </body>
 </html>
