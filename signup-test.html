@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>建立帳戶測試工具</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: #f5f7fa;
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    
+    .container {
+      display: flex;
+      width: 100%;
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .panel {
+      flex: 1;
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .panel h2 {
+      margin-bottom: 1.5rem;
+      color: #1e293b;
+      font-size: 1.3rem;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 0.75rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+      color: #1e293b;
+      font-size: 0.9rem;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    button {
+      flex: 1;
+      padding: 0.7rem;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #764ba2;
+    }
+    
+    button.secondary {
+      background: #64748b;
+    }
+    
+    button.secondary:hover {
+      background: #475569;
+    }
+    
+    .output {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      font-family: 'Courier New', monospace;
+      max-height: 300px;
+      overflow-y: auto;
+      color: #333;
+    }
+    
+    .output p {
+      margin: 0.3rem 0;
+      word-break: break-all;
+    }
+    
+    .status-box {
+      background: #e0f2fe;
+      border-left: 4px solid #0284c7;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    
+    .status-box.success {
+      background: #d1fae5;
+      border-left-color: #059669;
+    }
+    
+    .status-box.error {
+      background: #fee2e2;
+      border-left-color: #dc2626;
+    }
+    
+    .status-box.warning {
+      background: #fef3c7;
+      border-left-color: #d97706;
+    }
+    
+    .iframe-container {
+      flex: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .iframe-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    
+    th {
+      background: #f1f5f9;
+      padding: 0.6rem;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid #e2e8f0;
+      color: #1e293b;
+    }
+    
+    td {
+      padding: 0.6rem;
+      border-bottom: 1px solid #e2e8f0;
+      color: #475569;
+    }
+    
+    tr:hover {
+      background: #f8fafc;
+    }
+    
+    .test-flow {
+      background: #ecfdf5;
+      border: 1px solid #d1fae5;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .test-flow h3 {
+      color: #059669;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    
+    .test-flow ol {
+      margin-left: 1.5rem;
+      color: #047857;
+      font-size: 0.9rem;
+    }
+    
+    .test-flow li {
+      margin-bottom: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 左側：控制面板 -->
+    <div class="panel">
+      <h2>🔧 帳戶管理工具</h2>
+      
+      <!-- 快速狀態 -->
+      <div class="status-box" id="statusBox">
+        ℹ️ 系統已就緒，準備測試
+      </div>
+      
+      <!-- 建立新帳戶 -->
+      <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <h3 style="color: #1e293b; margin-bottom: 1rem;">📝 建立新帳戶</h3>
+        
+        <div class="form-group">
+          <label for="newUsername">使用者名稱</label>
+          <input type="text" id="newUsername" placeholder="例如：john_doe" value="testuser1">
+        </div>
+        
+        <div class="form-group">
+          <label for="newPassword">密碼</label>
+          <input type="password" id="newPassword" placeholder="最少4個字符" value="test1234">
+        </div>
+        
+        <div class="form-group">
+          <label for="newEmail">電郵</label>
+          <input type="email" id="newEmail" placeholder="例如：john@example.com" value="test@example.com">
+        </div>
+        
+        <div class="button-group">
+          <button onclick="createAccount()">✅ 建立帳戶</button>
+          <button class="secondary" onclick="clearSignupForm()">🗑️ 清除</button>
+        </div>
+      </div>
+      
+      <!-- 登入測試 -->
+      <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <h3 style="color: #1e293b; margin-bottom: 1rem;">🔓 測試登入</h3>
+        
+        <div class="form-group">
+          <label for="loginUsername">使用者名稱</label>
+          <input type="text" id="loginUsername" placeholder="輸入使用者名稱" value="testuser1">
+        </div>
+        
+        <div class="form-group">
+          <label for="loginPassword">密碼</label>
+          <input type="password" id="loginPassword" placeholder="輸入密碼" value="test1234">
+        </div>
+        
+        <div class="button-group">
+          <button onclick="testLogin()">🔓 測試登入</button>
+          <button class="secondary" onclick="clearLoginForm()">🗑️ 清除</button>
+        </div>
+      </div>
+      
+      <!-- localStorage 操作 -->
+      <div style="background: #f8fafc; padding: 1rem; border-radius: 8px;">
+        <h3 style="color: #1e293b; margin-bottom: 1rem;">💾 localStorage 管理</h3>
+        
+        <div class="button-group" style="flex-direction: column; gap: 0.5rem;">
+          <button onclick="showAllUsers()">📊 查看所有用戶</button>
+          <button onclick="showCurrentUser()">👤 查看當前用戶</button>
+          <button class="secondary" onclick="clearAllStorage()">🗑️ 清除所有數據</button>
+        </div>
+      </div>
+      
+      <!-- 快速測試流程 -->
+      <div class="test-flow">
+        <h3>✨ 推薦測試流程</h3>
+        <ol>
+          <li>點擊「建立帳戶」創建一個新用戶</li>
+          <li>在右側iframe點擊「建立新帳戶」按鈕</li>
+          <li>填寫表單並提交</li>
+          <li>點擊「查看所有用戶」確認帳戶已保存</li>
+          <li>點擊「測試登入」驗證帳戶</li>
+          <li>在右側iframe用新帳戶登入</li>
+        </ol>
+      </div>
+    </div>
+    
+    <!-- 右側：iframe 預覽 -->
+    <div class="iframe-container">
+      <iframe src="login.html" title="登入系統預覽"></iframe>
+    </div>
+  </div>
+  
+  <!-- 輸出面板 -->
+  <div style="position: fixed; bottom: 0; left: 0; right: 0; max-height: 20vh; background: #1e293b; color: #e2e8f0; padding: 1rem; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.8rem;">
+    <div id="console" style="display: flex; flex-direction: column; gap: 0.3rem;"></div>
+  </div>
+  
+  <script>
+    // ==================== 控制台日誌系統 ====================
+    const consoleOutput = document.getElementById('console');
+    
+    function log(msg, type = 'info') {
+      const entry = document.createElement('div');
+      const timestamp = new Date().toLocaleTimeString('zh-Hant');
+      
+      const icons = {
+        'info': 'ℹ️',
+        'success': '✅',
+        'error': '❌',
+        'warning': '⚠️',
+        'data': '📊'
+      };
+      
+      entry.style.color = {
+        'info': '#94a3b8',
+        'success': '#86efac',
+        'error': '#ff6b6b',
+        'warning': '#fbbf24',
+        'data': '#60a5fa'
+      }[type] || '#94a3b8';
+      
+      entry.textContent = `[${timestamp}] ${icons[type]} ${msg}`;
+      consoleOutput.appendChild(entry);
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      
+      // 限制最多100條日誌
+      if (consoleOutput.children.length > 100) {
+        consoleOutput.removeChild(consoleOutput.children[0]);
+      }
+    }
+    
+    // ==================== 帳戶管理函數 ====================
+    
+    function createAccount() {
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value;
+      const email = document.getElementById('newEmail').value.trim();
+      
+      log(`開始建立帳戶：${username}`, 'info');
+      
+      if (!username || !password) {
+        log('❌ 錯誤：用戶名和密碼必填', 'error');
+        updateStatus('❌ 用戶名和密碼必填', 'error');
+        return;
+      }
+      
+      if (password.length < 4) {
+        log('❌ 錯誤：密碼至少4個字符', 'error');
+        updateStatus('❌ 密碼至少需要4個字符', 'error');
+        return;
+      }
+      
+      try {
+        // 讀取現有用戶
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        log(`📊 當前用戶數：${users.length}`, 'data');
+        
+        // 檢查重複
+        if (users.some(u => u.username === username)) {
+          log(`❌ 錯誤：用戶名「${username}」已存在`, 'error');
+          updateStatus(`❌ 用戶名「${username}」已被使用`, 'error');
+          return;
+        }
+        
+        // 建立新用戶
+        const newUser = {
+          id: Date.now().toString(),
+          username: username,
+          password: password,
+          email: email || null,
+          createdAt: new Date().toISOString()
+        };
+        
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        log(`✅ 帳戶已建立成功！`, 'success');
+        log(`   用戶名：${username}`, 'data');
+        log(`   用戶ID：${newUser.id}`, 'data');
+        log(`   電郵：${newUser.email || '(未設置)'}`, 'data');
+        updateStatus(`✅ 帳戶「${username}」已成功建立！現在可以測試登入`, 'success');
+        
+        // 清除表單
+        clearSignupForm();
+        
+      } catch (error) {
+        log(`❌ 錯誤：${error.message}`, 'error');
+        updateStatus(`❌ 建立帳戶出錯：${error.message}`, 'error');
+      }
+    }
+    
+    function testLogin() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      
+      log(`開始測試登入：${username}`, 'info');
+      
+      if (!username || !password) {
+        log('❌ 錯誤：用戶名和密碼必填', 'error');
+        updateStatus('❌ 用戶名和密碼必填', 'error');
+        return;
+      }
+      
+      try {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = users.find(u => u.username === username && u.password === password);
+        
+        if (user) {
+          // 保存會話
+          const sessionData = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            loginTime: new Date().toISOString()
+          };
+          
+          localStorage.setItem('current-user', JSON.stringify(sessionData));
+          localStorage.setItem('rs-system-session', JSON.stringify({
+            userId: user.id,
+            username: user.username,
+            loginTime: new Date().toISOString()
+          }));
+          
+          log(`✅ 登入成功！`, 'success');
+          log(`   用戶名：${username}`, 'data');
+          log(`   用戶ID：${user.id}`, 'data');
+          log(`   會話已保存到 localStorage`, 'data');
+          updateStatus(`✅ 用戶「${username}」已成功登入！`, 'success');
+          
+        } else {
+          log(`❌ 錯誤：用戶名或密碼不正確`, 'error');
+          updateStatus(`❌ 用戶名或密碼不正確`, 'error');
+        }
+      } catch (error) {
+        log(`❌ 錯誤：${error.message}`, 'error');
+        updateStatus(`❌ 登入出錯：${error.message}`, 'error');
+      }
+    }
+    
+    function showAllUsers() {
+      log('查詢所有用戶...', 'info');
+      try {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        if (users.length === 0) {
+          log('❌ 還沒有任何用戶', 'warning');
+          updateStatus('❌ 還沒有任何用戶，請先建立帳戶', 'warning');
+        } else {
+          log(`✅ 找到 ${users.length} 個用戶：`, 'success');
+          users.forEach((user, idx) => {
+            log(`   [${idx + 1}] ${user.username} (ID: ${user.id.substring(0, 8)}..., Email: ${user.email || '無'})`, 'data');
+          });
+        }
+      } catch (error) {
+        log(`❌ 錯誤：${error.message}`, 'error');
+      }
+    }
+    
+    function showCurrentUser() {
+      log('查詢當前登入用戶...', 'info');
+      try {
+        const currentUser = localStorage.getItem('current-user');
+        if (!currentUser) {
+          log('❌ 沒有用戶登入', 'warning');
+          updateStatus('❌ 沒有用戶登入', 'warning');
+        } else {
+          const user = JSON.parse(currentUser);
+          log(`✅ 當前登入用戶：`, 'success');
+          log(`   用戶名：${user.username}`, 'data');
+          log(`   用戶ID：${user.id}`, 'data');
+          log(`   電郵：${user.email || '無'}`, 'data');
+          log(`   登入時間：${new Date(user.loginTime).toLocaleString('zh-Hant')}`, 'data');
+        }
+      } catch (error) {
+        log(`❌ 錯誤：${error.message}`, 'error');
+      }
+    }
+    
+    function clearAllStorage() {
+      if (confirm('⚠️ 確定要清除所有數據嗎？此操作無法撤銷。')) {
+        log('清除 localStorage...', 'warning');
+        localStorage.removeItem('users');
+        localStorage.removeItem('current-user');
+        localStorage.removeItem('rs-system-session');
+        log('✅ 所有數據已清除', 'success');
+        updateStatus('✅ 所有數據已清除', 'success');
+      }
+    }
+    
+    function clearSignupForm() {
+      document.getElementById('newUsername').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('newEmail').value = '';
+      log('註冊表單已清除', 'info');
+    }
+    
+    function clearLoginForm() {
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+      log('登入表單已清除', 'info');
+    }
+    
+    function updateStatus(msg, type = 'info') {
+      const statusBox = document.getElementById('statusBox');
+      statusBox.textContent = msg;
+      statusBox.className = `status-box ${type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : ''}`;
+    }
+    
+    // ==================== 初始化 ====================
+    window.addEventListener('load', () => {
+      log('='.repeat(60), 'info');
+      log('建立帳戶測試工具已啟動', 'success');
+      log('='.repeat(60), 'info');
+      
+      try {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const currentUser = localStorage.getItem('current-user');
+        
+        log(`當前環境狀態：`, 'data');
+        log(`  已註冊用戶：${users.length}`, 'data');
+        log(`  當前登入：${currentUser ? '是' : '否'}`, 'data');
+        log(``, 'info');
+        log(`提示：在右側iframe中點擊「建立新帳戶」按鈕進行交互測試`, 'info');
+      } catch (error) {
+        log(`初始化錯誤：${error.message}`, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

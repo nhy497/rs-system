@@ -227,7 +227,7 @@
     
     <!-- 表單切換 -->
     <div class="toggle-form">
-      <div id="toSignupSection">
+      <div id="toSignupSection" style="display: block;">
         <p>沒有帳戶?</p>
         <button type="button" class="btn-toggle" id="switchToSignup">建立新帳戶</button>
       </div>
@@ -237,7 +237,7 @@
       </div>
     </div>
     
-    <div class="mode-indicator">本地存儲模式</div>
+    <div class="mode-indicator">本地存儲模式 • v3.1</div>
   </div>
 
   <script>
@@ -295,12 +295,16 @@
     // 表單切換事件
     switchToSignup.addEventListener('click', (e) => {
       e.preventDefault();
+      console.log('🔄 切換到註冊表單...');
       switchToSignupForm();
+      console.log('✅ 註冊表單已顯示');
     });
     
     switchToLogin.addEventListener('click', (e) => {
       e.preventDefault();
+      console.log('🔄 切換到登入表單...');
       switchToLoginForm();
+      console.log('✅ 登入表單已顯示');
     });
     
     // ==================== 登入邏輯 ====================
@@ -427,17 +431,77 @@
     // ==================== 初始化 ====================
     
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('═══════════════════════════════════════');
       console.log('✅ 登入系統已初始化');
+      console.log('═══════════════════════════════════════');
+      
+      // 檢查所有DOM元素
+      console.log('📋 DOM 元素檢查:');
+      console.log('  ✓ loginSection:', loginSection ? '已找到' : '❌ 未找到');
+      console.log('  ✓ signupSection:', signupSection ? '已找到' : '❌ 未找到');
+      console.log('  ✓ loginForm:', loginForm ? '已找到' : '❌ 未找到');
+      console.log('  ✓ signupForm:', signupForm ? '已找到' : '❌ 未找到');
+      console.log('  ✓ switchToSignup:', switchToSignup ? '已找到' : '❌ 未找到');
+      console.log('  ✓ switchToLogin:', switchToLogin ? '已找到' : '❌ 未找到');
       
       // 初始化 localStorage
       if (!localStorage.getItem('users')) {
         localStorage.setItem('users', JSON.stringify([]));
-        console.log('✅ 已建立 users 存儲');
+        console.log('💾 已建立 users 存儲');
+      } else {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        console.log('💾 當前已註冊用戶數:', users.length);
       }
+      
+      // 檢查會話
+      const currentUser = localStorage.getItem('current-user');
+      console.log('👤 當前登入用戶:', currentUser ? '已登入' : '未登入');
       
       // 焦點設定
       document.getElementById('loginUsername').focus();
+      console.log('⌨️ 焦點已設定到用戶名欄位');
+      console.log('═══════════════════════════════════════');
     });
+    
+    // 測試用函數 - 在開發者工具中調用
+    window.testSignup = function(username = 'test_user', password = '1234', email = 'test@example.com') {
+      console.log('🧪 測試建立帳戶...');
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const newUser = {
+        id: Date.now().toString(),
+        username: username,
+        password: password,
+        email: email,
+        createdAt: new Date().toISOString()
+      };
+      users.push(newUser);
+      localStorage.setItem('users', JSON.stringify(users));
+      console.log('✅ 測試帳戶已建立:', newUser);
+    };
+    
+    window.testLogin = function(username = 'test_user', password = '1234') {
+      console.log('🧪 測試登入...');
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => u.username === username && u.password === password);
+      if (user) {
+        console.log('✅ 用戶找到:', user);
+        localStorage.setItem('current-user', JSON.stringify({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          loginTime: new Date().toISOString()
+        }));
+        console.log('✅ 會話已保存');
+      } else {
+        console.log('❌ 用戶或密碼不正確');
+      }
+    };
+    
+    window.showAllUsers = function() {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      console.log('📊 所有已註冊用戶:', users);
+      return users;
+    };
   </script>
 </body>
 </html>
