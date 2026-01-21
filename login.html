@@ -4,23 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>教練記錄系統 · 登入</title>
-  <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- PouchDB 核心庫 -->
-  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
-  <!-- PouchDB 相容索引外掛 -->
-  <script src="https://cdn.jsdelivr.net/npm/pouchdb-find@8.0.1/dist/pouchdb.find.min.js"></script>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      margin: 0;
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     
     .login-container {
@@ -30,18 +31,6 @@
       width: 100%;
       max-width: 420px;
       padding: 2.5rem;
-      animation: slideUp 0.3s ease-out;
-    }
-    
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
     }
     
     .login-header {
@@ -51,15 +40,47 @@
     
     .login-header h1 {
       font-size: 1.8rem;
-      margin: 0 0 0.5rem;
+      margin-bottom: 0.5rem;
       color: #1e293b;
       font-weight: 700;
     }
     
     .login-header p {
       color: #64748b;
-      margin: 0;
       font-size: 0.95rem;
+    }
+    
+    .message {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border-left: 4px solid;
+      display: none;
+      font-size: 0.85rem;
+    }
+    
+    .error-msg {
+      background: #fee2e2;
+      color: #dc2626;
+      border-left-color: #dc2626;
+    }
+    
+    .success-msg {
+      background: #d1fae5;
+      color: #059669;
+      border-left-color: #059669;
+    }
+    
+    .message.show {
+      display: block;
+    }
+    
+    .form-section {
+      display: none;
+    }
+    
+    .form-section.active {
+      display: block;
     }
     
     .login-form {
@@ -87,6 +108,7 @@
       font-size: 0.95rem;
       font-family: inherit;
       transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
     }
     
     .form-group input:focus {
@@ -110,21 +132,17 @@
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
       margin-top: 0.5rem;
+      font-family: inherit;
     }
     
-    .btn-login:hover {
+    .btn-login:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-    }
-    
-    .btn-login:active {
-      transform: translateY(0);
     }
     
     .btn-login:disabled {
       opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
     }
     
     .toggle-form {
@@ -136,7 +154,7 @@
     
     .toggle-form p {
       color: #64748b;
-      margin: 0 0 0.75rem;
+      margin-bottom: 0.75rem;
       font-size: 0.9rem;
     }
     
@@ -148,42 +166,17 @@
       text-decoration: underline;
       font-size: 0.9rem;
       font-weight: 600;
+      font-family: inherit;
     }
     
     .btn-toggle:hover {
       color: #764ba2;
     }
     
-    .error-msg {
-      color: #dc2626;
-      font-size: 0.85rem;
-      margin-bottom: 1rem;
-      padding: 0.75rem;
-      background: #fee2e2;
-      border-radius: 6px;
-      display: none;
-    }
-    
-    .error-msg.show {
-      display: block;
-    }
-    
-    .loading {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-    
-    .auth-info {
-      text-align: center;
-      color: #64748b;
-      font-size: 0.85rem;
-      margin-top: 1rem;
-    }
-    
     .mode-indicator {
       text-align: center;
       color: #cbd5e1;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       margin-top: 1rem;
     }
   </style>
@@ -195,243 +188,208 @@
       <p>HKJRA 跳繩課堂管理平臺</p>
     </div>
     
-    <div class="error-msg" id="errorMsg"></div>
+    <div class="error-msg message" id="errorMsg"></div>
+    <div class="success-msg message" id="successMsg"></div>
     
     <!-- 登入表單 -->
-    <form class="login-form" id="loginForm">
-      <div class="form-group">
-        <label for="loginUsername">使用者名稱</label>
-        <input type="text" id="loginUsername" placeholder="your username" required>
-      </div>
-      <div class="form-group">
-        <label for="loginPassword">密碼</label>
-        <input type="password" id="loginPassword" placeholder="your password" required>
-      </div>
-      <button type="submit" class="btn-login" id="btnLogin">登入</button>
-    </form>
+    <div id="loginSection" class="form-section active">
+      <form class="login-form" id="loginForm">
+        <div class="form-group">
+          <label for="loginUsername">使用者名稱</label>
+          <input type="text" id="loginUsername" placeholder="輸入您的使用者名稱" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">密碼</label>
+          <input type="password" id="loginPassword" placeholder="輸入您的密碼" required>
+        </div>
+        <button type="submit" class="btn-login" id="btnLogin">登入</button>
+      </form>
+    </div>
     
     <!-- 註冊表單 -->
-    <form class="login-form" id="signupForm" style="display: none;">
-      <div class="form-group">
-        <label for="signupUsername">使用者名稱</label>
-        <input type="text" id="signupUsername" placeholder="your username" required>
-      </div>
-      <div class="form-group">
-        <label for="signupPassword">密碼</label>
-        <input type="password" id="signupPassword" placeholder="your password" required>
-      </div>
-      <div class="form-group">
-        <label for="signupEmail">電郵帳戶 <span style="color: #999;">(選擇性)</span></label>
-        <input type="email" id="signupEmail" placeholder="your@email.com (optional)">
-      </div>
-      <button type="submit" class="btn-login" id="btnSignup">建立帳戶</button>
-    </form>
+    <div id="signupSection" class="form-section">
+      <form class="login-form" id="signupForm">
+        <div class="form-group">
+          <label for="signupUsername">使用者名稱</label>
+          <input type="text" id="signupUsername" placeholder="建立新的使用者名稱" required>
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">密碼</label>
+          <input type="password" id="signupPassword" placeholder="建立新密碼 (最少4個字)" required>
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">電郵 <span style="color: #999;">(可選)</span></label>
+          <input type="email" id="signupEmail" placeholder="您的電郵地址 (可選)">
+        </div>
+        <button type="submit" class="btn-login" id="btnSignup">建立帳戶</button>
+      </form>
+    </div>
     
     <!-- 表單切換 -->
     <div class="toggle-form">
-      <div id="toggleLogin" style="display: none;">
-        <p>已有帳戶？</p>
-        <button type="button" class="btn-toggle" id="switchToLogin">返回登入</button>
-      </div>
-      <div id="toggleSignup">
-        <p>未有帳戶？</p>
+      <div id="toSignupSection">
+        <p>沒有帳戶?</p>
         <button type="button" class="btn-toggle" id="switchToSignup">建立新帳戶</button>
       </div>
+      <div id="toLoginSection" style="display: none;">
+        <p>已有帳戶?</p>
+        <button type="button" class="btn-toggle" id="switchToLogin">返回登入</button>
+      </div>
     </div>
     
-    <!-- 本地模式提示 -->
-    <div class="mode-indicator" id="modeIndicator">
-      （本地存儲模式 - 使用者名稱 + 密碼，邮箱為可選）
-    </div>
+    <div class="mode-indicator">本地存儲模式</div>
   </div>
 
-  <!-- Firebase SDK（可選 - 如未配置則使用本地儲存） -->
-  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js"></script>
-  <script defer src="firebase-config.js"></script>
   <script>
-    // 登入相關變數
-    let isLoginMode = true;
+    // ==================== 核心功能 ====================
     
+    // DOM元素
     const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const loginSection = document.getElementById('loginSection');
+    const signupSection = document.getElementById('signupSection');
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
-    const toggleLogin = document.getElementById('toggleLogin');
-    const toggleSignup = document.getElementById('toggleSignup');
-    const switchToLogin = document.getElementById('switchToLogin');
-    const switchToSignup = document.getElementById('switchToSignup');
     const btnLogin = document.getElementById('btnLogin');
     const btnSignup = document.getElementById('btnSignup');
-    const modeIndicator = document.getElementById('modeIndicator');
+    const switchToSignup = document.getElementById('switchToSignup');
+    const switchToLogin = document.getElementById('switchToLogin');
+    const toSignupSection = document.getElementById('toSignupSection');
+    const toLoginSection = document.getElementById('toLoginSection');
     
-    // 表單字段
-    const loginEmail = document.getElementById('loginEmail');
-    const loginPassword = document.getElementById('loginPassword');
-    const signupName = document.getElementById('signupName');
-    const signupEmail = document.getElementById('signupEmail');
-    const signupPassword = document.getElementById('signupPassword');
-    const signupPasswordConfirm = document.getElementById('signupPasswordConfirm');
-    
-    // 隱藏錯誤訊息
-    function hideError() {
-      errorMsg.classList.remove('show');
-      errorMsg.textContent = '';
-    }
-    
-    // 顯示錯誤訊息
+    // 訊息函數
     function showError(msg) {
       errorMsg.textContent = msg;
       errorMsg.classList.add('show');
+      successMsg.classList.remove('show');
     }
     
-    // 表單模式切換
-    function toggleMode() {
-      isLoginMode = !isLoginMode;
-      if (isLoginMode) {
-        loginForm.style.display = 'flex';
-        signupForm.style.display = 'none';
-        toggleLogin.style.display = 'none';
-        toggleSignup.style.display = 'block';
-      } else {
-        loginForm.style.display = 'none';
-        signupForm.style.display = 'flex';
-        toggleLogin.style.display = 'block';
-        toggleSignup.style.display = 'none';
-      }
-      hideError();
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successMsg.classList.add('show');
+      errorMsg.classList.remove('show');
     }
     
-    // 登入處理（此函數將被下面的 DOMContentLoaded 覆蓋）
-    // 保留基本結構供備用
+    function hideMessages() {
+      errorMsg.classList.remove('show');
+      successMsg.classList.remove('show');
+    }
     
-    // 註冊處理（此函數將被下面的 DOMContentLoaded 覆蓋）
-    // 保留基本結構供備用
-      }
+    // 表單切換
+    function switchToLoginForm() {
+      loginSection.classList.add('active');
+      signupSection.classList.remove('active');
+      toSignupSection.style.display = 'block';
+      toLoginSection.style.display = 'none';
+      hideMessages();
+    }
+    
+    function switchToSignupForm() {
+      loginSection.classList.remove('active');
+      signupSection.classList.add('active');
+      toSignupSection.style.display = 'none';
+      toLoginSection.style.display = 'block';
+      hideMessages();
+    }
     
     // 表單切換事件
     switchToSignup.addEventListener('click', (e) => {
       e.preventDefault();
-      toggleMode();
+      switchToSignupForm();
     });
     
     switchToLogin.addEventListener('click', (e) => {
       e.preventDefault();
-      toggleMode();
+      switchToLoginForm();
     });
     
-    // Firebase 初始化（如有 SDK）
-    window.addEventListener('load', () => {
-      if (typeof initializeFirebase === 'function') {
-        const result = initializeFirebase();
-        if (result) {
-          modeIndicator.textContent = '（已連接 Firebase - 雲端同步模式）';
-          modeIndicator.style.color = '#10b981';
-        }
-      }
-    });
+    // ==================== 登入邏輯 ====================
     
-    // 初始聚焦
-    loginEmail.focus();
-  </script>
-
-  <!-- PouchDB 認證模組 -->
-  <script src="crypto-keys.js"></script>
-  <script src="user-auth.js"></script>
-  
-  <!-- 登入邏輯 -->
-  <script>
-    // 覆蓋登入邏輯以使用 PouchDB 認證
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('✅ PouchDB 認證系統已載入');
-      
-      // 檢查是否已登入
-      if (authManager.isLoggedIn()) {
-        window.location.href = 'index.html';
-      }
-    });
-
-    // 修改登入按鈕事件 - 使用 localStorage 驗證
-    document.getElementById('btnLogin').addEventListener('click', async function(e) {
+    loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const errorMsg = document.getElementById('errorMsg');
+      hideMessages();
       
       const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value;
       
       if (!username || !password) {
-        errorMsg.textContent = '❌ 請填寫使用者名稱和密碼';
-        errorMsg.classList.add('show');
+        showError('❌ 請填寫使用者名稱和密碼');
         return;
       }
       
       try {
-        this.disabled = true;
-        this.textContent = '登入中...';
-        errorMsg.classList.remove('show');
+        btnLogin.disabled = true;
+        btnLogin.textContent = '登入中...';
         
-        // 使用 authManager 登入
-        const result = await authManager.login(username, password);
+        // 從 localStorage 獲取用戶列表
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = users.find(u => u.username === username && u.password === password);
         
-        if (result.success) {
-          // 將登入資訊存到 localStorage
+        if (user) {
+          // 登入成功
           localStorage.setItem('current-user', JSON.stringify({
-            username: username,
+            id: user.id,
+            username: user.username,
+            email: user.email,
             loginTime: new Date().toISOString()
           }));
           
-          // 登入成功 - 導向主應用
-          window.location.href = 'index.html';
+          localStorage.setItem('rs-system-session', JSON.stringify({
+            userId: user.id,
+            username: user.username,
+            loginTime: new Date().toISOString()
+          }));
+          
+          showSuccess('✅ 登入成功！正在導向主應用...');
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1000);
         } else {
-          errorMsg.textContent = '❌ 登入失敗：' + result.error;
-          errorMsg.classList.add('show');
-          this.disabled = false;
-          this.textContent = '登入';
+          showError('❌ 使用者名稱或密碼不正確');
+          btnLogin.disabled = false;
+          btnLogin.textContent = '登入';
         }
       } catch (error) {
-        errorMsg.textContent = '❌ 錯誤：' + error.message;
-        errorMsg.classList.add('show');
-        this.disabled = false;
-        this.textContent = '登入';
+        showError('❌ 登入出錯：' + error.message);
+        btnLogin.disabled = false;
+        btnLogin.textContent = '登入';
       }
     });
-
-    // 修改註冊按鈕事件 - 使用 localStorage 儲存
-    document.getElementById('btnSignup').addEventListener('click', async function(e) {
+    
+    // ==================== 註冊邏輯 ====================
+    
+    signupForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const errorMsg = document.getElementById('errorMsg');
+      hideMessages();
       
       const username = document.getElementById('signupUsername').value.trim();
       const password = document.getElementById('signupPassword').value.trim();
       const email = document.getElementById('signupEmail').value.trim();
       
-      // 驗證輸入
       if (!username || !password) {
-        errorMsg.textContent = '❌ 請填寫使用者名稱和密碼';
-        errorMsg.classList.add('show');
+        showError('❌ 請填寫使用者名稱和密碼');
         return;
       }
       
       if (password.length < 4) {
-        errorMsg.textContent = '❌ 密碼至少需要 4 個字符';
-        errorMsg.classList.add('show');
-        return;
-      }
-      
-      // 檢查用戶名是否已存在
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      if (existingUsers.some(u => u.username === username)) {
-        errorMsg.textContent = '❌ 此使用者名稱已被使用';
-        errorMsg.classList.add('show');
+        showError('❌ 密碼至少需要4個字符');
         return;
       }
       
       try {
-        this.disabled = true;
-        this.textContent = '建立中...';
-        errorMsg.classList.remove('show');
+        btnSignup.disabled = true;
+        btnSignup.textContent = '建立中...';
         
-        // 建立新用戶並存到 localStorage
+        // 檢查用戶是否已存在
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        if (users.some(u => u.username === username)) {
+          showError('❌ 此使用者名稱已被使用，請選擇另一個');
+          btnSignup.disabled = false;
+          btnSignup.textContent = '建立帳戶';
+          return;
+        }
+        
+        // 建立新用戶
         const newUser = {
           id: Date.now().toString(),
           username: username,
@@ -440,28 +398,45 @@
           createdAt: new Date().toISOString()
         };
         
-        existingUsers.push(newUser);
-        localStorage.setItem('users', JSON.stringify(existingUsers));
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
         
-        errorMsg.textContent = '✅ 帳號建立成功！請登入';
-        errorMsg.classList.add('show');
+        showSuccess('✅ 帳戶建立成功！請用新帳號登入');
         
-        // 切換回登入表單
-        document.getElementById('loginForm').style.display = 'flex';
-        document.getElementById('signupForm').style.display = 'none';
-        document.getElementById('toggleLogin').style.display = 'none';
-        document.getElementById('toggleSignup').style.display = 'block';
-        document.getElementById('loginUsername').value = username;
-        document.getElementById('loginPassword').value = '';
-        document.getElementById('loginPassword').focus();
-        this.disabled = false;
-        this.textContent = '建立帳戶';
+        // 清空表單
+        document.getElementById('signupUsername').value = '';
+        document.getElementById('signupPassword').value = '';
+        document.getElementById('signupEmail').value = '';
+        
+        // 自動切換並預填
+        setTimeout(() => {
+          document.getElementById('loginUsername').value = username;
+          document.getElementById('loginPassword').value = '';
+          switchToLoginForm();
+          document.getElementById('loginPassword').focus();
+          btnSignup.disabled = false;
+          btnSignup.textContent = '建立帳戶';
+        }, 1500);
       } catch (error) {
-        errorMsg.textContent = '❌ 錯誤：' + error.message;
-        errorMsg.classList.add('show');
-        this.disabled = false;
-        this.textContent = '建立帳戶';
+        showError('❌ 建立帳戶出錯：' + error.message);
+        btnSignup.disabled = false;
+        btnSignup.textContent = '建立帳戶';
       }
+    });
+    
+    // ==================== 初始化 ====================
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('✅ 登入系統已初始化');
+      
+      // 初始化 localStorage
+      if (!localStorage.getItem('users')) {
+        localStorage.setItem('users', JSON.stringify([]));
+        console.log('✅ 已建立 users 存儲');
+      }
+      
+      // 焦點設定
+      document.getElementById('loginUsername').focus();
     });
   </script>
 </body>
