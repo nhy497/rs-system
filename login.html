@@ -200,12 +200,12 @@
     <!-- 登入表單 -->
     <form class="login-form" id="loginForm">
       <div class="form-group">
-        <label for="loginEmail">電郵帳戶</label>
-        <input type="email" id="loginEmail" placeholder="your@email.com" required>
+        <label for="loginUsername">使用者名稱</label>
+        <input type="text" id="loginUsername" placeholder="your username" required>
       </div>
       <div class="form-group">
         <label for="loginPassword">密碼</label>
-        <input type="password" id="loginPassword" placeholder="至少 6 個字符" required>
+        <input type="password" id="loginPassword" placeholder="your password" required>
       </div>
       <button type="submit" class="btn-login" id="btnLogin">登入</button>
     </form>
@@ -213,27 +213,16 @@
     <!-- 註冊表單 -->
     <form class="login-form" id="signupForm" style="display: none;">
       <div class="form-group">
-        <label for="signupName">姓名</label>
-        <input type="text" id="signupName" placeholder="你的姓名" required>
-      </div>
-      <div class="form-group">
-        <label for="signupEmail">電郵帳戶</label>
-        <input type="email" id="signupEmail" placeholder="your@email.com" required>
+        <label for="signupUsername">使用者名稱</label>
+        <input type="text" id="signupUsername" placeholder="your username" required>
       </div>
       <div class="form-group">
         <label for="signupPassword">密碼</label>
-        <input type="password" id="signupPassword" placeholder="至少 6 個字符" required>
+        <input type="password" id="signupPassword" placeholder="your password" required>
       </div>
       <div class="form-group">
-        <label for="signupPasswordConfirm">確認密碼</label>
-        <input type="password" id="signupPasswordConfirm" placeholder="再輸入一次" required>
-      </div>
-      <div class="form-group">
-        <label for="signupRole">身份</label>
-        <select id="signupRole">
-          <option value="user">一般用戶</option>
-          <option value="creator">系統創建者</option>
-        </select>
+        <label for="signupEmail">電郵帳戶 <span style="color: #999;">(選擇性)</span></label>
+        <input type="email" id="signupEmail" placeholder="your@email.com (optional)">
       </div>
       <button type="submit" class="btn-login" id="btnSignup">建立帳戶</button>
     </form>
@@ -252,7 +241,7 @@
     
     <!-- 本地模式提示 -->
     <div class="mode-indicator" id="modeIndicator">
-      （Firebase 未配置 - 使用本地儲存模式）
+      （本地存儲模式 - 使用者名稱 + 密碼，邮箱為可選）
     </div>
   </div>
 
@@ -362,16 +351,16 @@
       }
     });
 
-    // 修改登入按鈕事件 - 使用 authManager
+    // 修改登入按鈕事件 - 使用 localStorage 驗證
     document.getElementById('btnLogin').addEventListener('click', async function(e) {
       e.preventDefault();
       const errorMsg = document.getElementById('errorMsg');
       
-      const username = document.getElementById('loginEmail').value.trim();
+      const username = document.getElementById('loginUsername').value.trim();
       const password = document.getElementById('loginPassword').value;
       
       if (!username || !password) {
-        errorMsg.textContent = '請填寫使用者名稱和密碼';
+        errorMsg.textContent = '❌ 請填寫使用者名稱和密碼';
         errorMsg.classList.add('show');
         return;
       }
@@ -385,6 +374,12 @@
         const result = await authManager.login(username, password);
         
         if (result.success) {
+          // 將登入資訊存到 localStorage
+          localStorage.setItem('current-user', JSON.stringify({
+            username: username,
+            loginTime: new Date().toISOString()
+          }));
+          
           // 登入成功 - 導向主應用
           window.location.href = 'index.html';
         } else {
@@ -401,31 +396,32 @@
       }
     });
 
-    // 修改註冊按鈕事件 - 使用 authManager
+    // 修改註冊按鈕事件 - 使用 localStorage 儲存
     document.getElementById('btnSignup').addEventListener('click', async function(e) {
       e.preventDefault();
       const errorMsg = document.getElementById('errorMsg');
       
-      const username = document.getElementById('signupName').value.trim();
+      const username = document.getElementById('signupUsername').value.trim();
+      const password = document.getElementById('signupPassword').value.trim();
       const email = document.getElementById('signupEmail').value.trim();
-      const password = document.getElementById('signupPassword').value;
-      const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
-      const role = document.getElementById('signupRole').value;
       
-      if (!username || !email || !password || !passwordConfirm) {
-        errorMsg.textContent = '請填寫所有欄位';
-        errorMsg.classList.add('show');
-        return;
-      }
-      
-      if (password !== passwordConfirm) {
-        errorMsg.textContent = '兩次密碼輸入不一致';
+      // 驗證輸入
+      if (!username || !password) {
+        errorMsg.textContent = '❌ 請填寫使用者名稱和密碼';
         errorMsg.classList.add('show');
         return;
       }
       
       if (password.length < 4) {
-        errorMsg.textContent = '密碼至少需要 4 個字符';
+        errorMsg.textContent = '❌ 密碼至少需要 4 個字符';
+        errorMsg.classList.add('show');
+        return;
+      }
+      
+      // 檢查用戶名是否已存在
+      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
+      if (existingUsers.some(u => u.username === username)) {
+        errorMsg.textContent = '❌ 此使用者名稱已被使用';
         errorMsg.classList.add('show');
         return;
       }
@@ -435,27 +431,31 @@
         this.textContent = '建立中...';
         errorMsg.classList.remove('show');
         
-        // 使用 authManager 註冊 - 傳遞角色
-        const result = await authManager.register(username, password, email, role);
+        // 建立新用戶並存到 localStorage
+        const newUser = {
+          id: Date.now().toString(),
+          username: username,
+          password: password,
+          email: email || null,
+          createdAt: new Date().toISOString()
+        };
         
-        if (result.success) {
-          errorMsg.textContent = `✅ 帳號建立成功！(${role === 'creator' ? '系統創建者' : '一般用戶'}) 請登入`;
-          errorMsg.classList.add('show');
-          // 切換回登入表單
-          document.getElementById('loginForm').style.display = 'flex';
-          document.getElementById('signupForm').style.display = 'none';
-          document.getElementById('toggleLogin').style.display = 'none';
-          document.getElementById('toggleSignup').style.display = 'block';
-          document.getElementById('loginEmail').value = username;
-          document.getElementById('loginPassword').focus();
-          this.disabled = false;
-          this.textContent = '建立帳戶';
-        } else {
-          errorMsg.textContent = '❌ 註冊失敗：' + result.error;
-          errorMsg.classList.add('show');
-          this.disabled = false;
-          this.textContent = '建立帳戶';
-        }
+        existingUsers.push(newUser);
+        localStorage.setItem('users', JSON.stringify(existingUsers));
+        
+        errorMsg.textContent = '✅ 帳號建立成功！請登入';
+        errorMsg.classList.add('show');
+        
+        // 切換回登入表單
+        document.getElementById('loginForm').style.display = 'flex';
+        document.getElementById('signupForm').style.display = 'none';
+        document.getElementById('toggleLogin').style.display = 'none';
+        document.getElementById('toggleSignup').style.display = 'block';
+        document.getElementById('loginUsername').value = username;
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginPassword').focus();
+        this.disabled = false;
+        this.textContent = '建立帳戶';
       } catch (error) {
         errorMsg.textContent = '❌ 錯誤：' + error.message;
         errorMsg.classList.add('show');
