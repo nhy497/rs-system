@@ -801,9 +801,25 @@
       console.log('📋 第六步：更新UI');
       try {
         const userNameEl = document.getElementById('sidebarUserName');
+        const userRoleEl = document.getElementById('sidebarUserRole');
         if (userNameEl && userData) {
           userNameEl.textContent = userData.username || '未知用戶';
           console.log('✅ 側邊欄用戶名已更新:', userData.username);
+        }
+        
+        // 顯示用戶角色
+        if (userRoleEl && userData) {
+          const role = userData.role || 'user';
+          userRoleEl.textContent = role === 'creator' ? '👑 Creator' : '👤 用戶';
+          console.log('✅ 側邊欄角色已更新:', role);
+        }
+        
+        // 根據角色控制「數據管理」菜單可見性
+        const navData = document.getElementById('navData');
+        if (navData && userData) {
+          const isCreator = userData.role === 'creator';
+          navData.hidden = !isCreator;
+          console.log('📊 數據管理菜單可見性:', isCreator ? '✓ 顯示' : '✗ 隱藏');
         }
       } catch (e) {
         console.warn('⚠️ 無法更新UI，但用戶已登入');

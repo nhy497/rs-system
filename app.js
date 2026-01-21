@@ -305,17 +305,41 @@ function setPage(name) {
   if (window.matchMedia('(max-width: 768px)').matches) $('sidebar')?.classList.add('collapsed');
 }
 
+// --- 權限管理
+function isCreator() {
+  try {
+    const currentUser = localStorage.getItem('current-user');
+    if (!currentUser) return false;
+    const user = JSON.parse(currentUser);
+    return user.role === 'creator';
+  } catch (e) {
+    return false;
+  }
+}
+
+function getCurrentUser() {
+  try {
+    const currentUser = localStorage.getItem('current-user');
+    return currentUser ? JSON.parse(currentUser) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // --- 數據管理頁面
 function refreshDataManagement() {
-  if (!isCreator()) return;
+  if (!isCreator()) {
+    document.getElementById('page-data').hidden = true;
+    return;
+  }
   
-  const stats = authManager.getUserStats();
-  const users = stats.users;
+  document.getElementById('page-data').hidden = false;
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
   
   // 更新統計
-  $('statTotalUsers').textContent = stats.totalUsers;
+  $('statTotalUsers').textContent = users.length;
   $('statCreatorCount').textContent = users.filter(u => u.role === 'creator').length;
-  $('statUserCount').textContent = users.filter(u => u.role === 'user').length;
+  $('statUserCount').textContent = users.filter(u => u.role !== 'creator').length;
   
   // 渲染用戶列表
   const usersList = $('usersList');

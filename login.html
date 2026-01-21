@@ -335,12 +335,14 @@
             id: user.id,
             username: user.username,
             email: user.email,
+            role: user.role || 'user',
             loginTime: new Date().toISOString()
           }));
           
           localStorage.setItem('rs-system-session', JSON.stringify({
             userId: user.id,
             username: user.username,
+            role: user.role || 'user',
             loginTime: new Date().toISOString()
           }));
           
@@ -441,6 +443,7 @@
           username: username,
           password: password,
           email: email || null,
+          role: 'user',
           createdAt: new Date().toISOString()
         };
         
@@ -493,6 +496,23 @@
       } else {
         const users = JSON.parse(localStorage.getItem('users') || '[]');
         console.log('💾 當前已註冊用戶數:', users.length);
+      }
+      
+      // 自動創建默認 Creator 帳戶
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const creatorExists = users.some(u => u.username === 'creator');
+      if (!creatorExists) {
+        const creatorAccount = {
+          id: Date.now().toString(),
+          username: 'creator',
+          password: '1234',
+          email: 'creator@system.local',
+          role: 'creator',
+          createdAt: new Date().toISOString()
+        };
+        users.push(creatorAccount);
+        localStorage.setItem('users', JSON.stringify(users));
+        console.log('✅ 已自動創建默認 Creator 帳戶 (用戶名: creator, 密碼: 1234)');
       }
       
       // 檢查會話
