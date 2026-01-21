@@ -120,10 +120,22 @@ function updateUserInfo(username = null) {
   
   if (username) {
     nameEl.textContent = username;
-    roleEl.textContent = '教練';
+    const user = authManager.getCurrentUser();
+    const userRole = user?.role === 'creator' ? '系統創建者' : '教練';
+    roleEl.textContent = userRole;
+    
+    // 顯示/隱藏用戶管理導航項
+    const navData = $('navData');
+    if (navData) {
+      navData.hidden = !isCreator();
+    }
   } else {
     nameEl.textContent = '未登錄';
     roleEl.textContent = '訪客';
+    const navData = $('navData');
+    if (navData) {
+      navData.hidden = true;
+    }
   }
 }
 
@@ -289,7 +301,45 @@ function setPage(name) {
   if (title) title.textContent = PAGE_TITLES[name] || name;
   if (name === 'analytics') refreshAnalytics();
   if (name === 'actions') refreshActionsView();
+  if (name === 'data') refreshDataManagement();
   if (window.matchMedia('(max-width: 768px)').matches) $('sidebar')?.classList.add('collapsed');
+}
+
+// --- 數據管理頁面
+function refreshDataManagement() {
+  if (!isCreator()) return;
+  
+  const stats = authManager.getUserStats();
+  const users = stats.users;
+  
+  // 更新統計
+  $('statTotalUsers').textContent = stats.totalUsers;
+  $('statCreatorCount').textContent = users.filter(u => u.role === 'creator').length;
+  $('statUserCount').textContent = users.filter(u => u.role === 'user').length;
+  
+  // 渲染用戶列表
+  const usersList = $('usersList');
+  if (users.length === 0) {
+    usersList.innerHTML = '';
+    $('usersEmpty').hidden = false;
+  } else {
+    $('usersEmpty').hidden = true;
+    usersList.innerHTML = users.map(user => {
+      const createdDate = new Date(user.createdAt).toLocaleDateString('zh-HK');
+      const lastLoginText = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('zh-HK') : '未登入';
+      return `<div class="user-item">
+        <div class="user-item-info">
+          <div class="user-name">${escapeHtml(user.username)}</div>
+          <div class="user-email">${escapeHtml(user.email || '無電郵')}</div>
+          <div class="user-created">建立於: ${createdDate}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.8rem;">
+          <span class="user-role ${user.role}">${user.role === 'creator' ? '👑 Creator' : '👤 用戶'}</span>
+          <span class="user-created">最後登入: ${lastLoginText}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
 }
 
 // --- 教學花式
