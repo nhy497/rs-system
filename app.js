@@ -99,6 +99,34 @@ function getLastLesson() {
   return list[0]; // 已排序，最新的在最前
 }
 
+// 側邊欄統計更新
+function updateSidebarStats() {
+  const records = parseRecords();
+  const today = new Date().toISOString().split('T')[0];
+  const todayRecords = records.filter(r => r.classDate === today);
+  const totalStudents = records.reduce((sum, r) => sum + (parseInt(r.students) || 0), 0);
+  
+  const el1 = $('todayCount');
+  const el2 = $('totalStudents');
+  if (el1) el1.textContent = todayRecords.length;
+  if (el2) el2.textContent = totalStudents;
+}
+
+// 用戶信息更新
+function updateUserInfo(username = null) {
+  const nameEl = $('sidebarUserName');
+  const roleEl = $('sidebarUserRole');
+  if (!nameEl) return;
+  
+  if (username) {
+    nameEl.textContent = username;
+    roleEl.textContent = '教練';
+  } else {
+    nameEl.textContent = '未登錄';
+    roleEl.textContent = '訪客';
+  }
+}
+
 function getClassOptions() {
   const list = parseRecords();
   const set = new Set();
@@ -536,6 +564,44 @@ function duplicateLastLesson() {
 
 // 快速複製按鈕（在介面初始化時添加）
 document.addEventListener('DOMContentLoaded', () => {
+  // 登出功能
+  const btnLogout = $('btnLogout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      if (confirm('確定要登出嗎？')) {
+        // 清除會話信息
+        localStorage.removeItem('rs-system-session');
+        updateUserInfo();
+        updateSidebarStats();
+        // 重定向到登錄頁面
+        window.location.href = 'login.html';
+      }
+    });
+  }
+
+  // 導出功能
+  const btnExport = $('btnExport');
+  if (btnExport) {
+    btnExport.addEventListener('click', (e) => {
+      e.preventDefault();
+      doExportCsv();
+    });
+  }
+
+  // 設置功能預留
+  const btnSettings = $('btnSettings');
+  if (btnSettings) {
+    btnSettings.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('系統設置功能即將推出');
+    });
+  }
+
+  // 更新統計
+  updateSidebarStats();
+  updateUserInfo();
+
+  // 快速複製按鈕
   const btnDuplicate = document.createElement('button');
   btnDuplicate.type = 'button';
   btnDuplicate.id = 'btnDuplicate';
@@ -884,3 +950,36 @@ renderClassPresets();
 renderTricks();
 refreshStats();
 setPage('overview');
+
+// === 系統診斷功能 (最小化代碼) ===
+window.systemDiagnosis = () => {
+  const tests = {
+    localStorage: () => {
+      try {
+        localStorage.setItem('test', 'ok');
+        localStorage.removeItem('test');
+        return '✅ localStorage 正常';
+      } catch { return '❌ localStorage 失敗'; }
+    },
+    pouchdb: () => {
+      return typeof PouchDB !== 'undefined' ? '✅ PouchDB 已加載' : '❌ PouchDB 未加載';
+    },
+    userAuth: () => {
+      return typeof window.auth !== 'undefined' ? '✅ 認證系統已初始化' : '❌ 認證系統未初始化';
+    },
+    dataCount: () => {
+      const count = parseRecords().length;
+      return `✅ 已加載 ${count} 筆記錄`;
+    },
+    encryption: () => {
+      try {
+        const test = btoa('test');
+        return atob(test) === 'test' ? '✅ Base64 加密正常' : '❌ 加密失敗';
+      } catch { return '❌ Base64 加密錯誤'; }
+    }
+  };
+  
+  console.log('=== 系統診斷報告 ===');
+  Object.entries(tests).forEach(([name, fn]) => console.log(`${name}: ${fn()}`));
+  return tests;
+};

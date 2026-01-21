@@ -22,7 +22,31 @@
         <span class="brand-icon">◇</span>
         <span class="brand-text">教練記錄系統</span>
       </div>
+
+      <!-- 用戶信息區 -->
+      <div class="sidebar-user" id="sidebarUser">
+        <div class="user-avatar">👤</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebarUserName">未登錄</div>
+          <div class="user-role" id="sidebarUserRole">訪客</div>
+        </div>
+      </div>
+
+      <!-- 快速統計 -->
+      <div class="sidebar-stats">
+        <div class="stat-item">
+          <div class="stat-label">今日課堂</div>
+          <div class="stat-value" id="todayCount">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">學生總數</div>
+          <div class="stat-value" id="totalStudents">0</div>
+        </div>
+      </div>
+
+      <!-- 主菜單 -->
       <nav class="sidebar-nav">
+        <div class="nav-section-title">主菜單</div>
         <a href="#" class="nav-item active" data-page="overview">
           <span class="nav-icon">▣</span>
           <span class="nav-label">課堂概覽</span>
@@ -39,9 +63,28 @@
           <span class="nav-icon">▤</span>
           <span class="nav-label">統計分析</span>
         </a>
+
+        <div class="nav-section-title">工具</div>
+        <a href="#" class="nav-item" id="btnExport">
+          <span class="nav-icon">⬇️</span>
+          <span class="nav-label">導出數據</span>
+        </a>
+        <a href="#" class="nav-item" id="btnSettings">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">系統設置</span>
+        </a>
       </nav>
+
+      <!-- 底部信息 -->
       <div class="sidebar-footer">
-        <span class="footer-tag">HKJRA 合作</span>
+        <div class="footer-info">
+          <div class="footer-tag">HKJRA 合作</div>
+          <div class="footer-version">v2.1.1</div>
+        </div>
+        <button type="button" class="btn-logout" id="btnLogout" aria-label="登出">
+          <span class="logout-icon">🚪</span>
+          <span>登出</span>
+        </button>
       </div>
     </aside>
 
