@@ -349,16 +349,42 @@
           setTimeout(() => {
             // 驗證會話已保存
             const savedSession = localStorage.getItem('rs-system-session');
-            if (savedSession) {
+            const savedUser = localStorage.getItem('current-user');
+            
+            if (savedSession && savedUser) {
               console.log('✅ 會話已驗證，開始導向...');
-              window.location.href = 'index.html';
+              console.log('   rs-system-session:', savedSession.substring(0, 50) + '...');
+              console.log('   current-user:', savedUser.substring(0, 50) + '...');
+              
+              // 延遲稍長以確保所有同步完成
+              setTimeout(() => {
+                window.location.href = 'index.html';
+              }, 200);
             } else {
               console.error('❌ 會話保存失敗，重試中...');
-              localStorage.setItem('rs-system-session', JSON.stringify({
-                userId: user.id,
-                username: user.username,
-                loginTime: new Date().toISOString()
-              }));
+              console.log('   rs-system-session:', savedSession ? '✓' : '✗');
+              console.log('   current-user:', savedUser ? '✓' : '✗');
+              
+              // 雙重保存確保
+              if (!savedSession) {
+                localStorage.setItem('rs-system-session', JSON.stringify({
+                  userId: user.id,
+                  username: user.username,
+                  loginTime: new Date().toISOString()
+                }));
+              }
+              if (!savedUser) {
+                localStorage.setItem('current-user', JSON.stringify({
+                  id: user.id,
+                  username: user.username,
+                  email: user.email,
+                  loginTime: new Date().toISOString()
+                }));
+              }
+              
+              console.log('✅ 會話已重新保存，再次嘗試導向...');
+              
+              // 給予更長的時間讓同步完成
               setTimeout(() => {
                 window.location.href = 'index.html';
               }, 500);

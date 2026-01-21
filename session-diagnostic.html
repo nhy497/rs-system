@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>會話診斷工具</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      font-family: 'Noto Sans TC', sans-serif;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    h1 {
+      color: #1e293b;
+      margin-bottom: 0.5rem;
+      font-size: 1.8rem;
+    }
+    
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 2rem;
+    }
+    
+    .diagnostic-section {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .diagnostic-section h2 {
+      color: #1e293b;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .data-display {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      color: #333;
+    }
+    
+    .data-display.error {
+      background: #fee2e2;
+      border-color: #dc2626;
+      color: #dc2626;
+    }
+    
+    .data-display.success {
+      background: #d1fae5;
+      border-color: #059669;
+      color: #059669;
+    }
+    
+    .data-display.warning {
+      background: #fef3c7;
+      border-color: #d97706;
+      color: #d97706;
+    }
+    
+    button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      margin-right: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #764ba2;
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    
+    .btn-secondary:hover {
+      background: #cbd5e1;
+    }
+    
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+    
+    .timeline {
+      position: relative;
+      padding: 1rem 0;
+    }
+    
+    .timeline-item {
+      display: flex;
+      margin-bottom: 1rem;
+      align-items: flex-start;
+    }
+    
+    .timeline-marker {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #667eea;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-right: 1rem;
+      margin-top: 2px;
+    }
+    
+    .timeline-marker.success {
+      background: #059669;
+    }
+    
+    .timeline-marker.error {
+      background: #dc2626;
+    }
+    
+    .timeline-content {
+      flex: 1;
+    }
+    
+    .timeline-content .label {
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 0.25rem;
+    }
+    
+    .timeline-content .detail {
+      color: #64748b;
+      font-size: 0.9rem;
+      margin: 0.25rem 0;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    
+    tr:hover {
+      background: #f8fafc;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .status-badge.ok {
+      background: #d1fae5;
+      color: #059669;
+    }
+    
+    .status-badge.error {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    
+    .status-badge.warning {
+      background: #fef3c7;
+      color: #d97706;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 會話診斷工具</h1>
+    <p class="subtitle">診斷登入和會話相關問題</p>
+    
+    <!-- 會話狀態 -->
+    <div class="diagnostic-section">
+      <h2>1️⃣ 當前會話狀態</h2>
+      <table>
+        <tr>
+          <th>鍵名</th>
+          <th>存在狀態</th>
+          <th>大小</th>
+          <th>內容</th>
+        </tr>
+        <tr>
+          <td><code>rs-system-session</code></td>
+          <td id="status-session"></td>
+          <td id="size-session"></td>
+          <td><button class="btn-secondary" onclick="showSessionData()">查看</button></td>
+        </tr>
+        <tr>
+          <td><code>current-user</code></td>
+          <td id="status-user"></td>
+          <td id="size-user"></td>
+          <td><button class="btn-secondary" onclick="showUserData()">查看</button></td>
+        </tr>
+        <tr>
+          <td><code>users</code> (用戶列表)</td>
+          <td id="status-users"></td>
+          <td id="size-users"></td>
+          <td><button class="btn-secondary" onclick="showUsersData()">查看</button></td>
+        </tr>
+      </table>
+      <div id="data-display" style="margin-top: 1rem;"></div>
+    </div>
+    
+    <!-- 詳細數據 -->
+    <div class="diagnostic-section">
+      <h2>2️⃣ 詳細數據分析</h2>
+      <div id="detailed-analysis"></div>
+    </div>
+    
+    <!-- 測試流程 -->
+    <div class="diagnostic-section">
+      <h2>3️⃣ 測試流程</h2>
+      <div class="timeline" id="test-timeline"></div>
+    </div>
+    
+    <!-- 操作 -->
+    <div class="diagnostic-section">
+      <h2>4️⃣ 診斷操作</h2>
+      <button class="btn-primary" onclick="runDiagnostics()">🔍 運行完整診斷</button>
+      <button class="btn-secondary" onclick="refreshData()">♻️ 刷新數據</button>
+      <button class="btn-secondary" onclick="createTestSession()">📝 建立測試會話</button>
+      <button class="btn-danger" onclick="clearAllSessions()">🗑️ 清除所有會話</button>
+    </div>
+    
+    <!-- 控制台 -->
+    <div class="diagnostic-section">
+      <h2>5️⃣ 實時控制台</h2>
+      <div id="console" style="background: #1e293b; color: #e2e8f0; border-radius: 6px; padding: 1rem; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 300px; overflow-y: auto;"></div>
+    </div>
+  </div>
+  
+  <script>
+    const consoleOutput = document.getElementById('console');
+    
+    function log(msg, type = 'info') {
+      const entry = document.createElement('div');
+      const time = new Date().toLocaleTimeString('zh-Hant');
+      
+      const colors = {
+        'info': '#60a5fa',
+        'success': '#86efac',
+        'error': '#ff6b6b',
+        'warning': '#fbbf24'
+      };
+      
+      entry.style.color = colors[type] || colors.info;
+      entry.textContent = `[${time}] ${msg}`;
+      consoleOutput.appendChild(entry);
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      
+      if (consoleOutput.children.length > 50) {
+        consoleOutput.removeChild(consoleOutput.children[0]);
+      }
+    }
+    
+    function refreshData() {
+      const dataDisplay = document.getElementById('data-display');
+      dataDisplay.innerHTML = '';
+      
+      // 檢查會話
+      const session = localStorage.getItem('rs-system-session');
+      const user = localStorage.getItem('current-user');
+      const users = localStorage.getItem('users');
+      
+      document.getElementById('status-session').innerHTML = session ? 
+        '<span class="status-badge ok">✓ 存在</span>' : 
+        '<span class="status-badge error">✗ 缺失</span>';
+      document.getElementById('size-session').textContent = session ? session.length + ' 字節' : '-';
+      
+      document.getElementById('status-user').innerHTML = user ? 
+        '<span class="status-badge ok">✓ 存在</span>' : 
+        '<span class="status-badge error">✗ 缺失</span>';
+      document.getElementById('size-user').textContent = user ? user.length + ' 字節' : '-';
+      
+      document.getElementById('status-users').innerHTML = users ? 
+        '<span class="status-badge ok">✓ 存在</span>' : 
+        '<span class="status-badge warning">⚠ 缺失</span>';
+      document.getElementById('size-users').textContent = users ? users.length + ' 字節' : '-';
+    }
+    
+    function showSessionData() {
+      const session = localStorage.getItem('rs-system-session');
+      const dataDisplay = document.getElementById('data-display');
+      
+      if (!session) {
+        dataDisplay.innerHTML = '<div class="data-display error">❌ rs-system-session 不存在</div>';
+        return;
+      }
+      
+      try {
+        const data = JSON.parse(session);
+        dataDisplay.innerHTML = `
+          <div class="data-display success">
+            ✅ rs-system-session (JSON 格式正確)<br>
+            ${JSON.stringify(data, null, 2)}
+          </div>
+        `;
+      } catch (e) {
+        dataDisplay.innerHTML = `
+          <div class="data-display error">
+            ❌ rs-system-session JSON 解析失敗<br>
+            ${e.message}<br><br>
+            原始數據：${session}
+          </div>
+        `;
+      }
+    }
+    
+    function showUserData() {
+      const user = localStorage.getItem('current-user');
+      const dataDisplay = document.getElementById('data-display');
+      
+      if (!user) {
+        dataDisplay.innerHTML = '<div class="data-display error">❌ current-user 不存在</div>';
+        return;
+      }
+      
+      try {
+        const data = JSON.parse(user);
+        dataDisplay.innerHTML = `
+          <div class="data-display success">
+            ✅ current-user (JSON 格式正確)<br>
+            ${JSON.stringify(data, null, 2)}
+          </div>
+        `;
+      } catch (e) {
+        dataDisplay.innerHTML = `
+          <div class="data-display error">
+            ❌ current-user JSON 解析失敗<br>
+            ${e.message}<br><br>
+            原始數據：${user}
+          </div>
+        `;
+      }
+    }
+    
+    function showUsersData() {
+      const users = localStorage.getItem('users');
+      const dataDisplay = document.getElementById('data-display');
+      
+      if (!users) {
+        dataDisplay.innerHTML = '<div class="data-display warning">⚠️ users 列表不存在</div>';
+        return;
+      }
+      
+      try {
+        const data = JSON.parse(users);
+        dataDisplay.innerHTML = `
+          <div class="data-display success">
+            ✅ users (已找到 ${data.length} 個用戶)<br>
+            ${JSON.stringify(data, null, 2)}
+          </div>
+        `;
+      } catch (e) {
+        dataDisplay.innerHTML = `
+          <div class="data-display error">
+            ❌ users JSON 解析失敗<br>
+            ${e.message}
+          </div>
+        `;
+      }
+    }
+    
+    function createTestSession() {
+      log('建立測試會話...', 'info');
+      
+      const testUser = {
+        id: Date.now().toString(),
+        username: 'diagnostic_test_' + Date.now(),
+        password: 'test123',
+        email: 'test@example.com',
+        createdAt: new Date().toISOString()
+      };
+      
+      // 添加到用戶列表
+      let users = JSON.parse(localStorage.getItem('users') || '[]');
+      users.push(testUser);
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      // 創建會話
+      localStorage.setItem('current-user', JSON.stringify({
+        id: testUser.id,
+        username: testUser.username,
+        email: testUser.email,
+        loginTime: new Date().toISOString()
+      }));
+      
+      localStorage.setItem('rs-system-session', JSON.stringify({
+        userId: testUser.id,
+        username: testUser.username,
+        loginTime: new Date().toISOString()
+      }));
+      
+      log('✅ 測試會話已建立: ' + testUser.username, 'success');
+      refreshData();
+    }
+    
+    function clearAllSessions() {
+      if (!confirm('⚠️ 確定要清除所有會話嗎？')) {
+        return;
+      }
+      
+      log('清除會話...', 'warning');
+      localStorage.removeItem('rs-system-session');
+      localStorage.removeItem('current-user');
+      localStorage.removeItem('users');
+      log('✅ 所有會話已清除', 'success');
+      refreshData();
+    }
+    
+    function runDiagnostics() {
+      const timeline = document.getElementById('test-timeline');
+      timeline.innerHTML = '';
+      
+      log('═════════════════════════════════', 'info');
+      log('開始運行完整診斷...', 'info');
+      log('═════════════════════════════════', 'info');
+      
+      const diagnostics = [];
+      
+      // 1. 檢查 localStorage 可用性
+      const step1 = {
+        label: 'localStorage 可用性',
+        status: 'success'
+      };
+      try {
+        localStorage.setItem('_test', 'ok');
+        localStorage.removeItem('_test');
+        step1.detail = 'localStorage 正常可用';
+        log('✅ localStorage 可用', 'success');
+      } catch (e) {
+        step1.status = 'error';
+        step1.detail = 'localStorage 不可用: ' + e.message;
+        log('❌ localStorage 不可用: ' + e.message, 'error');
+      }
+      diagnostics.push(step1);
+      
+      // 2. 檢查會話鍵
+      const session = localStorage.getItem('rs-system-session');
+      const user = localStorage.getItem('current-user');
+      const users = localStorage.getItem('users');
+      
+      const step2 = {
+        label: '會話鍵檢查',
+        status: (session && user) ? 'success' : 'error'
+      };
+      if (session && user) {
+        step2.detail = 'rs-system-session 和 current-user 都存在';
+        log('✅ 會話鍵存在', 'success');
+      } else {
+        step2.detail = `缺失: ${!session ? 'rs-system-session' : ''} ${!user ? 'current-user' : ''}`;
+        log('⚠️ 會話鍵檢查: ' + step2.detail, 'warning');
+      }
+      diagnostics.push(step2);
+      
+      // 3. 驗證 JSON 格式
+      const step3 = {
+        label: 'JSON 格式驗證',
+        status: 'success'
+      };
+      let details = [];
+      if (session) {
+        try {
+          JSON.parse(session);
+          details.push('✓ rs-system-session JSON 正確');
+          log('✅ rs-system-session JSON 格式正確', 'success');
+        } catch (e) {
+          step3.status = 'error';
+          details.push('✗ rs-system-session JSON 錯誤');
+          log('❌ rs-system-session JSON 格式錯誤', 'error');
+        }
+      }
+      if (user) {
+        try {
+          JSON.parse(user);
+          details.push('✓ current-user JSON 正確');
+          log('✅ current-user JSON 格式正確', 'success');
+        } catch (e) {
+          step3.status = 'error';
+          details.push('✗ current-user JSON 錯誤');
+          log('❌ current-user JSON 格式錯誤', 'error');
+        }
+      }
+      step3.detail = details.join(', ');
+      diagnostics.push(step3);
+      
+      // 4. 一致性檢查
+      const step4 = {
+        label: '會話一致性',
+        status: 'success'
+      };
+      if (session && user) {
+        try {
+          const s = JSON.parse(session);
+          const u = JSON.parse(user);
+          if (s.username === u.username) {
+            step4.detail = '用戶名一致: ' + s.username;
+            log('✅ 會話一致性正常', 'success');
+          } else {
+            step4.status = 'error';
+            step4.detail = '用戶名不一致!';
+            log('❌ 會話一致性錯誤', 'error');
+          }
+        } catch (e) {
+          step4.status = 'error';
+          step4.detail = 'JSON 解析失敗';
+          log('❌ 無法驗證一致性', 'error');
+        }
+      } else {
+        step4.status = 'warning';
+        step4.detail = '會話不完整，無法檢查';
+        log('⚠️ 會話不完整', 'warning');
+      }
+      diagnostics.push(step4);
+      
+      // 渲染時間軸
+      diagnostics.forEach((diag, idx) => {
+        const item = document.createElement('div');
+        item.className = 'timeline-item';
+        
+        const marker = document.createElement('div');
+        marker.className = 'timeline-marker ' + diag.status;
+        marker.textContent = idx + 1;
+        
+        const content = document.createElement('div');
+        content.className = 'timeline-content';
+        
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = diag.label;
+        
+        const detail = document.createElement('div');
+        detail.className = 'detail';
+        detail.textContent = diag.detail;
+        
+        content.appendChild(label);
+        content.appendChild(detail);
+        item.appendChild(marker);
+        item.appendChild(content);
+        timeline.appendChild(item);
+      });
+      
+      log('═════════════════════════════════', 'info');
+      log('診斷完成！', 'success');
+      log('═════════════════════════════════', 'info');
+    }
+    
+    // 初始化
+    window.addEventListener('load', () => {
+      refreshData();
+      log('🔍 會話診斷工具已就緒', 'success');
+    });
+  </script>
+</body>
+</html>
