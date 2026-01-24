@@ -1991,6 +1991,41 @@ function showDetail(rec) {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 初始化用戶數據庫（如果不存在）
+  if (!localStorage.getItem('users')) {
+    const defaultUsers = [
+      {
+        id: `user_${Date.now()}_creator`,
+        userId: `user_${Date.now()}_creator`,
+        username: 'creator',
+        password: '1234',
+        role: 'creator',
+        email: 'creator@system.local',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: `user_${Date.now()}_alice`,
+        userId: `user_${Date.now()}_alice`,
+        username: 'alice',
+        password: 'pass123',
+        role: 'user',
+        email: 'alice@system.local',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: `user_${Date.now()}_bob`,
+        userId: `user_${Date.now()}_bob`,
+        username: 'bob',
+        password: 'pass123',
+        role: 'user',
+        email: 'bob@system.local',
+        createdAt: new Date().toISOString()
+      }
+    ];
+    localStorage.setItem('users', JSON.stringify(defaultUsers));
+    console.log('✅ 已初始化默認用戶數據');
+  }
+
   // 登入頁面初始化
   const isLoginPage = Boolean(document.getElementById('loginForm'));
   if (isLoginPage) {
