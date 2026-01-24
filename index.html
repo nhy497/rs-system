@@ -36,6 +36,9 @@
           <div class="user-name" id="sidebarUserName">未登錄</div>
           <div class="user-role" id="sidebarUserRole">訪客</div>
         </div>
+        <button type="button" class="btn-collapse-sidebar" id="btnCollapseSidebar" aria-label="收起側邊欄" title="收起側邊欄">
+          <span class="collapse-icon">◄</span>
+        </button>
       </div>
 
       <!-- 快速統計 -->
@@ -656,16 +659,52 @@
 
   <!-- 會話檢查腳本 -->
   <script>
-    // 簡單會話檢查 - 確保用戶已登入
+    // 改進的會話檢查 - 確保用戶已登入
     (function() {
-      const session = localStorage.getItem('rs-system-session');
-      const currentUser = localStorage.getItem('current-user');
+      try {
+        const session = localStorage.getItem('rs-system-session');
+        const currentUser = localStorage.getItem('current-user');
 
-      if (!session || !currentUser) {
-        console.warn('⚠️ 會話無效，重定向到登入頁面');
+        // 第一層檢查：檢查是否存在基本會話數據
+        if (!session || !currentUser) {
+          console.warn('⚠️ 未檢測到會話，重定向到登入頁面');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        // 第二層檢查：解析並驗證會話數據
+        try {
+          const sessionData = JSON.parse(session);
+          const userData = JSON.parse(currentUser);
+
+          // 驗證必要欄位
+          if (!sessionData.userId || !sessionData.sessionId || !userData.id) {
+            console.warn('⚠️ 會話資料不完整，重定向到登入頁面');
+            localStorage.removeItem('rs-system-session');
+            localStorage.removeItem('current-user');
+            window.location.href = 'login.html';
+            return;
+          }
+
+          // 驗證會話是否過期（寬鬆檢查）
+          if (sessionData.expiresAt && Date.now() > sessionData.expiresAt) {
+            console.warn('⚠️ 會話已過期，重定向到登入頁面');
+            localStorage.removeItem('rs-system-session');
+            localStorage.removeItem('current-user');
+            window.location.href = 'login.html';
+            return;
+          }
+
+          console.log('✅ 會話有效，應用將啟動');
+        } catch (parseError) {
+          console.error('⚠️ 會話資料格式錯誤:', parseError);
+          localStorage.removeItem('rs-system-session');
+          localStorage.removeItem('current-user');
+          window.location.href = 'login.html';
+        }
+      } catch (error) {
+        console.error('❌ 會話檢查發生未預期的錯誤:', error);
         window.location.href = 'login.html';
-      } else {
-        console.log('✅ 會話有效，應用將啟動');
       }
     })();
   </script>

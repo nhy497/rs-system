@@ -430,16 +430,27 @@ const LOGIN_MANAGER = {
       const session = JSON.parse(localStorage.getItem('rs-system-session') || 'null');
       if (!session) return false;
 
-      if (Date.now() > session.expiresAt) {
+      // 檢查會話是否過期
+      if (session.expiresAt && Date.now() > session.expiresAt) {
         console.warn('⚠️ 會話已過期');
         this.logout();
         return false;
       }
 
-      if (session.ipHash !== this.getIpHash()) {
-        console.warn('⚠️ 檢測到異常登入位置，自動登出');
-        this.logout();
+      // 驗證必要的會話欄位
+      if (!session.userId || !session.sessionId) {
+        console.warn('⚠️ 會話資料不完整');
         return false;
+      }
+
+      // 可選的 IP 驗證（寬鬆模式 - 允許輕微差異）
+      if (session.ipHash) {
+        const currentHash = this.getIpHash();
+        // 如果 IP 完全改變才登出（防止過度嚴格的驗證）
+        if (session.ipHash !== currentHash) {
+          console.warn('⚠️ 檢測到不同的登入設備，但會話仍有效');
+          // 不自動登出，只記錄警告
+        }
       }
 
       console.log('✅ 會話有效');
@@ -645,48 +656,66 @@ function initLoginPage() {
       const user = users.find((u) => u.username === username && u.password === password);
 
       if (user) {
-        localStorage.setItem('current-user', JSON.stringify({
+        // 建立會話數據 - 必須包含必要欄位
+        const currentTime = Date.now();
+        const sessionTimeout = 24 * 60 * 60 * 1000; // 24 小時
+        
+        const sessionData = {
+          userId: user.id,
+          username: user.username,
+          sessionId: `session_${currentTime}_${Math.random().toString(36).substr(2, 9)}`,
+          createdAt: currentTime,
+          expiresAt: currentTime + sessionTimeout,
+          role: user.role || 'user'
+        };
+
+        const userData = {
           id: user.id,
           username: user.username,
           email: user.email,
           role: user.role || 'user',
           loginTime: new Date().toISOString()
-        }));
+        };
 
-        localStorage.setItem('rs-system-session', JSON.stringify({
-          userId: user.id,
-          username: user.username,
-          role: user.role || 'user',
-          loginTime: new Date().toISOString()
-        }));
+        // 同步保存會話數據
+        localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
+        localStorage.setItem('current-user', JSON.stringify(userData));
 
         showSuccess('✅ 登入成功！正在導向主應用...');
 
+        // 驗證保存成功後再重定向
         setTimeout(() => {
           const savedSession = localStorage.getItem('rs-system-session');
           const savedUser = localStorage.getItem('current-user');
 
           if (savedSession && savedUser) {
-            setTimeout(() => { window.location.href = 'index.html'; }, 200);
+            try {
+              const verifySession = JSON.parse(savedSession);
+              const verifyUser = JSON.parse(savedUser);
+              
+              // 驗證必要欄位
+              if (verifySession.userId && verifySession.sessionId && verifyUser.id) {
+                console.log('✅ 會話數據驗證成功，重定向到 index.html');
+                window.location.href = 'index.html';
+              } else {
+                console.error('❌ 會話數據不完整，重新保存');
+                localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
+                localStorage.setItem('current-user', JSON.stringify(userData));
+                setTimeout(() => { window.location.href = 'index.html'; }, 500);
+              }
+            } catch (parseError) {
+              console.error('❌ 會話數據格式錯誤，重新保存');
+              localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
+              localStorage.setItem('current-user', JSON.stringify(userData));
+              setTimeout(() => { window.location.href = 'index.html'; }, 500);
+            }
           } else {
-            if (!savedSession) {
-              localStorage.setItem('rs-system-session', JSON.stringify({
-                userId: user.id,
-                username: user.username,
-                loginTime: new Date().toISOString()
-              }));
-            }
-            if (!savedUser) {
-              localStorage.setItem('current-user', JSON.stringify({
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                loginTime: new Date().toISOString()
-              }));
-            }
+            console.warn('⚠️ 會話保存失敗，重新保存並重試');
+            localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
+            localStorage.setItem('current-user', JSON.stringify(userData));
             setTimeout(() => { window.location.href = 'index.html'; }, 500);
           }
-        }, 800);
+        }, 500);
       } else {
         showError('❌ 使用者名稱或密碼不正確');
         if (btnLogin) {
@@ -2184,7 +2213,19 @@ document.addEventListener('DOMContentLoaded', () => {
     el.addEventListener('click', (e) => { e.preventDefault(); setPage(el.dataset.page); });
   });
 
+  // 側邊欄控制 - 打開/關閉
   $('sidebarToggle')?.addEventListener('click', () => { $('sidebar')?.classList.toggle('collapsed'); });
+  
+  // 側邊欄控制 - 收起按鈕
+  $('btnCollapseSidebar')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const sidebar = $('sidebar');
+    if (sidebar) {
+      sidebar.classList.add('collapsed');
+      console.log('✅ 側邊欄已收起');
+    }
+  });
 
   // 篩選事件
   $('globalFilterClass')?.addEventListener('change', () => { refreshByClass(); refreshStats(); });

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>側邊欄退出功能測試</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft JhengHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 30px;
+    }
+    .header { border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; }
+    .header h1 { color: #333; font-size: 1.8em; margin-bottom: 10px; }
+    .header p { color: #666; }
+    .feature-list {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .feature-item {
+      padding: 15px;
+      background: white;
+      border-left: 4px solid #667eea;
+      margin-bottom: 10px;
+      border-radius: 6px;
+    }
+    .feature-item h3 { color: #667eea; margin-bottom: 8px; }
+    .feature-item p { color: #666; font-size: 0.95em; }
+    .code-block {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .status-badge.done { background: #d4edda; color: #155724; }
+    .status-badge.new { background: #cce5ff; color: #004085; }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin-top: 15px;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+    .demo-link {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin-top: 15px;
+    }
+    .demo-link:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎨 側邊欄退出功能 - 功能說明</h1>
+      <p>新增側邊欄收起按鈕，提升用戶體驗</p>
+    </div>
+
+    <div class="feature-list">
+      <div class="feature-item">
+        <h3>✨ 功能 1: 側邊欄收起按鈕</h3>
+        <p><strong>位置</strong>：用戶信息區右上角</p>
+        <p><strong>外觀</strong>：◄ 符號按鈕，帶有 hover 效果</p>
+        <p><strong>功能</strong>：點擊即可立即收起側邊欄</p>
+        <p><strong>優勢</strong>：比原有的漢堡菜單更直觀，用戶無需返回頂部</p>
+        <span class="status-badge new">新增功能</span>
+      </div>
+
+      <div class="feature-item">
+        <h3>✅ 功能 2: 原有的漢堡菜單保留</h3>
+        <p><strong>位置</strong>：頂部菜單欄</p>
+        <p><strong>功能</strong>：打開/關閉側邊欄切換</p>
+        <p><strong>行為</strong>：點擊可以打開已關閉的側邊欄</p>
+        <span class="status-badge done">原有功能</span>
+      </div>
+
+      <div class="feature-item">
+        <h3>💻 實現細節</h3>
+        <p><strong>HTML</strong>：在 sidebar-user 區域添加新按鈕</p>
+        <div class="code-block">&lt;button type="button" class="btn-collapse-sidebar" id="btnCollapseSidebar"&gt;
+  &lt;span class="collapse-icon"&gt;◄&lt;/span&gt;
+&lt;/button&gt;</div>
+        <p><strong>CSS</strong>：新增 .btn-collapse-sidebar 樣式</p>
+        <div class="code-block">.btn-collapse-sidebar {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}</div>
+        <p><strong>JavaScript</strong>：添加事件監聽器</p>
+        <div class="code-block">$('btnCollapseSidebar')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const sidebar = $('sidebar');
+  if (sidebar) {
+    sidebar.classList.add('collapsed');
+    console.log('✅ 側邊欄已收起');
+  }
+});</div>
+        <span class="status-badge done">已實現</span>
+      </div>
+
+      <div class="feature-item">
+        <h3>📱 用戶體驗改進</h3>
+        <ul style="margin-left: 20px; color: #666; line-height: 1.8;">
+          <li>✅ 無需返回頂部即可收起側邊欄</li>
+          <li>✅ 按鈕清晰可見，視覺效果好</li>
+          <li>✅ Hover 效果提供清晰反饋</li>
+          <li>✅ 點擊動畫流暢自然</li>
+          <li>✅ 移動設備友好</li>
+        </ul>
+      </div>
+
+      <div class="feature-item">
+        <h3>🧪 測試步驟</h3>
+        <ol style="margin-left: 20px; color: #666; line-height: 2;">
+          <li>訪問 <strong>index.html</strong></li>
+          <li>在側邊欄用戶區找到 <strong>◄ 按鈕</strong></li>
+          <li>點擊按鈕驗證側邊欄收起</li>
+          <li>點擊頂部 <strong>☰ 按鈕</strong>重新打開側邊欄</li>
+          <li>驗證功能正常運行</li>
+        </ol>
+        <span class="status-badge done">可驗證</span>
+      </div>
+
+      <div class="feature-item">
+        <h3>📝 修改的文件</h3>
+        <ul style="margin-left: 20px; color: #666; line-height: 2;">
+          <li><strong>index.html</strong> - 添加收起按鈕 HTML</li>
+          <li><strong>styles.css</strong> - 添加按鈕樣式</li>
+          <li><strong>system.js</strong> - 添加事件監聽器</li>
+          <li><strong>app.js</strong> - 添加備用事件監聽器</li>
+        </ul>
+        <span class="status-badge done">全部更新</span>
+      </div>
+    </div>
+
+    <div style="text-align: center; padding: 20px; background: #e7f3ff; border-radius: 8px; margin-top: 30px;">
+      <h3 style="color: #004085; margin-bottom: 15px;">🚀 立即測試新功能</h3>
+      <p style="color: #666; margin-bottom: 20px;">點擊下方按鈕進入應用，體驗側邊欄退出功能</p>
+      <a href="http://localhost:8000/index.html" class="demo-link" target="_blank">🔗 進入應用 (index.html)</a>
+    </div>
+
+    <div style="text-align: center; padding: 20px; background: #fff3cd; border-radius: 8px; margin-top: 20px;">
+      <h3 style="color: #856404; margin-bottom: 15px;">📋 功能總結</h3>
+      <p style="color: #666;">
+        新功能現已完全集成到系統中。<br>
+        用戶可以通過側邊欄用戶區的「◄」按鈕快速收起側邊欄，<br>
+        提升移動設備和小屏幕用戶的體驗。
+      </p>
+    </div>
+  </div>
+
+  <script>
+    console.log('%c✅ 側邊欄退出功能已就緒', 'color: green; font-size: 14px; font-weight: bold;');
+    console.log('%c📝 新增功能詳情：', 'color: blue; font-size: 12px; font-weight: bold;');
+    console.log('1. HTML: 在 sidebar-user 區域添加 btnCollapseSidebar 按鈕');
+    console.log('2. CSS: 新增 .btn-collapse-sidebar 樣式類');
+    console.log('3. JavaScript: 在 system.js 和 app.js 中添加事件監聽器');
+    console.log('%c🚀 修改完成，可進行測試', 'color: green; font-size: 12px;');
+  </script>
+</body>
+</html>

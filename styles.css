@@ -118,6 +118,36 @@ body {
   margin-top: 0.2rem;
 }
 
+/* 收起側邊欄按鈕 */
+.btn-collapse-sidebar {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.btn-collapse-sidebar:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+.btn-collapse-sidebar:active {
+  transform: scale(0.95);
+}
+.collapse-icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
 /* 快速統計 */
 .sidebar-stats {
   padding: 1rem 1.25rem;
