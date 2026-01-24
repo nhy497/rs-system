@@ -1041,7 +1041,9 @@ function testLoginDataStorage() {
  * 測試用戶資料持久性
  */
 function testUserDataPersistence() {
-  const containerId = 'storage-login-results';
+  const containerId = 'storage-persistence-results';
+  document.getElementById(containerId).innerHTML = '';
+  addLog('storage-log', '測試用戶資料持久性...', 'info');
   
   const currentUser = localStorage.getItem('current-user');
   if (currentUser) {
@@ -1847,6 +1849,16 @@ async function runAllTests() {
   testSessionData();
   await new Promise(r => setTimeout(r, 300));
   
+  // 自動登入 Creator 以供後續測試使用
+  addLog(logId, '\n=== 自動登入 Creator ===', 'info');
+  await performLogin('creator', '1234');
+  await new Promise(r => setTimeout(r, 500));
+  
+  // 初始化資料庫
+  addLog(logId, '\n=== 初始化資料庫 ===', 'info');
+  await initializeUserDatabase();
+  await new Promise(r => setTimeout(r, 500));
+  
   // 資料儲存測試
   addLog(logId, '\n=== 資料儲存測試 ===', 'info');
   testLoginDataStorage();
@@ -1874,6 +1886,14 @@ async function runAllTests() {
   testCreatorRole();
   await new Promise(r => setTimeout(r, 300));
   testCreatorPermissions();
+  await new Promise(r => setTimeout(r, 300));
+  testCreatorUI();
+  await new Promise(r => setTimeout(r, 300));
+  testCreatorFeatures();
+  await new Promise(r => setTimeout(r, 300));
+  testCreatorManagement();
+  await new Promise(r => setTimeout(r, 300));
+  testCreatorDataAccess();
   await new Promise(r => setTimeout(r, 300));
   
   addLog(logId, '\n========== 所有測試完成 ==========', 'success');
