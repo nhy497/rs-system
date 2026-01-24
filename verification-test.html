@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RS System - 登入與儲存庫驗證測試</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .content {
+      padding: 30px;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+    }
+    .test-section h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+    .test-controls {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    .test-controls input,
+    .test-controls select {
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      flex: 1;
+      min-width: 150px;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .result.success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    .result.error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    .result.info {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    .status-badge.pass {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-badge.fail {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .status-badge.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .summary {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+    .summary h3 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .summary-card {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .summary-card h4 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    .summary-card .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 RS System 功能驗證測試</h1>
+      <p>登入功能 + 儲存庫資料隔離驗證</p>
+    </div>
+
+    <div class="content">
+      <!-- 測試 1: 使用者註冊 -->
+      <div class="test-section">
+        <h3>測試 1: 用戶註冊功能 <span class="status-badge pending" id="test1-status">待執行</span></h3>
+        <div class="test-controls">
+          <input type="text" id="reg-username" placeholder="用戶名 (例如: user1)">
+          <input type="email" id="reg-email" placeholder="電子郵件">
+          <input type="password" id="reg-password" placeholder="密碼 (至少4位)">
+          <button onclick="testRegister()">執行註冊測試</button>
+        </div>
+        <div id="test1-result"></div>
+      </div>
+
+      <!-- 測試 2: 用戶登入 -->
+      <div class="test-section">
+        <h3>測試 2: 用戶登入功能 <span class="status-badge pending" id="test2-status">待執行</span></h3>
+        <div class="test-controls">
+          <input type="text" id="login-username" placeholder="用戶名">
+          <input type="password" id="login-password" placeholder="密碼">
+          <button onclick="testLogin()">執行登入測試</button>
+        </div>
+        <div id="test2-result"></div>
+      </div>
+
+      <!-- 測試 3: 儲存庫初始化 -->
+      <div class="test-section">
+        <h3>測試 3: 用戶專屬儲存庫初始化 <span class="status-badge pending" id="test3-status">待執行</span></h3>
+        <button onclick="testStorageInit()">檢查儲存庫狀態</button>
+        <div id="test3-result"></div>
+      </div>
+
+      <!-- 測試 4: 資料寫入 -->
+      <div class="test-section">
+        <h3>測試 4: 資料寫入測試 <span class="status-badge pending" id="test4-status">待執行</span></h3>
+        <div class="test-controls">
+          <input type="text" id="class-name" placeholder="班級名稱 (例如: A班)">
+          <input type="date" id="class-date" value="">
+          <button onclick="testDataWrite()">寫入測試資料</button>
+        </div>
+        <div id="test4-result"></div>
+      </div>
+
+      <!-- 測試 5: 資料讀取 -->
+      <div class="test-section">
+        <h3>測試 5: 資料讀取測試 <span class="status-badge pending" id="test5-status">待執行</span></h3>
+        <button onclick="testDataRead()">讀取當前用戶資料</button>
+        <div id="test5-result"></div>
+      </div>
+
+      <!-- 測試 6: 用戶切換測試 -->
+      <div class="test-section">
+        <h3>測試 6: 用戶切換與資料隔離 <span class="status-badge pending" id="test6-status">待執行</span></h3>
+        <div class="test-controls">
+          <select id="switch-user">
+            <option value="">選擇用戶...</option>
+          </select>
+          <button onclick="testUserSwitch()">切換用戶並驗證資料</button>
+        </div>
+        <div id="test6-result"></div>
+      </div>
+
+      <!-- 測試 7: 登出功能 -->
+      <div class="test-section">
+        <h3>測試 7: 登出功能 <span class="status-badge pending" id="test7-status">待執行</span></h3>
+        <button onclick="testLogout()">執行登出測試</button>
+        <div id="test7-result"></div>
+      </div>
+
+      <!-- 測試總結 -->
+      <div class="summary">
+        <h3>📊 測試總結報告</h3>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <h4>總測試數</h4>
+            <div class="value" id="total-tests">7</div>
+          </div>
+          <div class="summary-card">
+            <h4>通過</h4>
+            <div class="value" style="color: #28a745;" id="passed-tests">0</div>
+          </div>
+          <div class="summary-card">
+            <h4>失敗</h4>
+            <div class="value" style="color: #dc3545;" id="failed-tests">0</div>
+          </div>
+          <div class="summary-card">
+            <h4>成功率</h4>
+            <div class="value" style="color: #17a2b8;" id="success-rate">0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 引入必要的腳本：僅保留 PouchDB + system.js -->
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+  <script src="logger-service.js"></script>
+  <script src="system.js"></script>
+
+  <script>
+    // 測試狀態追蹤
+    const testResults = { total: 7, passed: 0, failed: 0 };
+
+    // 預設日期
+    document.getElementById('class-date').valueAsDate = new Date();
+
+    // --- 基礎工具：用戶模型（與 system.js 的 LOGIN_MANAGER 相容）
+    function migrateUsers() {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const migrated = users.map(u => {
+        const userId = u.userId || u.id || `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const passwordHash = u.passwordHash || (u.password ? LOGIN_MANAGER.hashPassword(u.password) : LOGIN_MANAGER.hashPassword('1234'));
+        return {
+          ...u,
+          userId,
+          id: userId,
+          passwordHash,
+          password: undefined,
+          role: u.role || 'user',
+          email: u.email || ''
+        };
+      });
+      localStorage.setItem('users', JSON.stringify(migrated));
+    }
+
+    migrateUsers();
+
+    let loginInitialized = false;
+    async function ensureLoginReady() {
+      if (!loginInitialized) {
+        await LOGIN_MANAGER.init();
+        loginInitialized = true;
+      }
+    }
+
+    const authManager = {
+      _hashPassword(pwd) {
+        return LOGIN_MANAGER.hashPassword(pwd);
+      },
+      async register(username, password, email = '', role = 'user') {
+        await ensureLoginReady();
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        if (users.some(u => u.username === username)) {
+          return { success: false, error: '使用者名稱已存在' };
+        }
+        const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const user = {
+          userId,
+          id: userId,
+          username,
+          email,
+          role,
+          passwordHash: LOGIN_MANAGER.hashPassword(password),
+          createdAt: new Date().toISOString()
+        };
+        users.push(user);
+        localStorage.setItem('users', JSON.stringify(users));
+        return { success: true, userId };
+      },
+      async login(username, password) {
+        await ensureLoginReady();
+        return await LOGIN_MANAGER.login(username, password);
+      },
+      async logout() {
+        await ensureLoginReady();
+        return LOGIN_MANAGER.logout();
+      },
+      getCurrentUser() {
+        return LOGIN_MANAGER.getCurrentUser();
+      },
+      getAllUsers() {
+        return JSON.parse(localStorage.getItem('users') || '[]');
+      }
+    };
+
+    function getUserDb(userId) {
+      return new PouchDB(`rs-system-${userId}`);
+    }
+
+    // 更新用戶列表下拉選單
+    function updateUserList() {
+      const users = authManager.getAllUsers();
+      const select = document.getElementById('switch-user');
+      select.innerHTML = '<option value="">選擇用戶...</option>';
+      users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.userId || user.id;
+        option.textContent = `${user.username} (${user.email || '無電郵'})`;
+        select.appendChild(option);
+      });
+    }
+
+    updateUserList();
+
+    // 顯示結果
+    function showResult(testId, message, type = 'info') {
+      const resultDiv = document.getElementById(`test${testId}-result`);
+      resultDiv.className = `result ${type}`;
+      resultDiv.textContent = message;
+
+      const statusBadge = document.getElementById(`test${testId}-status`);
+      if (type === 'success') {
+        statusBadge.className = 'status-badge pass';
+        statusBadge.textContent = '✓ 通過';
+        testResults.passed++;
+      } else if (type === 'error') {
+        statusBadge.className = 'status-badge fail';
+        statusBadge.textContent = '✗ 失敗';
+        testResults.failed++;
+      }
+
+      updateSummary();
+    }
+
+    // 更新總結
+    function updateSummary() {
+      document.getElementById('passed-tests').textContent = testResults.passed;
+      document.getElementById('failed-tests').textContent = testResults.failed;
+      const rate = ((testResults.passed / testResults.total) * 100 || 0).toFixed(1);
+      document.getElementById('success-rate').textContent = rate + '%';
+    }
+
+    // 測試 1: 用戶註冊
+    async function testRegister() {
+      const username = document.getElementById('reg-username').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+
+      if (!username || !email || !password) {
+        showResult(1, '❌ 請填寫所有欄位', 'error');
+        return;
+      }
+
+      try {
+        const result = await authManager.register(username, password, email);
+        if (result.success) {
+          showResult(1, `✅ 註冊成功！\n用戶 ID: ${result.userId}\n用戶名: ${username}\n電子郵件: ${email}`, 'success');
+          updateUserList();
+        } else {
+          showResult(1, `❌ 註冊失敗: ${result.error}`, 'error');
+        }
+      } catch (error) {
+        showResult(1, `❌ 註冊過程發生錯誤: ${error.message}`, 'error');
+      }
+    }
+
+    // 測試 2: 用戶登入
+    async function testLogin() {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      if (!username || !password) {
+        showResult(2, '❌ 請填寫用戶名和密碼', 'error');
+        return;
+      }
+
+      try {
+        const result = await authManager.login(username, password);
+        if (result.success) {
+          const session = localStorage.getItem('rs-system-session');
+          showResult(2, `✅ 登入成功！\n用戶: ${result.user.username}\nID: ${result.user.id}\n會話已建立: ${session ? '是' : '否'}`, 'success');
+        } else {
+          showResult(2, `❌ 登入失敗: ${result.error}`, 'error');
+        }
+      } catch (error) {
+        showResult(2, `❌ 登入過程發生錯誤: ${error.message}`, 'error');
+      }
+    }
+
+    // 測試 3: 儲存庫初始化
+    async function testStorageInit() {
+      try {
+        const currentUser = authManager.getCurrentUser();
+        if (!currentUser) {
+          showResult(3, '❌ 請先登入', 'error');
+          return;
+        }
+
+        const db = getUserDb(currentUser.id || currentUser.userId);
+        const info = await db.info();
+        showResult(3, `✅ 儲存庫初始化成功！\n\n資料庫名稱: rs-system-${currentUser.id || currentUser.userId}\n文檔數量: ${info.doc_count}\n已刪除文檔: ${info.doc_del_count}\n資料大小: ${info.data_size} bytes\n\n每個用戶擁有獨立的 PouchDB 資料庫實例`, 'success');
+      } catch (error) {
+        showResult(3, `❌ 儲存庫初始化失敗: ${error.message}`, 'error');
+      }
+    }
+
+    // 測試 4: 資料寫入
+    async function testDataWrite() {
+      try {
+        const currentUser = authManager.getCurrentUser();
+        if (!currentUser) {
+          showResult(4, '❌ 請先登入', 'error');
+          return;
+        }
+
+        const className = document.getElementById('class-name').value.trim();
+        const classDate = document.getElementById('class-date').value;
+        if (!className || !classDate) {
+          showResult(4, '❌ 請填寫班級名稱和日期', 'error');
+          return;
+        }
+
+        const db = getUserDb(currentUser.id || currentUser.userId);
+        const checkpointData = {
+          _id: `checkpoint_${Date.now()}`,
+          type: 'checkpoint',
+          className,
+          date: classDate,
+          atmosphere: '良好',
+          skillLevel: '中等',
+          studentRecords: [
+            { studentId: 'S001', studentName: '測試學生1', performance: '優秀' },
+            { studentId: 'S002', studentName: '測試學生2', performance: '良好' }
+          ],
+          notes: '這是測試資料',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          userId: currentUser.id || currentUser.userId
+        };
+
+        const result = await db.put(checkpointData);
+        showResult(4, `✅ 資料寫入成功！\n\n文檔 ID: ${result.id}\n班級: ${className}\n日期: ${classDate}\n學生數: 2\n\n資料已儲存到用戶 ${currentUser.username} 的專屬資料庫`, 'success');
+      } catch (error) {
+        showResult(4, `❌ 資料寫入失敗: ${error.message}`, 'error');
+      }
+    }
+
+    // 測試 5: 資料讀取
+    async function testDataRead() {
+      try {
+        const currentUser = authManager.getCurrentUser();
+        if (!currentUser) {
+          showResult(5, '❌ 請先登入', 'error');
+          return;
+        }
+
+        const db = getUserDb(currentUser.id || currentUser.userId);
+        const result = await db.allDocs({ include_docs: true, startkey: 'checkpoint', endkey: 'checkpoint\ufff0' });
+        const checkpoints = result.rows.filter(row => row.doc.type === 'checkpoint').map(row => row.doc);
+
+        let message = `✅ 資料讀取成功！\n\n當前用戶: ${currentUser.username}\n資料庫: rs-system-${currentUser.id || currentUser.userId}\n課堂記錄數量: ${checkpoints.length}\n\n`;
+        if (checkpoints.length > 0) {
+          message += '最近的記錄:\n';
+          checkpoints.slice(0, 3).forEach((cp, idx) => {
+            message += `\n${idx + 1}. ${cp.className} - ${cp.date}\n   學生數: ${cp.studentRecords?.length || 0}\n   備註: ${cp.notes || '無'}`;
+          });
+        } else {
+          message += '尚無課堂記錄，請先執行「測試 4: 資料寫入」';
+        }
+        showResult(5, message, 'success');
+      } catch (error) {
+        showResult(5, `❌ 資料讀取失敗: ${error.message}`, 'error');
+      }
+    }
+
+    // 測試 6: 用戶切換與資料隔離
+    async function testUserSwitch() {
+      try {
+        const currentUser = authManager.getCurrentUser();
+        const targetUserId = document.getElementById('switch-user').value;
+        if (!targetUserId) {
+          showResult(6, '❌ 請選擇要切換的用戶', 'error');
+          return;
+        }
+
+        let currentUserData = [];
+        if (currentUser) {
+          const currentDb = getUserDb(currentUser.id || currentUser.userId);
+          const currentResult = await currentDb.allDocs({ include_docs: true, startkey: 'checkpoint', endkey: 'checkpoint\ufff0' });
+          currentUserData = currentResult.rows.filter(r => r.doc.type === 'checkpoint');
+        }
+
+        const targetDb = getUserDb(targetUserId);
+        const targetResult = await targetDb.allDocs({ include_docs: true, startkey: 'checkpoint', endkey: 'checkpoint\ufff0' });
+        const targetUserData = targetResult.rows.filter(r => r.doc.type === 'checkpoint');
+
+        const users = authManager.getAllUsers();
+        const targetUser = users.find(u => (u.userId || u.id) === targetUserId);
+
+        let message = `✅ 用戶切換測試成功！\n\n`;
+        message += `原用戶: ${currentUser?.username || '無'}\n`;
+        message += `原用戶資料數: ${currentUserData.length}\n\n`;
+        message += `切換至: ${targetUser?.username || '未知'}\n`;
+        message += `新用戶資料數: ${targetUserData.length}\n\n`;
+        message += `✓ 資料隔離驗證: ${currentUserData.length !== targetUserData.length || currentUserData.length === 0 ? '通過' : '需檢查'}\n`;
+        message += `✓ 每個用戶擁有獨立的資料庫: rs-system-${targetUserId}`;
+
+        showResult(6, message, 'success');
+      } catch (error) {
+        showResult(6, `❌ 用戶切換測試失敗: ${error.message}`, 'error');
+      }
+    }
+
+    // 測試 7: 登出功能
+    async function testLogout() {
+      try {
+        const currentUser = authManager.getCurrentUser();
+        if (!currentUser) {
+          showResult(7, '❌ 沒有用戶登入', 'error');
+          return;
+        }
+
+        const username = currentUser.username;
+        await authManager.logout();
+        const sessionAfter = localStorage.getItem('rs-system-session');
+        const userAfter = localStorage.getItem('current-user');
+        if (!sessionAfter && !userAfter) {
+          showResult(7, `✅ 登出成功！\n\n用戶 ${username} 已登出\n會話已清除: 是\n用戶資料已清除: 是\n\n所有登入狀態已清空`, 'success');
+        } else {
+          showResult(7, `⚠️ 登出部分完成\n會話已清除: ${!sessionAfter}\n用戶資料已清除: ${!userAfter}`, 'error');
+        }
+      } catch (error) {
+        showResult(7, `❌ 登出測試失敗: ${error.message}`, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

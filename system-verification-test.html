@@ -82,10 +82,101 @@
     <div id="keyAnalysis"></div>
   </div>
 
-  <script src="user-auth.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
+  <script src="logger-service.js"></script>
+  <script src="system.js"></script>
   <script>
     let testResults = { total: 0, passed: 0, failed: 0, warnings: 0 };
     let testLogs = [];
+
+    // 輕量認證管理器（內嵌版本，取代 user-auth.js）
+    const AUTH_KEYS = { USERS: 'rs-system-users', SESSION: 'rs-system-session' };
+
+    const authManager = {
+      _hashPassword(password) {
+        let hash = 0;
+        for (let i = 0; i < password.length; i++) {
+          const char = password.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash;
+        }
+        return Math.abs(hash).toString(16);
+      },
+      _loadUsers() {
+        try { return JSON.parse(localStorage.getItem(AUTH_KEYS.USERS) || '{}'); } catch { return {}; }
+      },
+      _saveUsers(users) {
+        localStorage.setItem(AUTH_KEYS.USERS, JSON.stringify(users));
+      },
+      _createSession(user) {
+        const session = {
+          userId: user.userId,
+          username: user.username,
+          sessionId: `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 24 * 60 * 60 * 1000
+        };
+        localStorage.setItem(AUTH_KEYS.SESSION, JSON.stringify(session));
+        localStorage.setItem('current-user', JSON.stringify({
+          id: user.userId,
+          userId: user.userId,
+          username: user.username,
+          email: user.email || '',
+          role: user.role || 'user'
+        }));
+        return session;
+      },
+      getCurrentUser() {
+        try {
+          const session = JSON.parse(localStorage.getItem(AUTH_KEYS.SESSION) || 'null');
+          if (!session || Date.now() > session.expiresAt) return null;
+          const users = this._loadUsers();
+          return Object.values(users).find(u => u.userId === session.userId) || null;
+        } catch { return null; }
+      },
+      async register(username, password, email = '', role = 'user') {
+        const users = this._loadUsers();
+        if (Object.values(users).some(u => u.username === username)) {
+          return { success: false, error: '使用者名稱已存在' };
+        }
+        const userId = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        users[userId] = {
+          userId,
+          username,
+          email,
+          role,
+          passwordHash: this._hashPassword(password),
+          createdAt: new Date().toISOString(),
+          lastLogin: null
+        };
+        this._saveUsers(users);
+        return { success: true, userId };
+      },
+      async login(username, password) {
+        const users = this._loadUsers();
+        const user = Object.values(users).find(u => u.username === username);
+        if (!user) return { success: false, error: '使用者名稱或密碼錯誤' };
+        if (this._hashPassword(password) !== user.passwordHash) {
+          return { success: false, error: '使用者名稱或密碼錯誤' };
+        }
+        user.lastLogin = new Date().toISOString();
+        this._saveUsers(users);
+        this._createSession(user);
+        return { success: true, user: { userId: user.userId, username: user.username } };
+      },
+      async logout() {
+        localStorage.removeItem(AUTH_KEYS.SESSION);
+        localStorage.removeItem('current-user');
+        return { success: true };
+      },
+      getAllUsers() {
+        return Object.values(this._loadUsers());
+      },
+      getUserStats() {
+        const users = this.getAllUsers();
+        return { totalUsers: users.length, users };
+      }
+    };
 
     // ============ 測試工具函數 ============
     function log(message, type = 'info') {
@@ -470,7 +561,7 @@
           </ul>
           <p><strong>⚠️ 可優化項目:</strong></p>
           <ul>
-            <li>⚠ app.js 檔案過大 (1153 行) - 建議拆分為多個模組</li>
+            <li>⚠ system.js 為單檔整合，建議拆分模組提升可維護性</li>
             <li>⚠ 部分函數巢狀層級較深 (3-4 層) - 可提取子函數</li>
             <li>⚠ 重複的資料轉換邏輯 - 可建立統一轉換層</li>
           </ul>
