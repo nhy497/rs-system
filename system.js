@@ -402,7 +402,14 @@ const LOGIN_MANAGER = {
 
   logout() {
     try {
+      const currentUser = this.getCurrentUser();
       const session = JSON.parse(localStorage.getItem('rs-system-session') || '{}');
+      
+      // 記錄登出事件
+      if (typeof loggerService !== 'undefined') {
+        loggerService.logSystemEvent('logout', `用戶 ${currentUser?.username || '未知'} 已登出`, 'info');
+      }
+      
       localStorage.removeItem('rs-system-session');
       localStorage.removeItem('current-user');
       
@@ -1665,6 +1672,15 @@ function doExportCsv() {
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
   a.download = '跳繩課堂Checkpoint_' + todayStr() + '.csv';
   a.click();
+  
+  // 記錄導出操作
+  if (typeof loggerService !== 'undefined') {
+    loggerService.logCoachAction('export_csv', `導出 ${list.length} 筆課堂記錄`, {
+      recordCount: list.length,
+      format: 'csv'
+    });
+  }
+  
   toast('已匯出 CSV');
 }
 
@@ -1676,6 +1692,15 @@ function deleteRecord(classDate, className) {
   if (i >= 0) {
     list.splice(i, 1);
     saveRecords(list);
+    
+    // 記錄刪除操作
+    if (typeof loggerService !== 'undefined') {
+      loggerService.logCoachAction('delete_record', `刪除課堂記錄：${className || '未設定班級'}`, {
+        className: className,
+        date: classDate
+      });
+    }
+    
     populateGlobalFilterClass();
     populateQuickSelectClass();
     refreshStats();
@@ -1953,6 +1978,40 @@ document.addEventListener('DOMContentLoaded', () => {
   LOGIN_MANAGER.init();
   UI_MANAGER.init();
 
+  // 初始化 PouchDB（如果可用）
+  if (typeof PouchDB !== 'undefined') {
+    (async () => {
+      try {
+        const currentUser = LOGIN_MANAGER.getCurrentUser();
+        const userId = currentUser?.id || 'guest';
+        const dbName = `rs-system-${userId}`;
+        
+        // 創建用戶隔離的數據庫
+        const db = new PouchDB(dbName);
+        
+        // 初始化儲存服務
+        await storageService.init(db);
+        
+        console.log(`✅ PouchDB 初始化成功: ${dbName}`);
+        
+        // 記錄系統事件
+        if (typeof loggerService !== 'undefined') {
+          loggerService.logSystemEvent('pouchdb_init', `PouchDB 數據庫初始化: ${dbName}`, 'info');
+        }
+      } catch (error) {
+        console.error('❌ PouchDB 初始化失敗:', error);
+        if (typeof loggerService !== 'undefined') {
+          loggerService.logSystemEvent('pouchdb_init_error', `PouchDB 初始化失敗: ${error.message}`, 'error');
+        }
+      }
+    })();
+  } else {
+    console.warn('⚠️ PouchDB 庫未加載，將使用 localStorage 進行存儲');
+    if (typeof loggerService !== 'undefined') {
+      loggerService.logSystemEvent('pouchdb_unavailable', 'PouchDB 庫未加載，使用 localStorage', 'warning');
+    }
+  }
+
   // 登出功能
   const btnLogout = $('btnLogout');
   if (btnLogout) {
@@ -2055,9 +2114,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const list = parseRecords();
     const i = list.findIndex(r => r.classDate === d.classDate && r.className === d.className);
+    const isNew = i < 0;
     if (i >= 0) list[i] = d; else list.push(d);
     list.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
     saveRecords(list);
+    
+    // 記錄教練操作
+    if (typeof loggerService !== 'undefined') {
+      const action = isNew ? 'create_record' : 'update_record';
+      const details = `${isNew ? '新增' : '更新'}課堂記錄`;
+      const metadata = {
+        className: d.className,
+        date: d.classDate,
+        classSize: d.classSize,
+        atmosphere: d.atmosphere
+      };
+      loggerService.logCoachAction(action, details, metadata);
+    }
     
     if (d.className.trim()) {
       addClassPreset(d.className);
@@ -2155,8 +2228,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 頁面卸載時保存數據
 window.addEventListener('beforeunload', () => {
+  // 保存到 localStorage
   if (STORAGE_MANAGER.cache.checkpoints) {
     STORAGE_MANAGER.saveCheckpoints(STORAGE_MANAGER.cache.checkpoints);
+  }
+  
+  // 如果 PouchDB 可用，停止變動監聽並同步
+  if (typeof storageService !== 'undefined' && storageService.changesFeed) {
+    try {
+      storageService.stopChangesFeed();
+      console.log('✅ PouchDB 監聽已停止');
+    } catch (error) {
+      console.error('⚠️ PouchDB 停止失敗:', error);
+    }
+  }
+  
+  // 記錄應用卸載
+  if (typeof loggerService !== 'undefined') {
+    loggerService.logSystemEvent('app_unload', '應用已卸載', 'info');
   }
 });
 
