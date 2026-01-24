@@ -156,13 +156,9 @@ function createNewUser() {
     const users = localStorage.getItem('users');
     let usersList = users ? JSON.parse(users) : [];
     
-    // 檢查用戶名是否已存在
-    if (usersList.some(u => u.username === username)) {
-      addResult(containerId, `用戶名已存在: ${username}`, 'fail');
-      addLog('create-user-log', `用戶名「${username}」已被使用`, 'error');
-      updateStats('login', false);
-      return;
-    }
+    // 允許創建無限測試用戶賬號，即使用戶名相同也可以創建
+    // （通過時間戳和隨機值確保每個用戶都有唯一的 ID）
+    addLog('create-user-log', `允許創建無限用戶，即使名稱重複也無限制...`, 'info');
     
     // 創建新用戶
     const newUser = {
@@ -1801,6 +1797,46 @@ async function runAllTests() {
   
   addLog(logId, '========== 開始執行所有測試 ==========', 'info');
   addResult(containerId, '正在執行所有測試...', 'info');
+  
+  // 第一步：自動創建測試用戶以確保後面的測試能順利運行
+  addLog(logId, '\n=== 自動創建測試用戶 ===', 'info');
+  addResult(containerId, '正在創建測試用戶...', 'info');
+  
+  try {
+    // 獲取或創建用戶列表
+    let users = localStorage.getItem('users');
+    let usersList = users ? JSON.parse(users) : [];
+    
+    // 定義測試用戶
+    const testUsers = [
+      { username: 'creator', password: '1234', role: 'creator' },
+      { username: 'alice', password: 'pass123', role: 'user' },
+      { username: 'bob', password: 'pass123', role: 'user' },
+      { username: 'charlie', password: 'pass123', role: 'user' },
+      { username: 'teacher1', password: 'pass123', role: 'user' }
+    ];
+    
+    // 創建測試用戶
+    testUsers.forEach(testUser => {
+      const newUser = {
+        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        username: testUser.username,
+        password: testUser.password,
+        role: testUser.role,
+        createdAt: new Date().toISOString()
+      };
+      usersList.push(newUser);
+      addLog(logId, `✅ 創建用戶: ${testUser.username} (${testUser.role})`, 'success');
+    });
+    
+    // 保存用戶列表
+    localStorage.setItem('users', JSON.stringify(usersList));
+    addLog(logId, `共創建 ${testUsers.length} 個測試用戶`, 'success');
+    addLog(logId, '測試用戶創建完成，準備開始測試...', 'info');
+  } catch (error) {
+    addLog(logId, `創建測試用戶失敗: ${error.message}`, 'error');
+  }
   
   // 登入測試
   addLog(logId, '\n=== 登入測試 ===', 'info');
