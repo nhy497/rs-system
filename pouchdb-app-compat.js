@@ -1,111 +1,65 @@
 /**
  * PouchDB 與 app.js 相容層
- * 攔截並重新路由所有存儲操作到 PouchDB
- * 在 pouchdb-integration.js 後、app.js 前加載
+ * 攔截 app.js 的 localStorage 存取，改為走 PouchDB。
+ * 需在 app.js 之後載入，才能覆蓋同名函式。
  */
 
-/**
- * 全局事件監聽器 - 用於刷新 UI
- */
-window.onAppReady = async function() {
-  console.log('🎨 應用 UI 準備完成，初始化數據...');
-  
-  try {
-    // 刷新所有視圖
-    if (window.refreshAllViews) {
-      window.refreshAllViews();
-    }
-  } catch (error) {
-    console.error('❌ 初始化失敗:', error);
-  }
+// 保存原有實作，必要時回退
+const legacyFns = {
+  parseRecords: window.parseRecords,
+  saveRecords: window.saveRecords,
+  getClassPresets: window.getClassPresets,
+  saveClassPresets: window.saveClassPresets,
+  addClassPreset: window.addClassPreset,
+  removeClassPreset: window.removeClassPreset
 };
 
-/**
- * 刷新所有視圖
- */
-window.refreshAllViews = async function() {
-  try {
-    // 加載課堂記錄
-    const checkpoints = await storageAdapter.getAllCheckpoints();
-    
-    // 重新排序（最新優先）
-    checkpoints.sort((a, b) => {
-      const dateA = a.date || a.classDate || '';
-      const dateB = b.date || b.classDate || '';
-      return dateB.localeCompare(dateA);
-    });
-    
-    // 刷新統計視圖
-    if (window.refreshOverview) {
-      window.refreshOverview(checkpoints);
-    }
-    
-    // 刷新分析視圖
-    if (window.refreshAnalytics) {
-      window.refreshAnalytics();
-    }
-    
-    // 更新班級下拉選單
-    if (window.populateGlobalFilterClass) {
-      window.populateGlobalFilterClass();
-    }
-    
-    if (window.populateQuickSelectClass) {
-      window.populateQuickSelectClass();
-    }
-  } catch (error) {
-    console.error('❌ 刷新視圖失敗:', error);
-  }
-};
+// 將 PouchDB 文件轉為 app.js 期望的形狀
+function normalizeCheckpoint(doc) {
+  if (!doc) return null;
+  const classDate = doc.date || doc.classDate || '';
+  return {
+    id: doc.id || doc._id,
+    _id: doc._id,
+    _rev: doc._rev,
+    classDate,
+    date: classDate,
+    className: doc.className || '',
+    classSize: doc.classSize ?? null,
+    atmosphere: doc.atmosphere ?? '',
+    skillLevel: doc.skillLevel ?? '',
+    studentRecords: Array.isArray(doc.studentRecords) ? doc.studentRecords : [],
+    notes: doc.notes || '',
+    tricks: Array.isArray(doc.tricks) ? doc.tricks : [],
+    engagement: doc.engagement,
+    classStartTime: doc.classStartTime || '',
+    classEndTime: doc.classEndTime || '',
+    classDurationMins: doc.classDurationMins ?? null,
+    ...doc
+  };
+}
 
-/**
- * 攔截 parseRecords 函數 - 使用 PouchDB
- */
-const originalParseRecords = window.parseRecords;
-window.parseRecords = async function() {
-  try {
-    if (!storageAdapter.isReady()) {
-      console.warn('⚠️ 儲存適配層尚未準備，使用本地快取');
-      return storageAdapter.cacheData['checkpoints'] || [];
-    }
-    
-    const checkpoints = await storageAdapter.getAllCheckpoints();
-    
-    // 轉換為 app.js 期望的格式
-    return checkpoints.map(doc => ({
-      id: doc._id,
-      classDate: doc.date || doc.classDate,
-      className: doc.className,
-      classSize: doc.classSize,
-      atmosphere: doc.atmosphere,
-      skillLevel: doc.skillLevel,
-      studentRecords: doc.studentRecords || [],
-      notes: doc.notes,
-      tricks: doc.tricks || [],
-      engagement: doc.engagement,
-      classStartTime: doc.classStartTime,
-      classEndTime: doc.classEndTime,
-      ...doc // 保留所有其他欄位
-    }));
-  } catch (error) {
-    console.error('❌ 解析記錄失敗:', error);
-    return [];
-  }
-};
+function getCachedCheckpoints() {
+  if (!storageAdapter || !storageAdapter.cacheData['checkpoints']) return null;
+  return storageAdapter.cacheData['checkpoints'].map(normalizeCheckpoint).filter(Boolean);
+}
 
-/**
- * 攔截 saveRecords 函數 - 使用 PouchDB
- */
-window.saveRecords = async function(arr) {
-  try {
-    if (!storageAdapter.isReady()) {
-      console.error('❌ 儲存適配層尚未準備');
-      throw new Error('儲存系統未準備就緒');
+function overrideStorageLayer() {
+  // 解析課堂記錄（同步）
+  window.parseRecords = function() {
+    const cached = getCachedCheckpoints();
+    if (cached) return cached;
+    return legacyFns.parseRecords ? legacyFns.parseRecords() : [];
+  };
+
+  // 儲存課堂記錄（若 PouchDB 就緒則寫入，否則回退）
+  window.saveRecords = async function(arr) {
+    if (!storageAdapter || !storageAdapter.isReady()) {
+      return legacyFns.saveRecords ? legacyFns.saveRecords(arr) : undefined;
     }
 
     for (const record of arr) {
-      // 準備要保存的資料
-      const checkpointData = {
+      const payload = {
         date: record.classDate || record.date,
         className: record.className,
         classSize: record.classSize,
@@ -117,136 +71,182 @@ window.saveRecords = async function(arr) {
         engagement: record.engagement,
         classStartTime: record.classStartTime,
         classEndTime: record.classEndTime,
+        classDurationMins: record.classDurationMins,
         ...record
       };
 
-      // 如果有 ID，表示是更新
-      if (record.id) {
-        await storageAdapter.updateCheckpoint(record.id, checkpointData);
+      const docId = record.id || record._id;
+      if (docId) {
+        await storageAdapter.updateCheckpoint(docId, payload);
       } else {
-        // 新增記錄
-        const result = await storageAdapter.addCheckpoint(checkpointData);
-        record.id = result.id; // 保存返回的 ID
+        const result = await storageAdapter.addCheckpoint(payload);
+        record.id = result.id;
       }
     }
 
-    console.log('✅ 記錄已保存到 PouchDB');
-  } catch (error) {
-    console.error('❌ 保存記錄失敗:', error);
-    throw error;
-  }
-};
-
-/**
- * 攔截 getClassPresets 函數
- */
-window.getClassPresets = async function() {
-  try {
-    if (!storageAdapter.isReady()) {
-      return storageAdapter.cacheData['presets'] || [];
+    await storageAdapter._loadCacheFromDB();
+    if (window.refreshAllViews) {
+      await window.refreshAllViews();
     }
-    
-    return await storageAdapter.getAllClassPresets();
-  } catch (error) {
-    console.error('❌ 取得班級預設失敗:', error);
-    return [];
-  }
-};
+    return true;
+  };
 
-/**
- * 攔截 saveClassPresets 函數
- */
-window.saveClassPresets = async function(arr) {
-  try {
-    if (!storageAdapter.isReady()) {
-      console.error('❌ 儲存適配層尚未準備');
+  // 取得班級預設（同步，使用快取）
+  window.getClassPresets = function() {
+    if (storageAdapter?.isReady() && Array.isArray(storageAdapter.cacheData['presets'])) {
+      return [...storageAdapter.cacheData['presets']];
+    }
+    return legacyFns.getClassPresets ? legacyFns.getClassPresets() : [];
+  };
+
+  // 保存班級預設（非 async，避免破壞現有調用）
+  window.saveClassPresets = function(arr) {
+    if (!storageAdapter || !storageAdapter.isReady()) {
+      return legacyFns.saveClassPresets ? legacyFns.saveClassPresets(arr) : undefined;
+    }
+
+    const cleaned = Array.from(new Set((arr || []).map(c => (c || '').trim()).filter(Boolean)));
+    storageAdapter.getAllClassPresets()
+      .then(existing => {
+        const existingSet = new Set(existing);
+        const ops = [];
+
+        existing.forEach(name => {
+          if (!cleaned.includes(name)) {
+            ops.push(storageAdapter.deleteClassPreset(name));
+          }
+        });
+
+        cleaned.forEach(name => {
+          if (!existingSet.has(name)) {
+            ops.push(storageAdapter.addClassPreset(name));
+          }
+        });
+
+        return Promise.all(ops);
+      })
+      .then(() => storageAdapter._loadCacheFromDB())
+      .then(() => {
+        window.populateQuickSelectClass?.();
+        window.renderClassPresets?.();
+      })
+      .catch(err => console.error('❌ 保存班級預設失敗:', err));
+  };
+
+  // 新增班級預設（同步接口，內部異步執行）
+  window.addClassPreset = function(className) {
+    const name = (className || '').trim();
+    if (!name) return;
+
+    if (!storageAdapter || !storageAdapter.isReady()) {
+      legacyFns.addClassPreset?.(name);
       return;
     }
 
-    // 獲取現有預設
-    const existing = await storageAdapter.getAllClassPresets();
-    const existingNames = new Set(existing.map(p => p.className));
+    storageAdapter.getAllClassPresets()
+      .then(existing => {
+        if (existing.includes(name)) return null;
+        return storageAdapter.addClassPreset(name);
+      })
+      .then(() => storageAdapter._loadCacheFromDB())
+      .then(() => {
+        window.populateQuickSelectClass?.();
+        window.renderClassPresets?.();
+      })
+      .catch(err => console.error('❌ 新增班級預設失敗:', err));
+  };
 
-    // 刪除不在陣列中的預設
-    for (const preset of existing) {
-      if (!arr.includes(preset.className)) {
-        await storageAdapter.deleteClassPreset(preset.className);
-      }
-    }
+  // 刪除班級預設
+  window.removeClassPreset = function(className) {
+    const name = (className || '').trim();
+    if (!name) return;
 
-    // 新增陣列中不存在的預設
-    for (const className of arr) {
-      if (!existingNames.has(className)) {
-        await storageAdapter.addClassPreset(className);
-      }
-    }
-
-    console.log('✅ 班級預設已保存');
-  } catch (error) {
-    console.error('❌ 保存班級預設失敗:', error);
-  }
-};
-
-/**
- * 攔截 addClassPreset 函數
- */
-window.addClassPreset = async function(className) {
-  try {
-    if (!storageAdapter.isReady()) {
-      console.error('❌ 儲存適配層尚未準備');
+    if (!storageAdapter || !storageAdapter.isReady()) {
+      legacyFns.removeClassPreset?.(name);
       return;
     }
 
-    const presets = await storageAdapter.getAllClassPresets();
-    if (!presets.includes(className) && className.trim()) {
-      await storageAdapter.addClassPreset(className.trim());
-      console.log('✅ 班級預設已新增:', className);
+    storageAdapter.deleteClassPreset(name)
+      .then(() => storageAdapter._loadCacheFromDB())
+      .then(() => {
+        window.populateQuickSelectClass?.();
+        window.renderClassPresets?.();
+      })
+      .catch(err => console.error('❌ 刪除班級預設失敗:', err));
+  };
+}
+
+overrideStorageLayer();
+
+// 刷新所有視圖，使用最新的 PouchDB 快取
+window.refreshAllViews = async function() {
+  try {
+    const maybeList = window.parseRecords();
+    const checkpoints = maybeList instanceof Promise ? await maybeList : maybeList;
+
+    const sorted = [...checkpoints].sort((a, b) => {
+      const dateA = a.date || a.classDate || '';
+      const dateB = b.date || b.classDate || '';
+      return dateB.localeCompare(dateA);
+    });
+
+    if (window.refreshOverview) {
+      window.refreshOverview(sorted);
+    }
+
+    if (window.refreshAnalytics) {
+      window.refreshAnalytics();
+    }
+
+    if (window.populateGlobalFilterClass) {
+      window.populateGlobalFilterClass();
+    }
+
+    if (window.populateQuickSelectClass) {
+      window.populateQuickSelectClass();
     }
   } catch (error) {
-    console.error('❌ 新增班級預設失敗:', error);
+    console.error('❌ 刷新視圖失敗:', error);
   }
 };
 
-/**
- * 攔截 removeClassPreset 函數
- */
-window.removeClassPreset = async function(className) {
+// 啟動 PouchDB 並同步快取
+async function bootstrapPouchCompat() {
   try {
-    if (!storageAdapter.isReady()) {
-      console.error('❌ 儲存適配層尚未準備');
+    const ok = await initializeApp();
+    if (!ok) {
+      console.warn('⚠️ PouchDB 初始化失敗，回退至 legacy localStorage');
       return;
     }
 
-    await storageAdapter.deleteClassPreset(className);
-    console.log('✅ 班級預設已刪除:', className);
+    await storageAdapter._loadCacheFromDB();
+    if (window.refreshAllViews) {
+      await window.refreshAllViews();
+    }
   } catch (error) {
-    console.error('❌ 刪除班級預設失敗:', error);
+    console.error('❌ PouchDB 相容層啟動失敗:', error);
   }
-};
+}
 
-/**
- * 修補 app.js 的自動儲存行為
- * 攔截 btnSave 點擊事件
- */
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(async function() {
+document.addEventListener('DOMContentLoaded', () => {
+  // 保持與原本行為一致，僅在 DOM 就緒後啟動
+  bootstrapPouchCompat();
+
+  // 為舊的 btnSave 行為添加保護
+  setTimeout(() => {
     const btnSave = document.getElementById('btnSave');
-    
     if (btnSave) {
-      // 保存原有的事件監聽器
-      const originalClickHandler = btnSave.onclick;
-      
-      // 包裝成非同步版本
-      btnSave.addEventListener('click', async function(e) {
-        // 如果儲存適配層未準備，禁用保存
-        if (!storageAdapter.isReady()) {
+      btnSave.addEventListener('click', () => {
+        if (!storageAdapter || !storageAdapter.isReady()) {
           alert('⚠️ 儲存系統正在初始化，請稍候...');
-          return;
         }
       });
     }
   }, 500);
 });
+
+// 保留給其他模組的 onAppReady 勾點
+window.onAppReady = window.onAppReady || function() {};
 
 /**
  * 導出和匯入數據功能

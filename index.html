@@ -654,10 +654,12 @@
   <script src="crypto-keys.js"></script>
   <script src="user-auth.js"></script>
   <script src="pouchdb-integration.js"></script>
-  <script src="pouchdb-app-compat.js"></script>
   
-  <!-- 主應用 -->
+  <!-- 主應用 (需先載入，之後由相容層覆蓋存儲接口) -->
   <script src="app.js"></script>
+
+  <!-- PouchDB 相容層應在主應用後載入，確保覆蓋 parseRecords/saveRecords 等 -->
+  <script src="pouchdb-app-compat.js"></script>
   
   <!-- 初始化腳本 -->
   <script>

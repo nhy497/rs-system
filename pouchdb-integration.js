@@ -4,6 +4,44 @@
  * v1.0: 自動同步、事件監聽、相容原有函數
  */
 
+// 將 legacy localStorage 會話轉換為用戶 ID（與 authManager 未連動時使用）
+function getLegacyUserId() {
+  try {
+    const raw = localStorage.getItem('current-user');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed.id || parsed.userId || null;
+  } catch (e) {
+    console.warn('⚠️ 無法解析 legacy 用戶資訊:', e);
+    return null;
+  }
+}
+
+// 統一檢查點文件格式，補充 id 及 classDate 欄位
+function normalizeCheckpointDoc(doc) {
+  if (!doc) return null;
+  const classDate = doc.date || doc.classDate || '';
+  return {
+    id: doc._id || doc.id,
+    _id: doc._id,
+    _rev: doc._rev,
+    classDate,
+    date: classDate,
+    className: doc.className || '',
+    classSize: doc.classSize ?? null,
+    atmosphere: doc.atmosphere ?? '',
+    skillLevel: doc.skillLevel ?? '',
+    studentRecords: Array.isArray(doc.studentRecords) ? doc.studentRecords : [],
+    notes: doc.notes || '',
+    tricks: Array.isArray(doc.tricks) ? doc.tricks : [],
+    engagement: doc.engagement,
+    classStartTime: doc.classStartTime || '',
+    classEndTime: doc.classEndTime || '',
+    classDurationMins: doc.classDurationMins ?? null,
+    ...doc
+  };
+}
+
 /**
  * 儲存適配層 - 提供與原有 localStorage 相同的介面
  */
@@ -25,7 +63,8 @@ class StorageAdapter {
       await initializePouchDB();
 
       // 2. 設置用戶（如果已登入）
-      const userId = authManager.getCurrentUserId();
+      const legacyUserId = getLegacyUserId();
+      const userId = authManager.getCurrentUserId() || legacyUserId;
       if (!userId) {
         console.warn('⚠️ 未檢測到登入用戶，將使用臨時存儲');
         // 使用臨時用戶 ID
@@ -67,7 +106,7 @@ class StorageAdapter {
       const presets = await this.storage.getAllClassPresets();
 
       // 快取課堂記錄
-      this.cacheData['checkpoints'] = checkpoints;
+      this.cacheData['checkpoints'] = checkpoints.map(normalizeCheckpointDoc).filter(Boolean);
 
       // 快取班級預設（轉換為陣列格式）
       const presetNames = presets.map(p => p.className);
@@ -129,8 +168,9 @@ class StorageAdapter {
         return this.cacheData['checkpoints'];
       }
       const checkpoints = await this.storage.getAllCheckpoints();
-      this.cacheData['checkpoints'] = checkpoints;
-      return checkpoints;
+      const normalized = checkpoints.map(normalizeCheckpointDoc).filter(Boolean);
+      this.cacheData['checkpoints'] = normalized;
+      return normalized;
     } catch (error) {
       console.error('❌ 取得課堂記錄失敗:', error);
       return [];
