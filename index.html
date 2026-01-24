@@ -13,6 +13,9 @@
   <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js"></script>
   <!-- PouchDB 相容索引外掛 -->
   <script src="https://cdn.jsdelivr.net/npm/pouchdb-find@8.0.1/dist/pouchdb.find.min.js"></script>
+  
+  <!-- 系統核心模組（整合版） -->
+  <script src="system.js"></script>
 </head>
 <body>
   <div class="app">
@@ -648,229 +651,20 @@
   <!-- Toast -->
   <div id="toast" class="toast" hidden></div>
 
-  <!-- PouchDB 模組 -->
-  <script src="pouchdb-config.js"></script>
-  <script src="pouchdb-storage.js"></script>
-  <script src="crypto-keys.js"></script>
-  <script src="user-auth.js"></script>
-  <script src="pouchdb-integration.js"></script>
-  
-  <!-- 主應用 (需先載入，之後由相容層覆蓋存儲接口) -->
-  <script src="app.js"></script>
-
-  <!-- PouchDB 相容層應在主應用後載入，確保覆蓋 parseRecords/saveRecords 等 -->
-  <script src="pouchdb-app-compat.js"></script>
-  
-  <!-- 初始化腳本 -->
+  <!-- 會話檢查腳本 -->
   <script>
-    // 應用啟動
-    document.addEventListener('DOMContentLoaded', async function() {
-      console.log('═══════════════════════════════════════════════════');
-      console.log('🚀 應用啟動中... [時間戳: ' + new Date().toISOString() + ']');
-      console.log('═══════════════════════════════════════════════════');
-      
-      // 第一步：原始會話檢查（不要立即登出）
+    // 簡單會話檢查 - 確保用戶已登入
+    (function() {
       const session = localStorage.getItem('rs-system-session');
       const currentUser = localStorage.getItem('current-user');
-      
-      console.log('📋 第一步：原始會話檢查');
-      console.log('   rs-system-session:', session ? '✓ 存在 (' + session.length + ' 字節)' : '✗ 缺失');
-      console.log('   current-user:', currentUser ? '✓ 存在 (' + currentUser.length + ' 字節)' : '✗ 缺失');
-      
-      // 第二步：詳細驗證（嘗試修復而不是登出）
-      let isSessionValid = true;
-      let sessionData = null;
-      let userData = null;
-      
-      console.log('📋 第二步：詳細會話驗證');
-      
-      // 檢查 rs-system-session
-      if (!session) {
-        console.warn('⚠️ rs-system-session 缺失');
-        isSessionValid = false;
-      } else {
-        try {
-          sessionData = JSON.parse(session);
-          console.log('✅ rs-system-session JSON 格式正確');
-          console.log('   數據:', {
-            userId: sessionData.userId,
-            username: sessionData.username,
-            loginTime: sessionData.loginTime
-          });
-        } catch (e) {
-          console.error('❌ rs-system-session JSON 解析失敗:', e.message);
-          isSessionValid = false;
-        }
-      }
-      
-      // 檢查 current-user
-      if (!currentUser) {
-        console.warn('⚠️ current-user 缺失');
-        isSessionValid = false;
-      } else {
-        try {
-          userData = JSON.parse(currentUser);
-          console.log('✅ current-user JSON 格式正確');
-          console.log('   數據:', {
-            id: userData.id,
-            username: userData.username,
-            email: userData.email
-          });
-        } catch (e) {
-          console.error('❌ current-user JSON 解析失敗:', e.message);
-          isSessionValid = false;
-        }
-      }
-      
-      // 第三步：嘗試修復會話（而不是直接登出）
-      console.log('📋 第三步：會話修復');
-      
-      if (!isSessionValid && (session || currentUser)) {
-        console.log('⚠️ 檢測到不完整的會話，嘗試修復...');
-        
-        // 如果 current-user 存在但 rs-system-session 不存在，重建會話
-        if (userData && !sessionData) {
-          console.log('📝 從 current-user 重建 rs-system-session...');
-          try {
-            const rebuiltSession = {
-              userId: userData.id,
-              username: userData.username,
-              loginTime: userData.loginTime || new Date().toISOString()
-            };
-            localStorage.setItem('rs-system-session', JSON.stringify(rebuiltSession));
-            sessionData = rebuiltSession;
-            console.log('✅ 會話已重建');
-            isSessionValid = true;
-          } catch (e) {
-            console.error('❌ 無法重建會話:', e.message);
-          }
-        }
-        
-        // 如果 rs-system-session 存在但 current-user 不存在，嘗試從會話推導
-        if (sessionData && !userData) {
-          console.log('📝 從 rs-system-session 重建 current-user...');
-          try {
-            const rebuiltUser = {
-              id: sessionData.userId,
-              username: sessionData.username,
-              email: null,
-              loginTime: sessionData.loginTime
-            };
-            localStorage.setItem('current-user', JSON.stringify(rebuiltUser));
-            userData = rebuiltUser;
-            console.log('✅ 用戶信息已重建');
-            isSessionValid = true;
-          } catch (e) {
-            console.error('❌ 無法重建用戶信息:', e.message);
-          }
-        }
-      }
-      
-      // 第四步：最終決策（只有在無法修復時才登出）
-      console.log('📋 第四步：最終決策');
-      
-      if (!isSessionValid || !sessionData || !userData) {
-        console.error('❌ 會話無效且無法修復，執行登出');
-        console.log('   sessionData:', sessionData ? '✓' : '✗');
-        console.log('   userData:', userData ? '✓' : '✗');
-        
-        // 清除所有會話
-        localStorage.removeItem('rs-system-session');
-        localStorage.removeItem('current-user');
-        console.log('✅ 已清除所有會話數據');
-        
-        console.log('🔄 重定向到登入頁面...');
+
+      if (!session || !currentUser) {
+        console.warn('⚠️ 會話無效，重定向到登入頁面');
         window.location.href = 'login.html';
-        return;
+      } else {
+        console.log('✅ 會話有效，應用將啟動');
       }
-      
-      console.log('✅ 會話驗證成功！用戶 ' + userData.username + ' 已登入');
-      
-      // 第五步：初始化應用（但失敗不會登出用戶）
-      console.log('📋 第五步：應用初始化');
-      try {
-        const success = await initializeApp();
-        if (success) {
-          console.log('✅ 應用初始化成功');
-        } else {
-          console.warn('⚠️ 應用初始化失敗，但用戶會話保持有效');
-        }
-      } catch (err) {
-        console.error('⚠️ 應用初始化出錯，但用戶會話保持有效:', err.message);
-      }
-      
-      // 第六步：更新UI
-      console.log('📋 第六步：更新UI');
-      try {
-        const userNameEl = document.getElementById('sidebarUserName');
-        const userRoleEl = document.getElementById('sidebarUserRole');
-        if (userNameEl && userData) {
-          userNameEl.textContent = userData.username || '未知用戶';
-          console.log('✅ 側邊欄用戶名已更新:', userData.username);
-        }
-        
-        // 顯示用戶角色
-        if (userRoleEl && userData) {
-          const role = userData.role || 'user';
-          userRoleEl.textContent = role === 'creator' ? '👑 Creator' : '👤 用戶';
-          console.log('✅ 側邊欄角色已更新:', role);
-        }
-        
-        // 根據角色控制「數據管理」菜單可見性
-        const navData = document.getElementById('navData');
-        if (navData && userData) {
-          const isCreator = userData.role === 'creator';
-          navData.hidden = !isCreator;
-          console.log('📊 數據管理菜單可見性:', isCreator ? '✓ 顯示' : '✗ 隱藏');
-        }
-      } catch (e) {
-        console.warn('⚠️ 無法更新UI，但用戶已登入');
-      }
-      
-      // 第七步：會話心跳（監控會話狀態）
-      console.log('📋 第七步：啟動會話心跳');
-      const heartbeatInterval = setInterval(() => {
-        const s = localStorage.getItem('rs-system-session');
-        const u = localStorage.getItem('current-user');
-        
-        if (!s && !u) {
-          console.warn('❌ 會話完全丟失，停止心跳並登出');
-          clearInterval(heartbeatInterval);
-          window.location.href = 'login.html';
-        } else if (!s || !u) {
-          console.warn('⚠️ 檢測到不完整會話，嘗試修復...');
-          // 嘗試修復
-          if (u && !s) {
-            try {
-              const user = JSON.parse(u);
-              localStorage.setItem('rs-system-session', JSON.stringify({
-                userId: user.id,
-                username: user.username,
-                loginTime: user.loginTime || new Date().toISOString()
-              }));
-              console.log('✅ 會話已自動修復');
-            } catch (e) {
-              console.error('❌ 修復失敗');
-            }
-          }
-        } else {
-          // 更新最後活動時間
-          try {
-            const session = JSON.parse(s);
-            session.lastActivity = new Date().toISOString();
-            localStorage.setItem('rs-system-session', JSON.stringify(session));
-          } catch (e) {
-            // 忽略
-          }
-        }
-      }, 30000); // 30秒檢查一次
-      
-      console.log('═══════════════════════════════════════════════════');
-      console.log('✅ 應用啟動完成！');
-      console.log('═══════════════════════════════════════════════════');
-    });
-      }
-    });
+    })();
   </script>
 </body>
 </html>
