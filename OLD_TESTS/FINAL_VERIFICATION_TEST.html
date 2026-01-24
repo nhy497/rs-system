@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RS System - 最終功能驗證</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft JhengHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 30px;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .header h1 { font-size: 2em; margin-bottom: 10px; }
+    .test-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #667eea;
+    }
+    .test-section h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .test-item {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .test-item h4 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+    .test-steps {
+      list-style: none;
+      padding-left: 0;
+    }
+    .test-steps li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+      color: #666;
+    }
+    .test-steps li:before {
+      content: "▹";
+      position: absolute;
+      left: 0;
+      color: #667eea;
+      font-weight: bold;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-badge.pass { background: #d4edda; color: #155724; }
+    .status-badge.pending { background: #fff3cd; color: #856404; }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    button, .btn-link {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    button:hover, .btn-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    .log-area {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      display: none;
+    }
+    .log-area.show { display: block; }
+    .success-box {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 20px;
+    }
+    .info-box {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎯 RS System 最終功能驗證</h1>
+      <p>GitHub 更新完成 - 完整功能測試</p>
+      <p style="font-size: 0.9em; margin-top: 10px; opacity: 0.9;">
+        Commit: 676e316 | Branch: main | Status: ✅ Pushed
+      </p>
+    </div>
+
+    <div class="info-box">
+      <strong>📦 已推送到 GitHub:</strong><br>
+      倉庫: <a href="https://github.com/nhy497/rs-system" target="_blank" style="color: #0c5460; font-weight: bold;">github.com/nhy497/rs-system</a><br>
+      提交訊息: feat: add sidebar collapse & fix login redirect<br>
+      新增文件: 5 個 | 修改文件: 3 個 | 總共插入: 1704 行
+    </div>
+
+    <!-- 測試 1: 登入功能 -->
+    <div class="test-section">
+      <h3>
+        <span>🔐</span>
+        測試 1: 登入功能與會話管理
+        <span class="status-badge pending">待測試</span>
+      </h3>
+      
+      <div class="test-item">
+        <h4>1.1 登入流程測試</h4>
+        <ul class="test-steps">
+          <li>訪問 login.html</li>
+          <li>輸入測試帳號 (creator / 1234)</li>
+          <li>驗證登入成功並重定向到 index.html</li>
+          <li>✅ 確認不會被重定向回 login.html（已修復）</li>
+        </ul>
+        <div class="btn-group">
+          <a href="http://localhost:8000/login.html" target="_blank" class="btn-link">🔗 測試登入</a>
+          <button onclick="testLogin()">自動測試登入</button>
+        </div>
+        <div id="login-log" class="log-area"></div>
+      </div>
+
+      <div class="test-item">
+        <h4>1.2 會話驗證機制</h4>
+        <ul class="test-steps">
+          <li>檢查會話數據結構（userId, sessionId, expiresAt）</li>
+          <li>驗證會話過期檢查（24小時）</li>
+          <li>✅ 確認 ipHash 驗證不會強制登出（已修復）</li>
+        </ul>
+        <div class="btn-group">
+          <button onclick="checkSession()">檢查當前會話</button>
+        </div>
+        <div id="session-log" class="log-area"></div>
+      </div>
+    </div>
+
+    <!-- 測試 2: 側邊欄功能 -->
+    <div class="test-section">
+      <h3>
+        <span>📱</span>
+        測試 2: 側邊欄收起功能
+        <span class="status-badge pending">待測試</span>
+      </h3>
+      
+      <div class="test-item">
+        <h4>2.1 收起按鈕顯示與交互</h4>
+        <ul class="test-steps">
+          <li>在 index.html 側邊欄用戶區找到「◄」按鈕</li>
+          <li>驗證按鈕樣式和 hover 效果</li>
+          <li>點擊按鈕測試收起功能</li>
+          <li>使用頂部「☰」按鈕重新打開側邊欄</li>
+        </ul>
+        <div class="btn-group">
+          <a href="http://localhost:8000/index.html" target="_blank" class="btn-link">🔗 測試側邊欄</a>
+          <button onclick="testSidebar()">檢查側邊欄元素</button>
+        </div>
+        <div id="sidebar-log" class="log-area"></div>
+      </div>
+
+      <div class="test-item">
+        <h4>2.2 移動設備適配</h4>
+        <ul class="test-steps">
+          <li>在移動設備視圖下測試（F12 → 切換設備模擬）</li>
+          <li>驗證按鈕尺寸和觸控區域</li>
+          <li>測試側邊欄在小屏幕的行為</li>
+        </ul>
+        <div class="btn-group">
+          <button onclick="simulateMobile()">模擬移動設備測試</button>
+        </div>
+        <div id="mobile-log" class="log-area"></div>
+      </div>
+    </div>
+
+    <!-- 測試 3: 整合測試 -->
+    <div class="test-section">
+      <h3>
+        <span>🔄</span>
+        測試 3: 完整流程整合測試
+        <span class="status-badge pending">待測試</span>
+      </h3>
+      
+      <div class="test-item">
+        <h4>3.1 完整用戶流程</h4>
+        <ol style="padding-left: 20px; color: #666; line-height: 2;">
+          <li>訪問 login.html</li>
+          <li>登入系統（creator / 1234）</li>
+          <li>驗證重定向到 index.html</li>
+          <li>使用側邊欄收起按鈕</li>
+          <li>使用頂部菜單打開側邊欄</li>
+          <li>刷新頁面驗證會話保持</li>
+          <li>測試登出功能</li>
+        </ol>
+        <div class="btn-group">
+          <button onclick="runFullTest()">執行完整流程測試</button>
+        </div>
+        <div id="full-log" class="log-area"></div>
+      </div>
+    </div>
+
+    <!-- 測試 4: GitHub 同步驗證 -->
+    <div class="test-section">
+      <h3>
+        <span>🌐</span>
+        測試 4: GitHub 同步驗證
+        <span class="status-badge pass">已完成</span>
+      </h3>
+      
+      <div class="test-item">
+        <h4>4.1 推送驗證</h4>
+        <ul class="test-steps">
+          <li>✅ 本地更改已提交 (Commit: 676e316)</li>
+          <li>✅ 已推送到遠程倉庫 (origin/main)</li>
+          <li>✅ 8 個文件已更新（5 新增 + 3 修改）</li>
+          <li>✅ GitHub 倉庫: nhy497/rs-system</li>
+        </ul>
+        <div class="btn-group">
+          <a href="https://github.com/nhy497/rs-system" target="_blank" class="btn-link">🔗 查看 GitHub 倉庫</a>
+          <a href="https://github.com/nhy497/rs-system/commit/676e316" target="_blank" class="btn-link">🔗 查看 Commit</a>
+        </div>
+      </div>
+
+      <div class="test-item">
+        <h4>4.2 檔案清單</h4>
+        <strong style="color: #28a745;">新增檔案:</strong>
+        <ul style="padding-left: 20px; color: #666; margin-top: 5px;">
+          <li>APP_JS_PATCH_SIDEBAR.txt</li>
+          <li>LOGIN_REDIRECT_FIX_REPORT_20260125.md</li>
+          <li>LOGIN_REDIRECT_FIX_TEST.html</li>
+          <li>SIDEBAR_COLLAPSE_FEATURE.html</li>
+          <li>SIDEBAR_COLLAPSE_GITHUB_GUIDE.md</li>
+        </ul>
+        <strong style="color: #007bff; display: block; margin-top: 10px;">修改檔案:</strong>
+        <ul style="padding-left: 20px; color: #666; margin-top: 5px;">
+          <li>index.html（新增側邊欄收起按鈕）</li>
+          <li>styles.css（新增按鈕樣式）</li>
+          <li>system.js（新增事件監聽器）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="success-box">
+      <h3 style="margin-bottom: 10px;">✅ GitHub 更新完成</h3>
+      <p><strong>提交雜湊:</strong> 676e316</p>
+      <p><strong>分支:</strong> main</p>
+      <p><strong>遠程倉庫:</strong> https://github.com/nhy497/rs-system</p>
+      <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #c3e6cb;">
+        <strong>包含功能:</strong><br>
+        ✅ 側邊欄快速收起按鈕<br>
+        ✅ 登入重定向問題修復<br>
+        ✅ 會話管理機制改進<br>
+        ✅ 完整測試文檔和指南
+      </p>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background: #e7f3ff; border-radius: 8px;">
+      <h3 style="color: #004085; margin-bottom: 15px;">🚀 快速開始測試</h3>
+      <div class="btn-group" style="justify-content: center;">
+        <a href="http://localhost:8000/login.html" target="_blank" class="btn-link">登入頁面</a>
+        <a href="http://localhost:8000/index.html" target="_blank" class="btn-link">主應用</a>
+        <a href="https://github.com/nhy497/rs-system" target="_blank" class="btn-link">GitHub 倉庫</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function addLog(logId, message, type = 'info') {
+      const logEl = document.getElementById(logId);
+      logEl.classList.add('show');
+      const time = new Date().toLocaleTimeString('zh-TW');
+      const icon = { info: 'ℹ️', success: '✅', error: '❌', warn: '⚠️' }[type] || 'ℹ️';
+      logEl.textContent += `[${time}] ${icon} ${message}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function testLogin() {
+      const logId = 'login-log';
+      document.getElementById(logId).textContent = '';
+      addLog(logId, '開始測試登入功能...', 'info');
+      
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      addLog(logId, `用戶數據庫: ${users.length} 個用戶`, 'info');
+      
+      const testUser = users.find(u => u.username === 'creator');
+      if (testUser) {
+        addLog(logId, '找到測試用戶: creator', 'success');
+        addLog(logId, `用戶 ID: ${testUser.id || testUser.userId}`, 'info');
+      } else {
+        addLog(logId, '未找到 creator 用戶，請先註冊', 'warn');
+      }
+      
+      addLog(logId, '請使用瀏覽器手動測試完整登入流程', 'info');
+    }
+
+    function checkSession() {
+      const logId = 'session-log';
+      document.getElementById(logId).textContent = '';
+      addLog(logId, '檢查當前會話...', 'info');
+      
+      const session = localStorage.getItem('rs-system-session');
+      const currentUser = localStorage.getItem('current-user');
+      
+      if (!session || !currentUser) {
+        addLog(logId, '未找到會話，請先登入', 'warn');
+        return;
+      }
+      
+      try {
+        const sessionData = JSON.parse(session);
+        const userData = JSON.parse(currentUser);
+        
+        addLog(logId, '會話數據解析成功', 'success');
+        addLog(logId, `用戶 ID: ${sessionData.userId}`, 'info');
+        addLog(logId, `會話 ID: ${sessionData.sessionId}`, 'info');
+        addLog(logId, `過期時間: ${new Date(sessionData.expiresAt).toLocaleString('zh-TW')}`, 'info');
+        
+        const timeLeft = ((sessionData.expiresAt - Date.now()) / 1000 / 60 / 60).toFixed(1);
+        addLog(logId, `剩餘時間: ${timeLeft} 小時`, 'info');
+        
+        if (sessionData.userId && sessionData.sessionId && userData.id) {
+          addLog(logId, '✅ 會話結構完整', 'success');
+        } else {
+          addLog(logId, '❌ 會話結構不完整', 'error');
+        }
+      } catch (error) {
+        addLog(logId, `解析失敗: ${error.message}`, 'error');
+      }
+    }
+
+    function testSidebar() {
+      const logId = 'sidebar-log';
+      document.getElementById(logId).textContent = '';
+      addLog(logId, '檢查側邊欄元素...', 'info');
+      
+      addLog(logId, '注意: 此測試在 index.html 頁面中才有效', 'warn');
+      addLog(logId, '請訪問 index.html 並：', 'info');
+      addLog(logId, '1. 查看側邊欄用戶區是否有「◄」按鈕', 'info');
+      addLog(logId, '2. 點擊按鈕測試收起功能', 'info');
+      addLog(logId, '3. 使用頂部「☰」按鈕重新打開', 'info');
+      addLog(logId, '4. 檢查 hover 效果是否正常', 'info');
+    }
+
+    function simulateMobile() {
+      const logId = 'mobile-log';
+      document.getElementById(logId).textContent = '';
+      addLog(logId, '移動設備模擬測試...', 'info');
+      addLog(logId, '請按 F12 打開開發者工具', 'info');
+      addLog(logId, '點擊「切換設備模擬」圖標', 'info');
+      addLog(logId, '選擇移動設備（如 iPhone 12）', 'info');
+      addLog(logId, '測試側邊欄在小屏幕的行為', 'info');
+      addLog(logId, '驗證按鈕尺寸和觸控區域', 'info');
+    }
+
+    function runFullTest() {
+      const logId = 'full-log';
+      document.getElementById(logId).textContent = '';
+      addLog(logId, '=== 完整流程測試 ===', 'info');
+      addLog(logId, '步驟 1: 訪問 login.html', 'info');
+      addLog(logId, '步驟 2: 登入（creator / 1234）', 'info');
+      addLog(logId, '步驟 3: 驗證重定向到 index.html', 'info');
+      addLog(logId, '步驟 4: 測試側邊欄收起', 'info');
+      addLog(logId, '步驟 5: 測試側邊欄打開', 'info');
+      addLog(logId, '步驟 6: 刷新頁面驗證會話', 'info');
+      addLog(logId, '步驟 7: 測試登出功能', 'info');
+      addLog(logId, '', 'info');
+      addLog(logId, '請按照上述步驟手動測試', 'warn');
+      addLog(logId, '每個步驟完成後檢查控制台日誌', 'info');
+    }
+
+    console.log('%c✅ 最終驗證頁面已加載', 'color: green; font-size: 16px; font-weight: bold;');
+    console.log('%c📦 GitHub 推送完成', 'color: blue; font-size: 14px;');
+    console.log('Commit: 676e316');
+    console.log('Branch: main');
+    console.log('Repository: https://github.com/nhy497/rs-system');
+  </script>
+</body>
+</html>

@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RS System - 統一系統測試</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+    .header p { opacity: 0.95; font-size: 1.1em; }
+    .nav-tabs {
+      display: flex;
+      background: #f8f9fa;
+      border-bottom: 2px solid #dee2e6;
+    }
+    .nav-tab {
+      flex: 1;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-size: 1em;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.3s;
+    }
+    .nav-tab:hover { background: #e9ecef; color: #667eea; }
+    .nav-tab.active {
+      background: white;
+      color: #667eea;
+      border-bottom: 3px solid #667eea;
+    }
+    .tab-content {
+      display: none;
+      padding: 30px;
+    }
+    .tab-content.active { display: block; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    .stat-card h3 { font-size: 2.5em; margin: 10px 0; }
+    .stat-card p { opacity: 0.9; font-size: 0.95em; }
+    .stat-card.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .stat-card.danger { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); }
+    .stat-card.warning { background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%); }
+    .test-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #667eea;
+    }
+    .test-section h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .test-controls {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95em;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    button.btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    button.btn-danger { background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%); }
+    button.btn-warning { background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%); }
+    .test-result {
+      margin: 10px 0;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.9em;
+    }
+    .test-result.pass {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+    .test-result.fail {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+    .test-result.warn {
+      background: #fff3cd;
+      color: #856404;
+      border-left: 4px solid #ffc107;
+    }
+    .test-result.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
+    .log-viewer {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 15px;
+      white-space: pre-wrap;
+    }
+    .log-viewer:empty:before {
+      content: '等待測試執行...';
+      color: #888;
+    }
+    .progress-bar {
+      height: 30px;
+      background: #ecf0f1;
+      border-radius: 15px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    .info-box {
+      background: #e7f3ff;
+      border: 1px solid #b3d9ff;
+      color: #004085;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .user-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: white;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .user-data-table th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+    .user-data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .user-data-table tr:hover {
+      background: #f8f9fa;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .badge.success { background: #d4edda; color: #155724; }
+    .badge.danger { background: #f8d7da; color: #721c24; }
+    .badge.warning { background: #fff3cd; color: #856404; }
+    .badge.info { background: #d1ecf1; color: #0c5460; }
+    
+    /* 登入表單樣式 */
+    .login-form {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 2px solid #e9ecef;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+      font-size: 0.95em;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 0.95em;
+      font-family: 'Microsoft JhengHei', sans-serif;
+      transition: border-color 0.3s;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group input[type="password"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    .radio-group {
+      margin-bottom: 15px;
+    }
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 6px;
+      transition: background 0.3s;
+    }
+    .radio-group label:hover {
+      background: #e9ecef;
+    }
+    .radio-group input[type="radio"] {
+      margin-right: 10px;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+    }
+    .form-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 RS System 統一測試中心</h1>
+      <p>登入狀態 | 資料儲存 | 用戶資料庫 | Creator 專屬界面</p>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('login')">🔐 登入測試</button>
+      <button class="nav-tab" onclick="switchTab('users')">👥 用戶管理</button>
+      <button class="nav-tab" onclick="switchTab('storage')">💾 資料儲存測試</button>
+      <button class="nav-tab" onclick="switchTab('database')">🗄️ 用戶資料庫測試</button>
+      <button class="nav-tab" onclick="switchTab('creator')">👤 Creator 界面測試</button>
+      <button class="nav-tab" onclick="switchTab('summary')">📊 測試總結</button>
+    </div>
+
+    <!-- 用戶管理 -->
+    <div id="tab-users" class="tab-content">
+      <div class="stats">
+        <div class="stat-card">
+          <p>用戶管理</p>
+          <h3 id="users-total">0</h3>
+        </div>
+        <div class="stat-card success">
+          <p>已創建</p>
+          <h3 id="users-created">0</h3>
+        </div>
+        <div class="stat-card warning">
+          <p>現有用戶</p>
+          <h3 id="users-existing">0</h3>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>➕</span> 1. 創建新用戶</h3>
+        <div class="info-box">
+          創建新的用戶帳號以便進行登入和資料儲存測試
+        </div>
+        
+        <div class="login-form">
+          <div class="form-group">
+            <label for="new-username">📝 用戶名</label>
+            <input type="text" id="new-username" placeholder="輸入用戶名 (例: testuser)">
+          </div>
+          
+          <div class="form-group">
+            <label for="new-password">🔑 密碼</label>
+            <input type="password" id="new-password" placeholder="輸入密碼 (例: password123)">
+          </div>
+          
+          <div class="form-group">
+            <label for="new-role">👤 角色</label>
+            <div class="radio-group">
+              <label>
+                <input type="radio" name="user-role" value="user" checked>
+                <strong>一般用戶</strong>
+              </label>
+              <label>
+                <input type="radio" name="user-role" value="creator">
+                <strong>Creator</strong>
+              </label>
+              <label>
+                <input type="radio" name="user-role" value="admin">
+                <strong>管理員</strong>
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-controls">
+            <button class="btn-success" onclick="createNewUser()">➕ 創建用戶</button>
+            <button onclick="refreshUserStats()">🔄 刷新統計</button>
+          </div>
+        </div>
+        
+        <div id="create-user-results"></div>
+        <div class="log-viewer" id="create-user-log"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>📊</span> 2. 用戶列表管理</h3>
+        <div class="test-controls">
+          <button onclick="listAllUsers()">📋 列出所有用戶</button>
+          <button onclick="searchUser()">🔍 搜尋用戶</button>
+          <button class="btn-danger" onclick="clearAllUsers()">🗑️ 清除所有用戶</button>
+        </div>
+        <div id="users-list-results"></div>
+        <table class="user-data-table" id="users-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>用戶 ID</th>
+              <th>用戶名</th>
+              <th>密碼</th>
+              <th>角色</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🧪</span> 3. 快速測試用戶</h3>
+        <div class="test-controls">
+          <button class="btn-success" onclick="createAndLoginTestUser()">🚀 創建並登入測試用戶</button>
+          <button onclick="createMultipleUsers()">👥 創建多個測試用戶</button>
+          <button onclick="testUserDataIsolation()">🔒 測試用戶資料隔離</button>
+        </div>
+        <div id="quick-test-results"></div>
+        <div class="log-viewer" id="quick-test-log"></div>
+      </div>
+    </div>
+
+    <!-- 登入測試 -->
+    <div id="tab-login" class="tab-content">
+      <div class="stats">
+        <div class="stat-card">
+          <p>登入測試</p>
+          <h3 id="login-total">0</h3>
+        </div>
+        <div class="stat-card success">
+          <p>通過</p>
+          <h3 id="login-pass">0</h3>
+        </div>
+        <div class="stat-card danger">
+          <p>失敗</p>
+          <h3 id="login-fail">0</h3>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🚀</span> 1. 自定義登入測試</h3>
+        <div class="info-box">
+          選擇登入方式並輸入用戶名和密碼進行登入測試
+        </div>
+        
+        <div class="login-form">
+          <div class="form-group">
+            <label>🔐 選擇登入方式</label>
+            <div class="radio-group">
+              <label>
+                <input type="radio" name="login-mode" value="creator" checked onchange="updateLoginMode()">
+                <strong>Creator 帳號</strong>
+                <span style="color: #666; margin-left: 5px;">(username: creator, password: 1234)</span>
+              </label>
+              <label>
+                <input type="radio" name="login-mode" value="random" onchange="updateLoginMode()">
+                <strong>隨機用戶</strong>
+                <span style="color: #666; margin-left: 5px;">(從現有用戶中隨機選擇)</span>
+              </label>
+              <label>
+                <input type="radio" name="login-mode" value="custom" onchange="updateLoginMode()">
+                <strong>自設用戶</strong>
+                <span style="color: #666; margin-left: 5px;">(輸入自定義用戶名和密碼)</span>
+              </label>
+            </div>
+          </div>
+          
+          <div id="custom-login-fields" style="display: none;">
+            <div class="form-group">
+              <label for="login-username">📝 用戶名</label>
+              <input type="text" id="login-username" placeholder="輸入用戶名">
+            </div>
+            <div class="form-group">
+              <label for="login-password">🔑 密碼</label>
+              <input type="password" id="login-password" placeholder="輸入密碼">
+            </div>
+          </div>
+          
+          <div class="form-controls">
+            <button class="btn-success" onclick="performCustomLogin()">🔓 執行登入</button>
+            <button class="btn-danger" onclick="performLogout()">🔒 執行登出</button>
+            <button onclick="showAvailableUsers()">👥 查看可用用戶</button>
+          </div>
+        </div>
+        
+        <div id="login-status-results"></div>
+        <div class="log-viewer" id="login-log"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🧪</span> 2. 預設登入場景測試</h3>
+        <div class="test-controls">
+          <button class="btn-success" onclick="testValidLogin()">✅ 測試有效登入 (creator/1234)</button>
+          <button class="btn-danger" onclick="testInvalidPassword()">❌ 測試無效密碼</button>
+          <button class="btn-danger" onclick="testInvalidUser()">❌ 測試無效用戶</button>
+          <button onclick="testLoginLogoutFlow()">🔄 測試登入/登出完整流程</button>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🔑</span> 3. 登入狀態驗證</h3>
+        <div class="test-controls">
+          <button onclick="testLoginStatus()">檢查登入狀態</button>
+          <button onclick="testSessionValidity()">驗證會話有效性</button>
+          <button onclick="testSessionData()">檢查會話數據結構</button>
+          <button class="btn-danger" onclick="clearSession()">清除會話</button>
+        </div>
+        <div id="login-status-results"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🔄</span> 4. 登入重定向測試</h3>
+        <div class="test-controls">
+          <button onclick="testLoginRedirect()">測試登入重定向</button>
+          <button onclick="testAutoLogout()">測試自動登出</button>
+          <button onclick="testSessionPersistence()">測試會話持久性</button>
+        </div>
+        <div id="redirect-results"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🛡️</span> 5. 安全性測試</h3>
+        <div class="test-controls">
+          <button onclick="testSessionExpiry()">測試會話過期</button>
+          <button onclick="testIpHashValidation()">測試 IP Hash 驗證</button>
+        </div>
+        <div id="security-results"></div>
+      </div>
+    </div>
+
+    <!-- 資料儲存測試 -->
+    <div id="tab-storage" class="tab-content">
+      <div class="stats">
+        <div class="stat-card">
+          <p>儲存測試</p>
+          <h3 id="storage-total">0</h3>
+        </div>
+        <div class="stat-card success">
+          <p>通過</p>
+          <h3 id="storage-pass">0</h3>
+        </div>
+        <div class="stat-card danger">
+          <p>失敗</p>
+          <h3 id="storage-fail">0</h3>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>💾</span> 1. 登入資料儲存</h3>
+        <div class="test-controls">
+          <button onclick="testLoginDataStorage()">測試登入資料儲存</button>
+          <button onclick="testUserDataPersistence()">測試用戶資料持久性</button>
+          <button onclick="viewStoredLoginData()">查看儲存的登入資料</button>
+        </div>
+        <div id="storage-login-results"></div>
+        <div class="log-viewer" id="storage-log"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>📝</span> 2. 課堂內容儲存測試</h3>
+        <div class="info-box">
+          測試登入後記錄的課堂內容是否正確儲存到對應用戶賬號的資料庫
+        </div>
+        <div class="test-controls">
+          <button onclick="testClassContentStorage()">測試課堂內容儲存</button>
+          <button onclick="testUserSpecificStorage()">測試用戶專屬儲存</button>
+          <button onclick="viewClassContent()">查看課堂內容</button>
+          <button class="btn-success" onclick="addTestClassContent()">新增測試課堂內容</button>
+        </div>
+        <div id="class-content-results"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🔗</span> 3. 資料關聯測試</h3>
+        <div class="test-controls">
+          <button onclick="testDataRelationship()">測試資料關聯</button>
+          <button onclick="testUserDataIsolation()">測試用戶資料隔離</button>
+        </div>
+        <div id="relationship-results"></div>
+      </div>
+    </div>
+
+    <!-- 用戶資料庫測試 -->
+    <div id="tab-database" class="tab-content">
+      <div class="stats">
+        <div class="stat-card">
+          <p>資料庫測試</p>
+          <h3 id="db-total">0</h3>
+        </div>
+        <div class="stat-card success">
+          <p>通過</p>
+          <h3 id="db-pass">0</h3>
+        </div>
+        <div class="stat-card danger">
+          <p>失敗</p>
+          <h3 id="db-fail">0</h3>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🗄️</span> 1. 用戶資料庫結構</h3>
+        <div class="test-controls">
+          <button class="btn-success" onclick="initializeUserDatabase()">初始化用戶資料庫</button>
+          <button onclick="testDatabaseStructure()">檢查資料庫結構</button>
+          <button onclick="testUserDatabaseNaming()">驗證資料庫命名</button>
+          <button onclick="listAllDatabases()">列出所有資料庫</button>
+        </div>
+        <div id="db-structure-results"></div>
+        <div class="log-viewer" id="db-log"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>👥</span> 2. 用戶資料隔離</h3>
+        <div class="test-controls">
+          <button onclick="testUserDataIsolation()">測試資料隔離</button>
+          <button onclick="testCrossUserAccess()">測試跨用戶訪問</button>
+          <button onclick="viewUserDatabases()">查看用戶資料庫</button>
+        </div>
+        <div id="isolation-results"></div>
+        <table class="user-data-table" id="user-db-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>用戶 ID</th>
+              <th>用戶名</th>
+              <th>資料庫名稱</th>
+              <th>資料筆數</th>
+              <th>狀態</th>
+            </tr>
+          </thead>
+          <tbody id="user-db-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="test-section">
+        <h3><span>📊</span> 3. 資料完整性</h3>
+        <div class="test-controls">
+          <button onclick="testDataIntegrity()">測試資料完整性</button>
+          <button onclick="testDataSync()">測試資料同步</button>
+        </div>
+        <div id="integrity-results"></div>
+      </div>
+    </div>
+
+    <!-- Creator 界面測試 -->
+    <div id="tab-creator" class="tab-content">
+      <div class="stats">
+        <div class="stat-card">
+          <p>Creator 測試</p>
+          <h3 id="creator-total">0</h3>
+        </div>
+        <div class="stat-card success">
+          <p>通過</p>
+          <h3 id="creator-pass">0</h3>
+        </div>
+        <div class="stat-card danger">
+          <p>失敗</p>
+          <h3 id="creator-fail">0</h3>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>📋 測試帳號：</strong> username: <code>creator</code> | password: <code>1234</code>
+      </div>
+
+      <div class="test-section">
+        <h3><span>👤</span> 1. Creator 身份驗證</h3>
+        <div class="test-controls">
+          <button onclick="testCreatorRole()">驗證 Creator 角色</button>
+          <button onclick="testCreatorPermissions()">測試 Creator 權限</button>
+          <button onclick="loginAsCreator()">以 Creator 身份登入</button>
+        </div>
+        <div id="creator-role-results"></div>
+        <div class="log-viewer" id="creator-log"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🎨</span> 2. Creator 專屬界面</h3>
+        <div class="test-controls">
+          <button onclick="testCreatorUI()">測試 Creator UI</button>
+          <button onclick="testCreatorFeatures()">測試 Creator 功能</button>
+          <button onclick="viewCreatorInterface()">查看 Creator 界面</button>
+        </div>
+        <div id="creator-ui-results"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>⚙️</span> 3. Creator 管理功能</h3>
+        <div class="test-controls">
+          <button onclick="testCreatorManagement()">測試管理功能</button>
+          <button onclick="testCreatorDataAccess()">測試資料訪問</button>
+        </div>
+        <div id="creator-mgmt-results"></div>
+      </div>
+    </div>
+
+    <!-- 測試總結 -->
+    <div id="tab-summary" class="tab-content">
+      <div class="stats">
+        <div class="stat-card">
+          <p>總測試數</p>
+          <h3 id="summary-total">0</h3>
+        </div>
+        <div class="stat-card success">
+          <p>通過</p>
+          <h3 id="summary-pass">0</h3>
+        </div>
+        <div class="stat-card danger">
+          <p>失敗</p>
+          <h3 id="summary-fail">0</h3>
+        </div>
+        <div class="stat-card warning">
+          <p>通過率</p>
+          <h3 id="summary-rate">0%</h3>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="summary-progress" style="width: 0%;">0%</div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>📊</span> 完整測試報告</h3>
+        <div class="test-controls">
+          <button class="btn-success" onclick="runAllTests()">執行所有測試</button>
+          <button class="btn-warning" onclick="exportTestReport()">匯出測試報告</button>
+          <button class="btn-danger" onclick="resetAllTests()">重置所有測試</button>
+        </div>
+        <div id="summary-results"></div>
+        <div class="log-viewer" id="summary-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="system-test.js"></script>
+</body>
+</html>
