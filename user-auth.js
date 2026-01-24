@@ -4,7 +4,7 @@
  * v1.0: 基本登入、登出、會話管理
  * 
  * 注意：這是本地認證系統，用於多用戶隔離。
- * 生產環境建議配合後端認證或 Firebase Authentication。
+ * 生產環境建議配合後端認證或 Firebase Authentication.
  */
 
 const AUTH_CONFIG = {
@@ -446,6 +446,17 @@ function requireCreator() {
 function getCurrentUserId() {
   const user = requireAuth();
   return user.userId;
+}
+
+// Function to update user interface after login
+function updateUI() {
+    // Logic to refresh the interface based on user login status
+}
+
+// Call updateUI after successful login
+function loginUser(username, password) {
+    // Authentication logic
+    updateUI(); // Ensure UI is updated after login
 }
 
 // 匯出供其他模組使用

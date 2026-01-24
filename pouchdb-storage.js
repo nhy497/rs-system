@@ -594,6 +594,28 @@ async function initializeStorageService(database) {
   }
 }
 
+// Function to set up PouchDB storage backend
+function setupPouchDB() {
+    var db = new PouchDB('shared_storage');
+    // Ensure all systems use the same PouchDB backend
+    return db;
+}
+
+// Function to handle CRUD operations
+function saveData(data) {
+    var db = setupPouchDB();
+    db.put(data).then(function (response) {
+        console.log('Data saved successfully:', response);
+    }).catch(function (err) {
+        console.error('Error saving data:', err);
+    });
+}
+
+// Function to ensure operability between storage and compatibility layers
+function ensureCompatibility() {
+    // Logic to ensure compatibility between storage and operational layers
+}
+
 // 匯出供其他模組使用
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { storageService, StorageService, initializeStorageService };
