@@ -104,7 +104,7 @@ function updateSidebarStats() {
   const records = parseRecords();
   const today = new Date().toISOString().split('T')[0];
   const todayRecords = records.filter(r => r.classDate === today);
-  const totalStudents = records.reduce((sum, r) => sum + (parseInt(r.students) || 0), 0);
+  const totalStudents = records.reduce((sum, r) => sum + (parseInt(r.classSize) || 0), 0);
   
   const el1 = $('todayCount');
   const el2 = $('totalStudents');
@@ -118,16 +118,16 @@ function updateUserInfo(username = null) {
   const roleEl = $('sidebarUserRole');
   if (!nameEl) return;
   
-  if (username) {
-    nameEl.textContent = username;
-    const user = authManager.getCurrentUser();
-    const userRole = user?.role === 'creator' ? '系統創建者' : '教練';
+  const user = getCurrentUser();
+  if (user) {
+    nameEl.textContent = user.username || '未知用戶';
+    const userRole = user.role === 'creator' ? '👑 Creator' : '👤 用戶';
     roleEl.textContent = userRole;
     
     // 顯示/隱藏用戶管理導航項
     const navData = $('navData');
     if (navData) {
-      navData.hidden = !isCreator();
+      navData.hidden = user.role !== 'creator';
     }
   } else {
     nameEl.textContent = '未登錄';
@@ -348,23 +348,52 @@ function refreshDataManagement() {
     $('usersEmpty').hidden = false;
   } else {
     $('usersEmpty').hidden = true;
+    const currentUser = getCurrentUser();
     usersList.innerHTML = users.map(user => {
       const createdDate = new Date(user.createdAt).toLocaleDateString('zh-HK');
-      const lastLoginText = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('zh-HK') : '未登入';
+      const isCurrentUser = currentUser && currentUser.id === user.id;
+      const isCreatorRole = user.role === 'creator';
       return `<div class="user-item">
         <div class="user-item-info">
-          <div class="user-name">${escapeHtml(user.username)}</div>
+          <div class="user-name">${escapeHtml(user.username)}${isCurrentUser ? ' (當前用戶)' : ''}</div>
           <div class="user-email">${escapeHtml(user.email || '無電郵')}</div>
           <div class="user-created">建立於: ${createdDate}</div>
         </div>
         <div style="display: flex; align-items: center; gap: 0.8rem;">
-          <span class="user-role ${user.role}">${user.role === 'creator' ? '👑 Creator' : '👤 用戶'}</span>
-          <span class="user-created">最後登入: ${lastLoginText}</span>
+          <span class="user-role ${isCreatorRole ? 'creator' : 'user'}">${isCreatorRole ? '👑 Creator' : '👤 用戶'}</span>
+          ${isCurrentUser ? '<span style="color: #999;">⚠️ 無法刪除當前用戶</span>' : `<button class="btn btn-sm btn-danger-ghost" onclick="deleteUser('${user.id}', '${escapeHtml(user.username)}')" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">刪除</button>`}
         </div>
       </div>`;
     }).join('');
   }
 }
+
+// --- 刪除用戶函數
+function deleteUser(userId, username) {
+  if (!isCreator()) {
+    toast('❌ 沒有權限執行此操作');
+    return;
+  }
+  
+  const currentUser = getCurrentUser();
+  if (currentUser && currentUser.id === userId) {
+    toast('❌ 無法刪除當前登入的用戶');
+    return;
+  }
+  
+  if (!confirm(`確定要刪除用戶「${username}」嗎？此操作無法恢復。`)) {
+    return;
+  }
+  
+  try {
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const newUsers = users.filter(u => u.id !== userId);
+    localStorage.setItem('users', JSON.stringify(newUsers));
+    toast(`✓ 已刪除用戶「${username}」`);
+    refreshDataManagement();
+  } catch (e) {
+    toast(`❌ 刪除失敗: ${e.message}`);
+  }
 
 // --- 教學花式
 let tricks = [];
@@ -647,7 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('🔓 執行登出操作...');
         localStorage.removeItem('rs-system-session');
         localStorage.removeItem('current-user');
-        localStorage.removeItem('users');  // 清除用戶列表
+        // 注意: 不要清除 'users' 列表，因為登出時仍需保留用戶數據
         console.log('✅ 會話已清除');
         
         // 強制頁面重載以確保清潔狀態
@@ -656,6 +685,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
       }
     });
+  }
+
+  // 初始化頁面可見性根據角色
+  if (!isCreator()) {
+    const pageData = $('page-data');
+    const navData = $('navData');
+    if (pageData) pageData.hidden = true;
+    if (navData) navData.hidden = true;
   }
 
   // 導出功能
