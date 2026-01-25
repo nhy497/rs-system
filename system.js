@@ -1728,31 +1728,14 @@ function updateClassDuration() {
   }
 }
 
-// 取得依用戶隔離的存儲鍵，避免測試帳號污染正式資料
-function getUserScopedKey(baseKey) {
-  try {
-    const current = LOGIN_MANAGER?.getCurrentUser ? LOGIN_MANAGER.getCurrentUser() : null;
-    const userId = current?.id || current?.userId || 'guest';
-    return `${baseKey}::${userId}`;
-  } catch {
-    return `${baseKey}::guest`;
-  }
-}
+// （已移除用戶隔離邏輯 - 改用共享存儲避免資料遺失）
 
-// 記錄解析和保存（含舊鍵遷移）
+// 記錄解析（共享存儲 - 所有登入用戶共用同一資料庫）
 function parseRecords() {
   try {
-    const scopedKey = getUserScopedKey(STORAGE_KEY);
-    let encoded = localStorage.getItem(scopedKey);
-    let migrated = false;
-
-    if (!encoded) {
-      encoded = localStorage.getItem(STORAGE_KEY); // 舊版共用鍵
-      if (encoded) migrated = true;
-    }
-
+    const encoded = localStorage.getItem(STORAGE_KEY);
     if (!encoded) return [];
-
+    
     let records = [];
     try {
       records = JSON.parse(atob(encoded));
@@ -1760,26 +1743,21 @@ function parseRecords() {
       records = JSON.parse(encoded);
     }
 
-    if (migrated) {
-      const encodedScoped = btoa(JSON.stringify(records));
-      localStorage.setItem(scopedKey, encodedScoped);
-      localStorage.removeItem(STORAGE_KEY);
-    }
-
     return Array.isArray(records) ? records : [];
   } catch (e) {
-    console.warn('Failed to parse records from storage:', e);
+    console.warn('❌ 讀取記錄失敗:', e);
     return [];
   }
 }
 
 function saveRecords(arr) {
   try {
-    const scopedKey = getUserScopedKey(STORAGE_KEY);
+    if (!Array.isArray(arr)) throw new Error('資料格式無效：必須是陣列');
     const encoded = btoa(JSON.stringify(arr));
-    localStorage.setItem(scopedKey, encoded);
+    localStorage.setItem(STORAGE_KEY, encoded);
+    console.log(`✅ 已儲存 ${arr.length} 筆課堂記錄 到 ${STORAGE_KEY}`);
   } catch (e) {
-    console.error('Failed to save records:', e);
+    console.error('❌ 保存記錄失敗:', e);
     if (e.name === 'QuotaExceededError') {
       toast('❌ 存儲空間已滿，請清除舊記錄');
     } else {
@@ -2345,9 +2323,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 清除所有
   $('btnDeleteAll')?.addEventListener('click', () => {
     if (!confirm('確定要永久清除所有記錄嗎？此操作無法復原。')) return;
-    const scopedKey = getUserScopedKey(STORAGE_KEY);
-    localStorage.removeItem(scopedKey);
-    localStorage.removeItem(STORAGE_KEY); // 清理舊版共享資料
+    localStorage.removeItem(STORAGE_KEY);
     clearForm();
     refreshAllViews();
     toast('已清除所有記錄');
