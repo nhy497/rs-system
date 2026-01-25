@@ -2331,7 +2331,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 儲存按鈕
   $('btnSave')?.addEventListener('click', () => {
+    console.log('🔴 儲存按鈕被點擊');
+    
     const d = getFormData();
+    console.log('📋 表單資料：', d);
     
     document.querySelectorAll('[aria-invalid="true"]').forEach(el => {
       el.removeAttribute('aria-invalid');
@@ -2339,6 +2342,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     const issues = validateFormData(d);
+    console.log('✔️  驗證結果：', issues.length === 0 ? '通過' : `失敗 (${issues.length} 個錯誤)`);
+    
     if (issues.length > 0) {
       issues.forEach(issue => {
         const field = $(issue.field);
@@ -2350,25 +2355,47 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const messages = issues.map(i => i.message).join('\n');
       toast('❌ 請修正以下問題:\n' + messages);
+      console.log('❌ 驗證失敗，停止儲存');
       return;
     }
     
-    if (!d.classDate) { toast('請填寫課堂日期'); return; }
+    if (!d.classDate) { 
+      toast('請填寫課堂日期'); 
+      console.log('❌ 未填寫課堂日期');
+      return; 
+    }
     
+    console.log('📝 準備儲存...');
     const dupes = checkDateDuplicate(d.classDate, d.className, d.classStartTime);
+    console.log(`🔍 重複檢查：找到 ${dupes.length} 筆重複記錄`);
+    
     if (dupes.length > 0) {
       const timeInfo = d.classStartTime ? ` (${d.classStartTime})` : '';
       if (!confirm(`⚠ 已存在 ${d.classDate}${timeInfo} 的記錄 (${d.className || '未設定班級'})。\n\n確定要覆蓋嗎？`)) {
+        console.log('⚠️  用戶取消覆蓋');
         return;
       }
     }
     
     const list = parseRecords();
+    console.log(`📚 讀取 ${list.length} 筆現有記錄`);
+    
     const i = list.findIndex(r => r.classDate === d.classDate && r.className === d.className);
     const isNew = i < 0;
-    if (i >= 0) list[i] = d; else list.push(d);
+    
+    if (i >= 0) {
+      list[i] = d;
+      console.log('✏️  更新第', i, '筆記錄');
+    } else {
+      list.push(d);
+      console.log('✨ 新增第', list.length, '筆記錄');
+    }
+    
     list.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
+    console.log('🔄 已排序記錄');
+    
     saveRecords(list);
+    console.log('💾 saveRecords() 已呼叫');
     
     // 記錄教練操作
     if (typeof loggerService !== 'undefined') {
@@ -2381,14 +2408,20 @@ document.addEventListener('DOMContentLoaded', () => {
         atmosphere: d.atmosphere
       };
       loggerService.logCoachAction(action, details, metadata);
+      console.log('📝 已記錄操作日誌');
     }
     
     if (d.className.trim()) {
       addClassPreset(d.className);
+      console.log('🏷️  班級預設已更新');
     }
 
+    console.log('🔄 執行 refreshAllViews()...');
     refreshAllViews();
+    console.log('✅ refreshAllViews() 完成');
+    
     toast('✓ 已儲存本堂記錄');
+    console.log('🎉 儲存完成！');
   });
 
   // 清空按鈕
