@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title> 教練記錄系統 · 跳繩課堂 Checkpoint</title>
+  <title>教練記錄系統 · 跳繩課堂 Checkpoint</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,7 +17,7 @@
   <!-- 日誌記錄系統 -->
   <script src="logger-service.js"></script>
   
-  <!-- 系統核心模組（整合版） -->
+  <!-- 系統核心模組（整合版 v3.1） -->
   <script src="system.js"></script>
 </head>
 <body>
@@ -695,7 +695,13 @@
             return;
           }
 
+          // 記錄日誌（如果日誌服務可用）
+          if (typeof loggerService !== 'undefined') {
+            loggerService.logSystemEvent('session_validated', `用戶 ${userData.username} 會話驗證成功`, 'info');
+          }
+
           console.log('✅ 會話有效，應用將啟動');
+          console.log('📊 當前用戶:', userData.username, '| 角色:', userData.role || 'user');
         } catch (parseError) {
           console.error('⚠️ 會話資料格式錯誤:', parseError);
           localStorage.removeItem('rs-system-session');

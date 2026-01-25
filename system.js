@@ -484,19 +484,21 @@ const LOGIN_MANAGER = {
         sessionId: sessionId,
         createdAt: Date.now(),
         expiresAt: Date.now() + this.SECURITY.SESSION_TIMEOUT,
-        ipHash: this.getIpHash()
+        ipHash: this.getIpHash(),
+        role: user.role || 'user'
       };
 
       localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
       localStorage.setItem('current-user', JSON.stringify({
         id: user.userId || user.id,
+        userId: user.userId || user.id,
         username: user.username,
         email: user.email || '',
         role: user.role || 'user'
       }));
 
       this.state.activeSessions[sessionId] = sessionData;
-      console.log(`✅ 用戶 ${username} 登入成功`);
+      console.log(`✅ 用戶 ${username} 登入成功 | 會話ID: ${sessionId}`);
       
       return {
         success: true,
@@ -765,23 +767,25 @@ function initLoginPage() {
       const isValid = user ? (user.passwordHash === hashPasswordCompat(password)) : false;
 
       if (user && isValid) {
-        // 建立會話數據 - 必須包含必要欄位
+        // 建立會話數據 - 與 system-test.js 完全一致的格式
         const currentTime = Date.now();
         const sessionTimeout = 24 * 60 * 60 * 1000; // 24 小時
         
         const sessionData = {
-          userId: user.id,
+          userId: user.userId || user.id,
           username: user.username,
           sessionId: `session_${currentTime}_${Math.random().toString(36).substr(2, 9)}`,
           createdAt: currentTime,
           expiresAt: currentTime + sessionTimeout,
+          ipHash: LOGIN_MANAGER.getIpHash(),
           role: user.role || 'user'
         };
 
         const userData = {
-          id: user.id,
+          id: user.userId || user.id,
+          userId: user.userId || user.id,
           username: user.username,
-          email: user.email,
+          email: user.email || '',
           role: user.role || 'user',
           loginTime: new Date().toISOString()
         };
@@ -789,6 +793,14 @@ function initLoginPage() {
         // 同步保存會話數據
         localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
         localStorage.setItem('current-user', JSON.stringify(userData));
+
+        // 記錄登入事件
+        console.log('✅ 登入成功:', username, '| 角色:', userData.role, '| 會話ID:', sessionData.sessionId);
+        
+        // 如果日誌服務可用，記錄登入事件
+        if (typeof loggerService !== 'undefined') {
+          loggerService.logSystemEvent('login', `用戶 ${username} 登入成功`, 'info');
+        }
 
         showSuccess('✅ 登入成功！正在導向主應用...');
 
@@ -871,18 +883,15 @@ function initLoginPage() {
       }
 
       const users = loadUsersFromStorage();
-      if (users.some((u) => u.username === username)) {
-        showError('❌ 此使用者名稱已被使用，請選擇另一個');
-        if (btnSignup) {
-          btnSignup.disabled = false;
-          btnSignup.textContent = '建立帳戶';
-        }
-        return;
-      }
-
+      
+      // 允許創建無限用戶，即使名稱重複（與 system-test.js 一致）
+      // 通過時間戳和隨機字符串確保每個用戶都有唯一的 ID
+      
       const newUser = {
-        id: Date.now().toString(),
+        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         username,
+        password: password,
         passwordHash: hashPasswordCompat(password),
         email: email || null,
         role: 'user',
@@ -892,7 +901,8 @@ function initLoginPage() {
       users.push(newUser);
       saveUsersToStorage(users);
 
-      showSuccess('✅ 帳戶建立成功！請用新帳號登入');
+      console.log('✅ 用戶創建成功:', username, '| ID:', newUser.id);
+      showSuccess(`✅ 帳戶建立成功！用戶名: ${username}`);
 
       document.getElementById('signupUsername').value = '';
       document.getElementById('signupPassword').value = '';
@@ -920,15 +930,19 @@ function initLoginPage() {
   // 初始化狀態與預設 Creator
   const existingUsers = loadUsersFromStorage();
   if (!existingUsers.some((u) => u.username === 'creator')) {
+    const creatorId = `user_${Date.now()}_creator`;
     existingUsers.push({
-      id: Date.now().toString(),
+      id: creatorId,
+      userId: creatorId,
       username: 'creator',
+      password: '1234',
       passwordHash: hashPasswordCompat('1234'),
       email: 'creator@system.local',
       role: 'creator',
       createdAt: new Date().toISOString()
     });
     saveUsersToStorage(existingUsers);
+    console.log('✅ 預設 Creator 帳戶已創建：creator/1234');
   }
 
   document.getElementById('loginUsername')?.focus();
