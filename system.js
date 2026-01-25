@@ -1438,10 +1438,20 @@ let tricks = [];
 function renderTricks() {
   const el = $('tricksList');
   if (!el) return;
-  el.innerHTML = tricks.map((t, i) =>
-    `<div class="trick-tag" data-i="${i}">
-      <span class="name">${escapeHtml(t.name)}</span>
-      ${t.detail ? `<span class="detail"> · ${escapeHtml(t.detail)}</span>` : ''}
+  el.innerHTML = tricks.map((t, i) => {
+    const masteryText = (t.mastery ?? t.mastery === 0) ? `掌握 ${t.mastery}%` : '';
+    const timeText = (t.plannedTime != null || t.actualTime != null)
+      ? `時間 ${t.plannedTime ?? '-'} / ${t.actualTime ?? '-'}`
+      : '';
+    const skillText = t.skillLevel ? `技巧 ${escapeHtml(t.skillLevel)}` : '';
+    const metaParts = [masteryText, timeText, skillText].filter(Boolean).join(' · ');
+
+    return `<div class="trick-tag" data-i="${i}">
+      <div class="trick-title-row">
+        <span class="name">${escapeHtml(t.name)}</span>
+        ${t.detail ? `<span class="detail"> · ${escapeHtml(t.detail)}</span>` : ''}
+      </div>
+      ${metaParts ? `<div class="trick-meta">${metaParts}</div>` : ''}
       <div class="trick-level-select">
         <select class="trick-level" data-i="${i}" aria-label="等級">
           <option value="">無等級</option>
@@ -1449,13 +1459,16 @@ function renderTricks() {
         </select>
       </div>
       <button type="button" class="remove-trick" data-i="${i}" aria-label="移除">×</button>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
   
   $qa('.trick-level').forEach(sel => {
     sel.addEventListener('change', (e) => {
       const idx = +e.target.dataset.i;
       tricks[idx].level = e.target.value;
+      if (!tricks[idx].skillLevel) {
+        tricks[idx].skillLevel = e.target.value;
+      }
     });
   });
   
@@ -1499,6 +1512,31 @@ function getFormData() {
     const endMins = eh * 60 + em;
     classDurationMins = endMins > startMins ? endMins - startMins : null;
   }
+
+  const trickMasteries = tricks
+    .map(t => Number.isFinite(t.mastery) ? t.mastery : null)
+    .filter(v => v != null);
+  const aggregatedMastery = trickMasteries.length > 0
+    ? Math.round(trickMasteries.reduce((a, b) => a + b, 0) / trickMasteries.length)
+    : parseInt($('mastery')?.value || '50', 10);
+
+  const trickPlannedTimes = tricks
+    .map(t => Number.isFinite(t.plannedTime) ? t.plannedTime : null)
+    .filter(v => v != null);
+  const aggregatedPlannedTime = trickPlannedTimes.length > 0
+    ? trickPlannedTimes.reduce((a, b) => a + b, 0)
+    : (($('plannedTime')?.value || '').trim() ? parseInt($('plannedTime').value, 10) : null);
+
+  const trickActualTimes = tricks
+    .map(t => Number.isFinite(t.actualTime) ? t.actualTime : null)
+    .filter(v => v != null);
+  const aggregatedActualTime = trickActualTimes.length > 0
+    ? trickActualTimes.reduce((a, b) => a + b, 0)
+    : (($('actualTime')?.value || '').trim() ? parseInt($('actualTime').value, 10) : null);
+
+  const selectedSkillBtn = $q('[data-name="skillLevel"] .selected');
+  const selectedSkillLevel = selectedSkillBtn?.textContent?.trim() || '';
+  const aggregatedSkillLevel = tricks.find(t => t.skillLevel)?.skillLevel || selectedSkillLevel;
   
   return {
     classDate: date,
@@ -1512,11 +1550,19 @@ function getFormData() {
     notes: ($('notes')?.value || '').trim(),
     engagement: parseInt($('engagement')?.value || '3', 10),
     atmosphere: $q('[data-name="atmosphere"] .selected')?.textContent?.trim() || '',
-    tricks: tricks.map(t => ({ name: t.name || '', detail: t.detail || '', level: t.level || '' })),
-    mastery: parseInt($('mastery')?.value || '50', 10),
-    plannedTime: ($('plannedTime')?.value || '').trim() ? parseInt($('plannedTime').value, 10) : null,
-    actualTime: ($('actualTime')?.value || '').trim() ? parseInt($('actualTime').value, 10) : null,
-    skillLevel: $q('[data-name="skillLevel"] .selected')?.textContent?.trim() || '',
+    tricks: tricks.map(t => ({
+      name: t.name || '',
+      detail: t.detail || '',
+      level: t.level || '',
+      mastery: Number.isFinite(t.mastery) ? t.mastery : null,
+      plannedTime: Number.isFinite(t.plannedTime) ? t.plannedTime : null,
+      actualTime: Number.isFinite(t.actualTime) ? t.actualTime : null,
+      skillLevel: t.skillLevel || ''
+    })),
+    mastery: aggregatedMastery,
+    plannedTime: aggregatedPlannedTime,
+    actualTime: aggregatedActualTime,
+    skillLevel: aggregatedSkillLevel,
     helpOthers: parseInt($('helpOthers')?.value || '50', 10),
     interaction: parseInt($('interaction')?.value || '50', 10),
     teamwork: parseInt($('teamwork')?.value || '50', 10),
@@ -1547,13 +1593,31 @@ function loadIntoForm(rec) {
   document.querySelectorAll('[data-name="atmosphere"] button').forEach(b => {
     b.classList.toggle('selected', b.textContent.trim() === (rec.atmosphere || ''));
   });
-  tricks = Array.isArray(rec.tricks) ? rec.tricks.map(t => ({ name: t.name || '', detail: t.detail || '', level: t.level || '' })) : [];
+  tricks = Array.isArray(rec.tricks) ? rec.tricks.map(t => ({
+    name: t.name || '',
+    detail: t.detail || '',
+    level: t.level || t.skillLevel || '',
+    mastery: Number.isFinite(t.mastery) ? t.mastery : (Number.isFinite(rec.mastery) ? rec.mastery : null),
+    plannedTime: Number.isFinite(t.plannedTime) ? t.plannedTime : null,
+    actualTime: Number.isFinite(t.actualTime) ? t.actualTime : null,
+    skillLevel: t.skillLevel || t.level || ''
+  })) : [];
   renderTricks();
-  if ($('mastery')) $('mastery').value = rec.mastery ?? 50;
-  if ($('plannedTime')) $('plannedTime').value = rec.plannedTime != null ? rec.plannedTime : '';
-  if ($('actualTime')) $('actualTime').value = rec.actualTime != null ? rec.actualTime : '';
+  const trickMasteries = tricks.map(t => Number.isFinite(t.mastery) ? t.mastery : null).filter(v => v != null);
+  const masterVal = trickMasteries.length ? Math.round(trickMasteries.reduce((a, b) => a + b, 0) / trickMasteries.length) : (rec.mastery ?? 50);
+  if ($('mastery')) $('mastery').value = masterVal;
+
+  const trickPlanned = tricks.map(t => Number.isFinite(t.plannedTime) ? t.plannedTime : null).filter(v => v != null);
+  const plannedVal = trickPlanned.length ? trickPlanned.reduce((a, b) => a + b, 0) : (rec.plannedTime != null ? rec.plannedTime : '');
+  if ($('plannedTime')) $('plannedTime').value = plannedVal;
+
+  const trickActual = tricks.map(t => Number.isFinite(t.actualTime) ? t.actualTime : null).filter(v => v != null);
+  const actualVal = trickActual.length ? trickActual.reduce((a, b) => a + b, 0) : (rec.actualTime != null ? rec.actualTime : '');
+  if ($('actualTime')) $('actualTime').value = actualVal;
+
+  const skillLevel = rec.skillLevel || tricks.find(t => t.skillLevel)?.skillLevel || '';
   document.querySelectorAll('[data-name="skillLevel"] button').forEach(b => {
-    b.classList.toggle('selected', b.textContent.trim() === (rec.skillLevel || ''));
+    b.classList.toggle('selected', b.textContent.trim() === skillLevel);
   });
   if ($('helpOthers')) $('helpOthers').value = rec.helpOthers ?? 50;
   if ($('interaction')) $('interaction').value = rec.interaction ?? 50;
@@ -2369,7 +2433,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = ($('trickName')?.value || '').trim();
     if (!name) return;
     const detail = ($('trickDetail')?.value || '').trim();
-    tricks.push({ name, detail, level: '' });
+    const masteryVal = parseInt($('mastery')?.value || '50', 10);
+    const plannedValRaw = ($('plannedTime')?.value || '').trim();
+    const actualValRaw = ($('actualTime')?.value || '').trim();
+    const plannedVal = plannedValRaw ? parseInt(plannedValRaw, 10) : null;
+    const actualVal = actualValRaw ? parseInt(actualValRaw, 10) : null;
+    const skillBtn = $q('[data-name="skillLevel"] .selected');
+    const skillLevel = skillBtn?.dataset?.v || skillBtn?.textContent?.trim() || '';
+
+    tricks.push({
+      name,
+      detail,
+      level: skillLevel || '',
+      mastery: Number.isFinite(masteryVal) ? masteryVal : null,
+      plannedTime: Number.isFinite(plannedVal) ? plannedVal : null,
+      actualTime: Number.isFinite(actualVal) ? actualVal : null,
+      skillLevel: skillLevel || ''
+    });
     if ($('trickName')) $('trickName').value = '';
     if ($('trickDetail')) $('trickDetail').value = '';
     if ($('trickName')) $('trickName').focus();

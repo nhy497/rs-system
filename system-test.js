@@ -1087,39 +1087,132 @@ function viewStoredLoginData() {
   }
 }
 
-/**
- * 測試課堂內容儲存
- */
+function getUserScopedKeyForClass(baseKey = 'rope-skip-checkpoints') {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('current-user') || '{}');
+    const uid = currentUser.id || currentUser.userId || 'guest';
+    return `${baseKey}::${uid}`;
+  } catch {
+    return `${baseKey}::guest`;
+  }
+}
+
+function loadClassRecordsForTest(scopedKey) {
+  const raw = localStorage.getItem(scopedKey) || localStorage.getItem('rope-skip-checkpoints');
+  if (!raw) return [];
+  try {
+    return JSON.parse(atob(raw));
+  } catch {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+}
+
+function saveClassRecordsForTest(scopedKey, records) {
+  const encoded = btoa(JSON.stringify(records));
+  localStorage.setItem(scopedKey, encoded);
+}
+
+function buildSampleClassContent(currentUser = {}) {
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10);
+  const className = `TEST-CLASS-${(currentUser.username || 'USER').toUpperCase()}`;
+  const tricks = [
+    {
+      name: '交叉跳',
+      detail: '測試花式 A',
+      level: '中級',
+      mastery: 75,
+      plannedTime: 15,
+      actualTime: 14,
+      skillLevel: '中級'
+    },
+    {
+      name: '雙搖',
+      detail: '測試花式 B',
+      level: '初級',
+      mastery: 55,
+      plannedTime: 10,
+      actualTime: 9,
+      skillLevel: '初級'
+    }
+  ];
+
+  const avgMastery = Math.round(tricks.reduce((a, b) => a + b.mastery, 0) / tricks.length);
+  const totalPlanned = tricks.reduce((a, b) => a + (b.plannedTime || 0), 0);
+  const totalActual = tricks.reduce((a, b) => a + (b.actualTime || 0), 0);
+
+  return {
+    classDate: dateStr,
+    className,
+    classSize: 12,
+    classLocation: '自動化測試場地',
+    teachingRole: '主教練',
+    classStartTime: '10:00',
+    classEndTime: '11:00',
+    classDurationMins: 60,
+    notes: '自動化測試新增的課堂內容',
+    engagement: 4,
+    atmosphere: '認真學習',
+    tricks,
+    mastery: avgMastery,
+    plannedTime: totalPlanned,
+    actualTime: totalActual,
+    skillLevel: '中級',
+    helpOthers: 60,
+    interaction: 70,
+    teamwork: 65,
+    selfPractice: 60,
+    activeLearn: 65,
+    positivity: 4,
+    enthusiasm: 4,
+    teachScore: 8,
+    satisfaction: 4,
+    disciplineCount: 0,
+    flexibility: 8,
+    individual: 55
+  };
+}
+
 async function testClassContentStorage() {
   const containerId = 'class-content-results';
   document.getElementById(containerId).innerHTML = '';
-  addLog('storage-log', '測試課堂內容儲存...', 'info');
-  
-  const currentUser = localStorage.getItem('current-user');
-  if (!currentUser) {
+  addLog('storage-log', '測試課堂內容儲存與讀取...', 'info');
+
+  const currentUserRaw = localStorage.getItem('current-user');
+  if (!currentUserRaw) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('storage', false);
     return;
   }
-  
+
   try {
-    const userData = JSON.parse(currentUser);
-    const userId = userData.id || userData.userId;
-    const dbName = `rs-system-${userId}`;
-    
-    addLog('storage-log', `檢查資料庫: ${dbName}`, 'info');
-    
-    // 檢查 IndexedDB
-    const databases = await indexedDB.databases();
-    const userDb = databases.find(db => db.name.includes(dbName) || db.name.includes('_pouch_'));
-    
-    if (userDb) {
-      addResult(containerId, `找到用戶資料庫: ${userDb.name}`, 'pass');
-      addLog('storage-log', `資料庫名稱: ${userDb.name}`, 'success');
-      updateStats('storage', true);
+    const currentUser = JSON.parse(currentUserRaw);
+    const scopedKey = getUserScopedKeyForClass();
+    let records = loadClassRecordsForTest(scopedKey);
+    const sample = buildSampleClassContent(currentUser);
+
+    records = records.filter(r => !(r.classDate === sample.classDate && r.className === sample.className));
+    records.push(sample);
+    saveClassRecordsForTest(scopedKey, records);
+
+    const reloaded = loadClassRecordsForTest(scopedKey);
+    const found = reloaded.find(r => r.classDate === sample.classDate && r.className === sample.className);
+
+    if (found) {
+      const trickHasDetails = Array.isArray(found.tricks) && found.tricks.every(t => (
+        t.name && (t.mastery != null || t.plannedTime != null || t.actualTime != null || t.skillLevel)
+      ));
+
+      addResult(containerId, `✅ 已儲存課堂內容：${found.className} (${found.classDate})`, 'pass');
+      addResult(containerId, `花式數量：${found.tricks.length}；含完整進度：${trickHasDetails ? '是' : '否'}`, trickHasDetails ? 'pass' : 'warn');
+      addLog('storage-log', `保存鍵：${scopedKey}`, 'success');
+      updateStats('storage', trickHasDetails);
     } else {
-      addResult(containerId, '未找到用戶專屬資料庫', 'warn');
-      addLog('storage-log', '可能尚未創建資料或資料庫命名不同', 'warn');
+      addResult(containerId, '未找到剛寫入的課堂內容', 'fail');
       updateStats('storage', false);
     }
   } catch (error) {
@@ -1129,47 +1222,80 @@ async function testClassContentStorage() {
   }
 }
 
-/**
- * 測試用戶專屬儲存
- */
 async function testUserSpecificStorage() {
   const containerId = 'class-content-results';
-  addLog('storage-log', '測試用戶專屬儲存...', 'info');
-  
-  const currentUser = localStorage.getItem('current-user');
-  if (!currentUser) {
+  addLog('storage-log', '測試用戶專屬課堂儲存...', 'info');
+
+  const currentUserRaw = localStorage.getItem('current-user');
+  if (!currentUserRaw) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('storage', false);
     return;
   }
-  
+
   try {
-    const userData = JSON.parse(currentUser);
-    const userId = userData.id || userData.userId;
-    
-    addResult(containerId, `用戶 ${userData.username} (ID: ${userId}) 擁有專屬資料庫`, 'pass');
-    addLog('storage-log', `資料庫命名格式: rs-system-${userId}`, 'success');
-    updateStats('storage', true);
+    const userData = JSON.parse(currentUserRaw);
+    const scopedKey = getUserScopedKeyForClass();
+    const records = loadClassRecordsForTest(scopedKey);
+    const encoded = localStorage.getItem(scopedKey);
+
+    if (encoded && records.length >= 0) {
+      addResult(containerId, `用戶 ${userData.username} (ID: ${userData.id || userData.userId}) 擁有專屬鍵 ${scopedKey}`, 'pass');
+      addResult(containerId, `現有課堂記錄數：${records.length}`, 'info');
+      updateStats('storage', true);
+    } else {
+      addResult(containerId, '未找到用戶專屬課堂資料', 'warn');
+      updateStats('storage', false);
+    }
   } catch (error) {
     addResult(containerId, `測試失敗: ${error.message}`, 'fail');
     updateStats('storage', false);
   }
 }
 
-/**
- * 查看課堂內容
- */
 function viewClassContent() {
-  addResult('class-content-results', '課堂內容查看功能需要 PouchDB 實例', 'info');
-  addLog('storage-log', '請在主應用中查看課堂內容', 'info');
+  const containerId = 'class-content-results';
+  const scopedKey = getUserScopedKeyForClass();
+  const records = loadClassRecordsForTest(scopedKey);
+  const latest = records[0];
+  if (!latest) {
+    addResult(containerId, '尚無課堂內容，請先新增測試課堂', 'warn');
+    return;
+  }
+
+  const trickSummary = (latest.tricks || []).map(t => ({
+    name: t.name,
+    mastery: t.mastery,
+    plannedTime: t.plannedTime,
+    actualTime: t.actualTime,
+    skillLevel: t.skillLevel || t.level
+  }));
+
+  addResult(containerId, `最近課堂：${latest.className} (${latest.classDate})`, 'info');
+  addResult(containerId, `花式進度：${JSON.stringify(trickSummary, null, 2)}`, 'info');
 }
 
-/**
- * 新增測試課堂內容
- */
 function addTestClassContent() {
-  addResult('class-content-results', '新增課堂內容功能需在主應用中操作', 'info');
-  addLog('storage-log', '請登入主系統後新增課堂內容', 'info');
+  const containerId = 'class-content-results';
+  const currentUserRaw = localStorage.getItem('current-user');
+  if (!currentUserRaw) {
+    addResult(containerId, '請先登入後再新增課堂', 'warn');
+    return;
+  }
+
+  try {
+    const currentUser = JSON.parse(currentUserRaw);
+    const scopedKey = getUserScopedKeyForClass();
+    let records = loadClassRecordsForTest(scopedKey);
+    const sample = buildSampleClassContent(currentUser);
+    records = records.filter(r => !(r.classDate === sample.classDate && r.className === sample.className));
+    records.push(sample);
+    saveClassRecordsForTest(scopedKey, records);
+    addResult(containerId, `已新增測試課堂：${sample.className}`, 'pass');
+    addLog('storage-log', `保存鍵：${scopedKey}，目前共 ${records.length} 筆`, 'success');
+  } catch (error) {
+    addResult(containerId, `新增失敗: ${error.message}`, 'fail');
+  }
 }
 
 /**
