@@ -1218,60 +1218,70 @@ function buildSampleClassContent(currentUser = {}) {
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
   const className = `TEST-CLASS-${(currentUser.username || 'USER').toUpperCase()}`;
-  const tricks = [
-    {
-      name: '交叉跳',
-      detail: '測試花式 A',
-      level: '中級',
-      mastery: 75,
-      plannedTime: 15,
-      actualTime: 14,
-      skillLevel: '中級'
-    },
-    {
-      name: '雙搖',
-      detail: '測試花式 B',
-      level: '初級',
-      mastery: 55,
-      plannedTime: 10,
-      actualTime: 9,
-      skillLevel: '初級'
-    }
+  
+  // 隨機選擇花式
+  const allTricks = [
+    { name: '單搖', detail: '基礎花式', level: '初級', skillLevel: '初級' },
+    { name: '交叉跳', detail: '進階花式', level: '中級', skillLevel: '中級' },
+    { name: '雙搖', detail: '難度花式', level: '進階', skillLevel: '進階' },
+    { name: '三搖', detail: '超難度花式', level: '進階', skillLevel: '進階' },
+    { name: '側搖', detail: '技巧花式', level: '中級', skillLevel: '中級' }
   ];
-
-  const avgMastery = Math.round(tricks.reduce((a, b) => a + b.mastery, 0) / tricks.length);
-  const totalPlanned = tricks.reduce((a, b) => a + (b.plannedTime || 0), 0);
-  const totalActual = tricks.reduce((a, b) => a + (b.actualTime || 0), 0);
-
+  
+  // 隨機選擇 1-3 個花式
+  const trickCount = Math.floor(Math.random() * 3) + 1;
+  const selectedTricks = [];
+  const usedIndices = new Set();
+  
+  while (selectedTricks.length < trickCount) {
+    const idx = Math.floor(Math.random() * allTricks.length);
+    if (!usedIndices.has(idx)) {
+      usedIndices.add(idx);
+      selectedTricks.push({
+        ...allTricks[idx],
+        mastery: Math.floor(Math.random() * 101),
+        plannedTime: 5 + Math.floor(Math.random() * 25),
+        actualTime: 5 + Math.floor(Math.random() * 25)
+      });
+    }
+  }
+  
+  const avgMastery = Math.round(selectedTricks.reduce((a, b) => a + b.mastery, 0) / selectedTricks.length);
+  const totalPlanned = selectedTricks.reduce((a, b) => a + (b.plannedTime || 0), 0);
+  const totalActual = selectedTricks.reduce((a, b) => a + (b.actualTime || 0), 0);
+  
+  const atmospheres = ['開心', '不開心', '認真學習', '心散', '一般'];
+  const randomAtmosphere = atmospheres[Math.floor(Math.random() * atmospheres.length)];
+  
   return {
     classDate: dateStr,
     className,
-    classSize: 12,
-    classLocation: '自動化測試場地',
-    teachingRole: '主教練',
-    classStartTime: '10:00',
-    classEndTime: '11:00',
-    classDurationMins: 60,
-    notes: '自動化測試新增的課堂內容',
-    engagement: 4,
-    atmosphere: '認真學習',
-    tricks,
+    classSize: 8 + Math.floor(Math.random() * 23),
+    classLocation: ['操場', '體育館', '教室', '多功能室'][Math.floor(Math.random() * 4)],
+    teachingRole: ['主教練', '助教', '副教練'][Math.floor(Math.random() * 3)],
+    classStartTime: `${7 + Math.floor(Math.random() * 12)}:${Math.random() > 0.5 ? '00' : '30'}`,
+    classEndTime: `${8 + Math.floor(Math.random() * 12)}:${Math.random() > 0.5 ? '00' : '30'}`,
+    classDurationMins: 45 + Math.floor(Math.random() * 75),
+    notes: `自動化測試課堂 - ${new Date().toLocaleTimeString()}`,
+    engagement: Math.floor(Math.random() * 5) + 1,
+    atmosphere: randomAtmosphere,
+    tricks: selectedTricks,
     mastery: avgMastery,
     plannedTime: totalPlanned,
     actualTime: totalActual,
-    skillLevel: '中級',
-    helpOthers: 60,
-    interaction: 70,
-    teamwork: 65,
-    selfPractice: 60,
-    activeLearn: 65,
-    positivity: 4,
-    enthusiasm: 4,
-    teachScore: 8,
-    satisfaction: 4,
-    disciplineCount: 0,
-    flexibility: 8,
-    individual: 55
+    skillLevel: selectedTricks[0]?.skillLevel || '初級',
+    helpOthers: Math.floor(Math.random() * 101),
+    interaction: Math.floor(Math.random() * 101),
+    teamwork: Math.floor(Math.random() * 101),
+    selfPractice: Math.floor(Math.random() * 101),
+    activeLearn: Math.floor(Math.random() * 101),
+    positivity: Math.floor(Math.random() * 5) + 1,
+    enthusiasm: Math.floor(Math.random() * 5) + 1,
+    teachScore: Math.floor(Math.random() * 10) + 1,
+    satisfaction: Math.floor(Math.random() * 5) + 1,
+    disciplineCount: Math.floor(Math.random() * 5),
+    flexibility: Math.floor(Math.random() * 10) + 1,
+    individual: Math.floor(Math.random() * 101)
   };
 }
 
@@ -1430,21 +1440,45 @@ function bulkAddClassContent() {
     const startCount = records.length;
     const today = new Date();
     
-    // 生成 count 筆課堂資料
-    const tricks = [
-      { name: '單搖', detail: '基礎技巧', level: '初級', mastery: 80, plannedTime: 10, actualTime: 9, skillLevel: '初級' },
-      { name: '交叉跳', detail: '進階技巧', level: '中級', mastery: 60, plannedTime: 15, actualTime: 14, skillLevel: '中級' },
-      { name: '雙搖', detail: '難度技巧', level: '進階', mastery: 40, plannedTime: 20, actualTime: 18, skillLevel: '進階' }
+    // 定義可用的花式池
+    const allTricks = [
+      { name: '單搖', detail: '基礎花式', level: '初級', skillLevel: '初級' },
+      { name: '交叉跳', detail: '進階花式', level: '中級', skillLevel: '中級' },
+      { name: '雙搖', detail: '難度花式', level: '進階', skillLevel: '進階' },
+      { name: '三搖', detail: '超難度花式', level: '進階', skillLevel: '進階' },
+      { name: '側搖', detail: '技巧花式', level: '中級', skillLevel: '中級' },
+      { name: '後搖', detail: '進階技巧', level: '中級', skillLevel: '中級' },
+      { name: '跳繩棒', detail: '特殊技巧', level: '進階', skillLevel: '進階' }
     ];
     
+    const atmospheres = ['開心', '不開心', '認真學習', '心散', '一般'];
+    const locations = ['操場', '體育館', '教室', '多功能室', '活動中心'];
+    const roles = ['主教練', '助教', '副教練'];
+    
     for (let i = 1; i <= count; i++) {
-      const dateOffset = Math.floor((i - 1) / 5); // 每 5 筆資料相隔 1 天
+      const dateOffset = Math.floor((i - 1) / 5);
       const classDate = new Date(today);
       classDate.setDate(classDate.getDate() - dateOffset);
       const dateStr = classDate.toISOString().slice(0, 10);
       
-      // 隨機選擇花式
-      const selectedTricks = tricks.slice(0, (i % 3) + 1);
+      // 隨機選擇 1-3 個不同的花式
+      const trickCount = Math.floor(Math.random() * 3) + 1;
+      const selectedTricks = [];
+      const usedIndices = new Set();
+      
+      while (selectedTricks.length < trickCount) {
+        const idx = Math.floor(Math.random() * allTricks.length);
+        if (!usedIndices.has(idx)) {
+          usedIndices.add(idx);
+          selectedTricks.push({
+            ...allTricks[idx],
+            mastery: Math.floor(Math.random() * 101),
+            plannedTime: 5 + Math.floor(Math.random() * 25),
+            actualTime: 5 + Math.floor(Math.random() * 25)
+          });
+        }
+      }
+      
       const avgMastery = Math.round(selectedTricks.reduce((a, b) => a + b.mastery, 0) / selectedTricks.length);
       const totalPlanned = selectedTricks.reduce((a, b) => a + (b.plannedTime || 0), 0);
       const totalActual = selectedTricks.reduce((a, b) => a + (b.actualTime || 0), 0);
@@ -1452,32 +1486,32 @@ function bulkAddClassContent() {
       const classContent = {
         classDate: dateStr,
         className: `${prefix}-${i}`,
-        classSize: 10 + (i % 20),
-        classLocation: `測試場地 ${i}`,
-        teachingRole: '主教練',
-        classStartTime: `${9 + (i % 8)}:00`,
-        classEndTime: `${10 + (i % 8)}:00`,
-        classDurationMins: 60,
-        notes: `批量測試課堂第 ${i} 筆`,
-        engagement: (i % 5) + 1,
-        atmosphere: ['開心', '認真學習', '一般'][i % 3],
+        classSize: 8 + Math.floor(Math.random() * 23),
+        classLocation: locations[Math.floor(Math.random() * locations.length)],
+        teachingRole: roles[Math.floor(Math.random() * roles.length)],
+        classStartTime: `${7 + Math.floor(Math.random() * 12)}:${Math.random() > 0.5 ? '00' : '30'}`,
+        classEndTime: `${8 + Math.floor(Math.random() * 12)}:${Math.random() > 0.5 ? '00' : '30'}`,
+        classDurationMins: 45 + Math.floor(Math.random() * 75),
+        notes: `批量測試課堂第 ${i} 筆 - ${new Date().toLocaleTimeString()}`,
+        engagement: Math.floor(Math.random() * 5) + 1,
+        atmosphere: atmospheres[Math.floor(Math.random() * atmospheres.length)],
         tricks: selectedTricks,
         mastery: avgMastery,
         plannedTime: totalPlanned,
         actualTime: totalActual,
         skillLevel: selectedTricks[0]?.skillLevel || '初級',
-        helpOthers: 50 + (i % 50),
-        interaction: 50 + (i % 50),
-        teamwork: 50 + (i % 50),
-        selfPractice: 50 + (i % 50),
-        activeLearn: 50 + (i % 50),
-        positivity: (i % 5) + 1,
-        enthusiasm: (i % 5) + 1,
-        teachScore: 5 + (i % 5),
-        satisfaction: (i % 5) + 1,
-        disciplineCount: i % 20,
-        flexibility: 5 + (i % 5),
-        individual: 50 + (i % 50)
+        helpOthers: Math.floor(Math.random() * 101),
+        interaction: Math.floor(Math.random() * 101),
+        teamwork: Math.floor(Math.random() * 101),
+        selfPractice: Math.floor(Math.random() * 101),
+        activeLearn: Math.floor(Math.random() * 101),
+        positivity: Math.floor(Math.random() * 5) + 1,
+        enthusiasm: Math.floor(Math.random() * 5) + 1,
+        teachScore: Math.floor(Math.random() * 10) + 1,
+        satisfaction: Math.floor(Math.random() * 5) + 1,
+        disciplineCount: Math.floor(Math.random() * 5),
+        flexibility: Math.floor(Math.random() * 10) + 1,
+        individual: Math.floor(Math.random() * 101)
       };
       
       records.push(classContent);
