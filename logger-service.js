@@ -35,9 +35,9 @@ class LoggerService {
       const system = localStorage.getItem(LOGGER_CONFIG.STORAGE_KEYS.SYSTEM_LOGS);
       const audit = localStorage.getItem(LOGGER_CONFIG.STORAGE_KEYS.AUDIT_LOGS);
 
-      this.coachLogs = coach ? JSON.parse(atob(coach)) : [];
-      this.systemLogs = system ? JSON.parse(atob(system)) : [];
-      this.auditLogs = audit ? JSON.parse(atob(audit)) : [];
+      this.coachLogs = coach ? JSON.parse(decodeURIComponent(atob(coach))) : [];
+      this.systemLogs = system ? JSON.parse(decodeURIComponent(atob(system))) : [];
+      this.auditLogs = audit ? JSON.parse(decodeURIComponent(atob(audit))) : [];
 
       console.log('✅ 日誌已加載');
     } catch (error) {
@@ -56,15 +56,15 @@ class LoggerService {
     try {
       localStorage.setItem(
         LOGGER_CONFIG.STORAGE_KEYS.COACH_LOGS,
-        btoa(JSON.stringify(this.coachLogs))
+        btoa(encodeURIComponent(JSON.stringify(this.coachLogs)))
       );
       localStorage.setItem(
         LOGGER_CONFIG.STORAGE_KEYS.SYSTEM_LOGS,
-        btoa(JSON.stringify(this.systemLogs))
+        btoa(encodeURIComponent(JSON.stringify(this.systemLogs)))
       );
       localStorage.setItem(
         LOGGER_CONFIG.STORAGE_KEYS.AUDIT_LOGS,
-        btoa(JSON.stringify(this.auditLogs))
+        btoa(encodeURIComponent(JSON.stringify(this.auditLogs)))
       );
     } catch (error) {
       console.error('❌ 保存日誌失敗:', error);

@@ -1760,9 +1760,16 @@ function parseRecords() {
     
     let records = [];
     try {
-      records = JSON.parse(atob(encoded));
+      // 嘗試新的 Unicode 編碼方式（支援中文）
+      records = JSON.parse(decodeURIComponent(atob(encoded)));
     } catch {
-      records = JSON.parse(encoded);
+      try {
+        // 回退到舊的 btoa 方式（兼容舊資料）
+        records = JSON.parse(atob(encoded));
+      } catch {
+        // 最後嘗試直接 JSON 解析
+        records = JSON.parse(encoded);
+      }
     }
     const safe = Array.isArray(records) ? records : [];
     console.log(`📦 parseRecords() 讀取筆數: ${safe.length}`);
@@ -1776,7 +1783,11 @@ function parseRecords() {
 function saveRecords(arr) {
   try {
     if (!Array.isArray(arr)) throw new Error('資料格式無效：必須是陣列');
-    const encoded = btoa(JSON.stringify(arr));
+    
+    // 使用 encodeURIComponent + btoa 支援中文與 Unicode 字元
+    const jsonStr = JSON.stringify(arr);
+    const encoded = btoa(encodeURIComponent(jsonStr));
+    
     localStorage.setItem(STORAGE_KEY, encoded);
     console.log(`✅ 已儲存 ${arr.length} 筆課堂記錄 到 ${STORAGE_KEY}`);
   } catch (e) {
