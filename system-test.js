@@ -1842,9 +1842,34 @@ function testCrossUserAccess() {
  * 查看用戶資料庫
  */
 async function viewUserDatabases() {
+  const container = document.getElementById('isolation-results');
+  const tableHtml = `
+    <table class="user-data-table" id="user-db-table" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+      <thead>
+        <tr style="background: #667eea; color: white;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">用戶 ID</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">用戶名</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">資料庫名稱</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">資料筆數</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">狀態</th>
+        </tr>
+      </thead>
+      <tbody id="user-db-tbody"></tbody>
+    </table>
+  `;
+  
   const table = document.getElementById('user-db-table');
-  const tbody = document.getElementById('user-db-tbody');
-  tbody.innerHTML = '';
+  let tbody = document.getElementById('user-db-tbody');
+  
+  // 如果表格不存在，創建表格
+  if (!table) {
+    const div = document.createElement('div');
+    div.innerHTML = tableHtml;
+    container.appendChild(div);
+    tbody = document.getElementById('user-db-tbody');
+  } else {
+    tbody.innerHTML = '';
+  }
   
   addLog('db-log', '查看用戶資料庫...', 'info');
   
@@ -1858,8 +1883,6 @@ async function viewUserDatabases() {
     const usersList = JSON.parse(users);
     const databases = await indexedDB.databases();
     
-    table.style.display = 'table';
-    
     for (const user of usersList) {
       const userId = user.id || user.userId;
       const expectedDbName = `rs-system-${userId}`;
@@ -1868,6 +1891,8 @@ async function viewUserDatabases() {
       );
       
       const row = tbody.insertRow();
+      row.style.borderBottom = '1px solid #dee2e6';
+      
       row.insertCell(0).textContent = userId;
       row.insertCell(1).textContent = user.username;
       row.insertCell(2).textContent = userDb ? userDb.name : '未找到';
@@ -1875,15 +1900,21 @@ async function viewUserDatabases() {
       
       const statusCell = row.insertCell(4);
       const badge = document.createElement('span');
-      badge.className = `badge ${userDb ? 'success' : 'danger'}`;
+      badge.style.padding = '4px 12px';
+      badge.style.borderRadius = '4px';
+      badge.style.fontSize = '0.85em';
+      badge.style.fontWeight = 'bold';
+      badge.className = userDb ? 'badge success' : 'badge danger';
+      badge.style.background = userDb ? '#28a745' : '#dc3545';
+      badge.style.color = 'white';
       badge.textContent = userDb ? '正常' : '缺失';
       statusCell.appendChild(badge);
     }
     
-    addResult('isolation-results', `顯示 ${usersList.length} 個用戶的資料庫狀態`, 'info');
+    addResult('isolation-results', `✅ 顯示 ${usersList.length} 個用戶的資料庫狀態`, 'info');
     updateStats('database', true);
   } catch (error) {
-    addResult('isolation-results', `查看失敗: ${error.message}`, 'fail');
+    addResult('isolation-results', `❌ 查看失敗: ${error.message}`, 'fail');
     updateStats('database', false);
   }
 }
