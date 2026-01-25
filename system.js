@@ -1300,7 +1300,7 @@ function getLastLesson() {
 // 側邊欄統計
 function updateSidebarStats() {
   const records = parseRecords();
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
   const todayRecords = records.filter(r => r.classDate === today);
   const totalStudents = records.reduce((sum, r) => sum + (parseInt(r.classSize) || 0), 0);
   
@@ -2334,6 +2334,9 @@ document.addEventListener('DOMContentLoaded', () => {
     populateQuickSelectClass();
     renderClassPresets();
     refreshStats();
+    updateSidebarStats();
+    refreshActionsView?.();
+    refreshAnalytics?.();
     toast('✓ 已儲存本堂記錄');
   });
 
@@ -2524,6 +2527,76 @@ window.pouchdbDiagnosis = async () => {
   console.log('=== PouchDB 診斷報告 ===');
   Object.entries(results).forEach(([key, val]) => console.log(`${key}: ${val}`));
   return results;
+};
+
+// 輕量自動化測試：模擬儲存並驗證 UI 即時刷新
+window.testImmediateRefresh = async () => {
+  try {
+    const testRecord = {
+      classDate: todayStr(),
+      className: '測試班',
+      classSize: 12,
+      classLocation: '',
+      teachingRole: '',
+      classStartTime: '',
+      classEndTime: '',
+      classDurationMins: null,
+      notes: 'auto-test',
+      engagement: 3,
+      atmosphere: '開心',
+      tricks: [],
+      mastery: 50,
+      plannedTime: null,
+      actualTime: null,
+      skillLevel: '初級',
+      helpOthers: 50,
+      interaction: 50,
+      teamwork: 50,
+      selfPractice: 50,
+      activeLearn: 50,
+      positivity: 3,
+      enthusiasm: 3,
+      teachScore: 7,
+      satisfaction: 3,
+      disciplineCount: null,
+      flexibility: 7,
+      individual: 50
+    };
+
+    const list = parseRecords();
+    const idx = list.findIndex(r => r.classDate === testRecord.classDate && r.className === testRecord.className);
+    if (idx >= 0) list[idx] = testRecord; else list.push(testRecord);
+    list.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
+    saveRecords(list);
+
+    // 觸發所有相關刷新
+    updateSidebarStats();
+    refreshStats?.();
+    refreshActionsView?.();
+    refreshAnalytics?.();
+
+    // 讀取結果
+    const todayCount = parseInt(document.getElementById('todayCount')?.textContent || '0', 10);
+    const totalStudents = parseInt(document.getElementById('totalStudents')?.textContent || '0', 10);
+    const byClassNonEmpty = Boolean(document.getElementById('byClassList')?.innerHTML?.trim());
+    const actionsRows = (document.getElementById('actionsTableBody')?.children || []).length;
+    const analyticsNonEmpty = Boolean(document.getElementById('analyticsChart')?.innerHTML?.trim());
+
+    const result = {
+      todayCount,
+      totalStudents,
+      byClassNonEmpty,
+      actionsRows,
+      analyticsNonEmpty,
+      recordCount: parseRecords().length
+    };
+
+    console.log('=== 自動化 UI 刷新測試 ===', result);
+    return result;
+  } catch (error) {
+    console.error('❌ 自動化測試失敗:', error);
+    return { error: error.message };
+  }
 };
 
 // 導出全局對象供外部使用
