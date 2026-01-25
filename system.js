@@ -1322,6 +1322,7 @@ function updateSidebarStats() {
   const el2 = $('totalStudents');
   if (el1) el1.textContent = todayRecords.length;
   if (el2) el2.textContent = totalStudents;
+  console.log(`📊 側邊欄統計：今日 ${todayRecords.length} 堂，累計學生 ${totalStudents}`);
 }
 
 // 用戶信息更新
@@ -1742,8 +1743,9 @@ function parseRecords() {
     } catch {
       records = JSON.parse(encoded);
     }
-
-    return Array.isArray(records) ? records : [];
+    const safe = Array.isArray(records) ? records : [];
+    console.log(`📦 parseRecords() 讀取筆數: ${safe.length}`);
+    return safe;
   } catch (e) {
     console.warn('❌ 讀取記錄失敗:', e);
     return [];
@@ -2529,7 +2531,8 @@ document.addEventListener('DOMContentLoaded', () => {
   populateQuickSelectClass();
   renderClassPresets();
   renderTricks();
-  refreshStats();
+  // 初始渲染所有視圖，避免頁面初載入顯示空白
+  refreshAllViews();
   setPage('overview');
 
   console.log('✅ 應用初始化完成');
