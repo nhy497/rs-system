@@ -311,6 +311,120 @@ const AUTH_CONFIG = {
   PASSWORD_MIN_LENGTH: 4
 };
 
+// 用戶存儲設定（含舊版遺留鍵與阻擋名單）
+const USER_STORAGE_KEY = AUTH_CONFIG.USER_DB_KEY;
+const LEGACY_USER_KEY = 'users';
+const BLOCKED_USERNAMES = ['123', 'test', 'demo', 'admin'];
+
+// 與舊版相容的雜湊函式，避免明碼儲存
+function hashPasswordCompat(password) {
+  let hash = 0;
+  for (let i = 0; i < (password || '').length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16);
+}
+
+// 取得使用者資料（含舊版遷移、阻擋測試帳號、自動補 Creator）
+function loadUsersFromStorage() {
+  try {
+    const rawNew = localStorage.getItem(USER_STORAGE_KEY);
+    const rawLegacy = localStorage.getItem(LEGACY_USER_KEY);
+    let users = rawNew ? JSON.parse(rawNew) : (rawLegacy ? JSON.parse(rawLegacy) : []);
+
+    if (!Array.isArray(users)) {
+      users = Object.values(users || {});
+    }
+
+    let changed = false;
+
+    users = users
+      .filter(u => u && u.username)
+      .filter(u => {
+        const uname = (u.username || '').toLowerCase();
+        const isBlocked = BLOCKED_USERNAMES.includes(uname) || /^\d{1,4}$/.test(uname);
+        if (isBlocked) {
+          changed = true;
+          return false;
+        }
+        return true;
+      })
+      .map(u => {
+        const user = { ...u };
+        if (!user.id && user.userId) { user.id = user.userId; changed = true; }
+        if (!user.passwordHash && user.password) {
+          user.passwordHash = hashPasswordCompat(user.password);
+          delete user.password;
+          changed = true;
+        }
+        if (!user.role) { user.role = 'user'; changed = true; }
+        if (!user.createdAt) { user.createdAt = new Date().toISOString(); changed = true; }
+        return user;
+      });
+
+    // 只允許單一 Creator，帳號固定為 creator / 1234
+    const creatorHash = hashPasswordCompat('1234');
+    let creatorEntry = null;
+    const normalized = [];
+
+    users.forEach(user => {
+      if ((user.username || '').toLowerCase() === 'creator') {
+        if (!creatorEntry) {
+          creatorEntry = {
+            ...user,
+            username: 'creator',
+            role: 'creator',
+            passwordHash: creatorHash,
+            id: user.id || user.userId || `user_${Date.now()}_creator`,
+            userId: user.userId || user.id || undefined
+          };
+          changed = true;
+        } else {
+          changed = true; // 丟棄多餘 creator
+        }
+      } else {
+        if (user.role === 'creator') { user.role = 'user'; changed = true; }
+        normalized.push(user);
+      }
+    });
+
+    if (!creatorEntry) {
+      creatorEntry = {
+        id: `user_${Date.now()}_creator`,
+        userId: `user_${Date.now()}_creator`,
+        username: 'creator',
+        email: 'creator@system.local',
+        role: 'creator',
+        passwordHash: creatorHash,
+        createdAt: new Date().toISOString()
+      };
+      changed = true;
+    }
+
+    users = [creatorEntry, ...normalized];
+
+    if (changed || rawLegacy) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
+      if (rawLegacy) localStorage.removeItem(LEGACY_USER_KEY);
+    }
+
+    return users;
+  } catch (error) {
+    console.error('❌ 讀取用戶資料失敗:', error);
+    return [];
+  }
+}
+
+function saveUsersToStorage(users) {
+  try {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(users));
+  } catch (error) {
+    console.error('❌ 保存用戶資料失敗:', error);
+  }
+}
+
 // ============================================================================
 // 第 4 部分：登入管理器
 // ============================================================================
@@ -346,17 +460,16 @@ const LOGIN_MANAGER = {
       if (!username || !password) throw new Error('用戶名和密碼不能為空');
       if (this.isAccountLocked(username)) throw new Error('帳號已鎖定，請稍後再試');
 
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = Array.isArray(users) 
-        ? users.find(u => u.username === username)
-        : Object.values(users).find(u => u.username === username);
+      const users = loadUsersFromStorage();
+      const user = users.find(u => u.username === username);
       
       if (!user) {
         this.recordFailedAttempt(username);
         throw new Error('用戶名或密碼錯誤');
       }
 
-      const isPasswordValid = await this.verifyPassword(password, user.passwordHash);
+      const storedHash = user.passwordHash || null;
+      const isPasswordValid = await this.verifyPassword(password, storedHash);
       if (!isPasswordValid) {
         this.recordFailedAttempt(username);
         throw new Error('用戶名或密碼錯誤');
@@ -496,6 +609,7 @@ const LOGIN_MANAGER = {
 
   async verifyPassword(password, hash) {
     return new Promise((resolve) => {
+      if (!hash) return resolve(false);
       const computed = this.hashPassword(password);
       let result = true;
       const minLength = Math.min(computed.length, hash.length);
@@ -510,13 +624,7 @@ const LOGIN_MANAGER = {
   },
 
   hashPassword(password) {
-    let hash = 0;
-    for (let i = 0; i < password.length; i++) {
-      const char = password.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash).toString(16);
+    return hashPasswordCompat(password);
   },
 
   generateSessionId() {
@@ -652,10 +760,11 @@ function initLoginPage() {
         btnLogin.textContent = '登入中...';
       }
 
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find((u) => u.username === username && u.password === password);
+      const users = loadUsersFromStorage();
+      const user = users.find((u) => u.username === username);
+      const isValid = user ? (user.passwordHash === hashPasswordCompat(password)) : false;
 
-      if (user) {
+      if (user && isValid) {
         // 建立會話數據 - 必須包含必要欄位
         const currentTime = Date.now();
         const sessionTimeout = 24 * 60 * 60 * 1000; // 24 小時
@@ -745,6 +854,11 @@ function initLoginPage() {
       return;
     }
 
+    if (username.toLowerCase() === 'creator') {
+      showError('❌ 無法建立創作者帳戶');
+      return;
+    }
+
     if (password.length < 4) {
       showError('❌ 密碼至少需要4個字符');
       return;
@@ -756,7 +870,7 @@ function initLoginPage() {
         btnSignup.textContent = '建立中...';
       }
 
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const users = loadUsersFromStorage();
       if (users.some((u) => u.username === username)) {
         showError('❌ 此使用者名稱已被使用，請選擇另一個');
         if (btnSignup) {
@@ -769,14 +883,14 @@ function initLoginPage() {
       const newUser = {
         id: Date.now().toString(),
         username,
-        password,
+        passwordHash: hashPasswordCompat(password),
         email: email || null,
         role: 'user',
         createdAt: new Date().toISOString()
       };
 
       users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
+      saveUsersToStorage(users);
 
       showSuccess('✅ 帳戶建立成功！請用新帳號登入');
 
@@ -804,18 +918,17 @@ function initLoginPage() {
   });
 
   // 初始化狀態與預設 Creator
-  const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
+  const existingUsers = loadUsersFromStorage();
   if (!existingUsers.some((u) => u.username === 'creator')) {
-    const creatorAccount = {
+    existingUsers.push({
       id: Date.now().toString(),
       username: 'creator',
-      password: '1234',
+      passwordHash: hashPasswordCompat('1234'),
       email: 'creator@system.local',
       role: 'creator',
       createdAt: new Date().toISOString()
-    };
-    existingUsers.push(creatorAccount);
-    localStorage.setItem('users', JSON.stringify(existingUsers));
+    });
+    saveUsersToStorage(existingUsers);
   }
 
   document.getElementById('loginUsername')?.focus();
@@ -1255,7 +1368,7 @@ function refreshDataManagement() {
   const pageData = document.getElementById('page-data');
   if (pageData) pageData.hidden = false;
   
-  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const users = loadUsersFromStorage();
   
   if ($('statTotalUsers')) $('statTotalUsers').textContent = users.length;
   if ($('statCreatorCount')) $('statCreatorCount').textContent = users.filter(u => u.role === 'creator').length;
@@ -1309,7 +1422,7 @@ function deleteUser(userId, username) {
   }
   
   try {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const users = loadUsersFromStorage();
     const newUsers = users.filter(u => u.id !== userId);
     localStorage.setItem('users', JSON.stringify(newUsers));
     toast(`✓ 已刪除用戶「${username}」`);
@@ -1537,16 +1650,45 @@ function updateClassDuration() {
   }
 }
 
-// 記錄解析和保存
+// 取得依用戶隔離的存儲鍵，避免測試帳號污染正式資料
+function getUserScopedKey(baseKey) {
+  try {
+    const current = LOGIN_MANAGER?.getCurrentUser ? LOGIN_MANAGER.getCurrentUser() : null;
+    const userId = current?.id || current?.userId || 'guest';
+    return `${baseKey}::${userId}`;
+  } catch {
+    return `${baseKey}::guest`;
+  }
+}
+
+// 記錄解析和保存（含舊鍵遷移）
 function parseRecords() {
   try {
-    const encoded = localStorage.getItem(STORAGE_KEY);
-    if (!encoded) return [];
-    try {
-      return JSON.parse(atob(encoded));
-    } catch {
-      return JSON.parse(encoded);
+    const scopedKey = getUserScopedKey(STORAGE_KEY);
+    let encoded = localStorage.getItem(scopedKey);
+    let migrated = false;
+
+    if (!encoded) {
+      encoded = localStorage.getItem(STORAGE_KEY); // 舊版共用鍵
+      if (encoded) migrated = true;
     }
+
+    if (!encoded) return [];
+
+    let records = [];
+    try {
+      records = JSON.parse(atob(encoded));
+    } catch {
+      records = JSON.parse(encoded);
+    }
+
+    if (migrated) {
+      const encodedScoped = btoa(JSON.stringify(records));
+      localStorage.setItem(scopedKey, encodedScoped);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    return Array.isArray(records) ? records : [];
   } catch (e) {
     console.warn('Failed to parse records from storage:', e);
     return [];
@@ -1555,8 +1697,9 @@ function parseRecords() {
 
 function saveRecords(arr) {
   try {
+    const scopedKey = getUserScopedKey(STORAGE_KEY);
     const encoded = btoa(JSON.stringify(arr));
-    localStorage.setItem(STORAGE_KEY, encoded);
+    localStorage.setItem(scopedKey, encoded);
   } catch (e) {
     console.error('Failed to save records:', e);
     if (e.name === 'QuotaExceededError') {
@@ -1587,6 +1730,10 @@ function toast(msg) {
 
 // 頁面切換
 function setPage(name) {
+  if (name === 'data' && !isCreator()) {
+    toast('❌ 僅 Creator 可查看用戶管理');
+    return;
+  }
   $qa('.page').forEach(p => p.classList.remove('active'));
   const page = $('page-' + name);
   if (page) page.classList.add('active');
@@ -1992,38 +2139,19 @@ function showDetail(rec) {
 
 document.addEventListener('DOMContentLoaded', () => {
   // 初始化用戶數據庫（如果不存在）
-  if (!localStorage.getItem('users')) {
-    const defaultUsers = [
-      {
-        id: `user_${Date.now()}_creator`,
-        userId: `user_${Date.now()}_creator`,
-        username: 'creator',
-        password: '1234',
-        role: 'creator',
-        email: 'creator@system.local',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: `user_${Date.now()}_alice`,
-        userId: `user_${Date.now()}_alice`,
-        username: 'alice',
-        password: 'pass123',
-        role: 'user',
-        email: 'alice@system.local',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: `user_${Date.now()}_bob`,
-        userId: `user_${Date.now()}_bob`,
-        username: 'bob',
-        password: 'pass123',
-        role: 'user',
-        email: 'bob@system.local',
-        createdAt: new Date().toISOString()
-      }
-    ];
-    localStorage.setItem('users', JSON.stringify(defaultUsers));
-    console.log('✅ 已初始化默認用戶數據');
+  let seedUsers = loadUsersFromStorage();
+  if (seedUsers.length === 0) {
+    seedUsers = [{
+      id: `user_${Date.now()}_creator`,
+      userId: `user_${Date.now()}_creator`,
+      username: 'creator',
+      passwordHash: hashPasswordCompat('1234'),
+      role: 'creator',
+      email: 'creator@system.local',
+      createdAt: new Date().toISOString()
+    }];
+    saveUsersToStorage(seedUsers);
+    console.log('✅ 已初始化 Creator 用戶');
   }
 
   // 登入頁面初始化
@@ -2132,7 +2260,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 清除所有
   $('btnDeleteAll')?.addEventListener('click', () => {
     if (!confirm('確定要永久清除所有記錄嗎？此操作無法復原。')) return;
-    localStorage.removeItem(STORAGE_KEY);
+    const scopedKey = getUserScopedKey(STORAGE_KEY);
+    localStorage.removeItem(scopedKey);
+    localStorage.removeItem(STORAGE_KEY); // 清理舊版共享資料
     clearForm();
     populateGlobalFilterClass();
     populateQuickSelectClass();
