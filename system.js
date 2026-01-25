@@ -1955,11 +1955,7 @@ function deleteRecord(classDate, className) {
       });
     }
     
-    populateGlobalFilterClass();
-    populateQuickSelectClass();
-    refreshStats();
-    refreshAnalytics();
-    refreshActionsView();
+    refreshAllViews();
     toast('已刪除記錄');
     const modal = $('detailModal');
     if (modal) modal.hidden = true;
@@ -2144,6 +2140,17 @@ function refreshAnalytics() {
         '</table>';
     }
   }
+}
+
+// 重新渲染所有視圖：學生管理、動作記錄、統計
+function refreshAllViews() {
+  populateGlobalFilterClass();
+  populateQuickSelectClass();
+  renderClassPresets();
+  refreshStats();
+  updateSidebarStats();
+  refreshActionsView();
+  refreshAnalytics();
 }
 
 // 班別詳情 Modal
@@ -2342,11 +2349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem(scopedKey);
     localStorage.removeItem(STORAGE_KEY); // 清理舊版共享資料
     clearForm();
-    populateGlobalFilterClass();
-    populateQuickSelectClass();
-    refreshStats();
-    refreshAnalytics();
-    refreshActionsView();
+    refreshAllViews();
     toast('已清除所有記錄');
   });
 
@@ -2407,14 +2410,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (d.className.trim()) {
       addClassPreset(d.className);
     }
-    
-    populateGlobalFilterClass();
-    populateQuickSelectClass();
-    renderClassPresets();
-    refreshStats();
-    updateSidebarStats();
-    refreshActionsView?.();
-    refreshAnalytics?.();
+
+    refreshAllViews();
     toast('✓ 已儲存本堂記錄');
   });
 
