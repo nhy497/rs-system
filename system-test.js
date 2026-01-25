@@ -1097,11 +1097,35 @@ function getUserScopedKeyForClass(baseKey = 'rope-skip-checkpoints') {
   }
 }
 
+function safeEncodeBase64(str) {
+  try {
+    return btoa(unescape(encodeURIComponent(str)));
+  } catch {
+    // TextEncoder fallback for更完整UTF-8
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(str);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary);
+  }
+}
+
+function safeDecodeBase64(b64) {
+  try {
+    return decodeURIComponent(escape(atob(b64)));
+  } catch {
+    const binary = atob(b64);
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    const decoder = new TextDecoder();
+    return decoder.decode(bytes);
+  }
+}
+
 function loadClassRecordsForTest(scopedKey) {
   const raw = localStorage.getItem(scopedKey) || localStorage.getItem('rope-skip-checkpoints');
   if (!raw) return [];
   try {
-    return JSON.parse(atob(raw));
+    return JSON.parse(safeDecodeBase64(raw));
   } catch {
     try {
       return JSON.parse(raw);
@@ -1112,7 +1136,7 @@ function loadClassRecordsForTest(scopedKey) {
 }
 
 function saveClassRecordsForTest(scopedKey, records) {
-  const encoded = btoa(JSON.stringify(records));
+  const encoded = safeEncodeBase64(JSON.stringify(records));
   localStorage.setItem(scopedKey, encoded);
 }
 
