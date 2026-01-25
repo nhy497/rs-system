@@ -110,12 +110,16 @@ GitHub 會自動重新部署，數分鐘內即可用同一網址存取最新版�
 ## 三、檔案結構
 
 ```
-Cursor(1)/
-├── index.html    # 主頁
-├── app.js        # 邏輯、儲存、匯出、統計、班別、詳情
-├── styles.css    # 樣式
+rs-system/
+├── index.html          # 主頁（載入 system.js + styles.css + logger-service.js）
+├── system.js           # 整合版核心邏輯 (v3.x)
+├── styles.css          # 樣式
+├── logger-service.js   # 日誌與審計
+├── dev/                # 開發/測試工具（system-test, integration-check, PHASE3_INIT_CHECK 等）
 ├── .gitignore
-└── README.md     # 本說明
+└── README.md
 ```
+
+> 開發測試頁與診斷腳本已移到 `dev/`，避免污染正式 localStorage。若需使用，請以開發模式開啟並確認不在正式環境下執行。
 
 資料儲存在瀏覽器 **localStorage**，未上傳到 GitHub；換裝置或清除瀏覽器資料會遺失，重要記錄請多用 **「匯出全部記錄（CSV）」** 備份。

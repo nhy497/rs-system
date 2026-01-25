@@ -1253,7 +1253,11 @@ function buildSampleClassContent(currentUser = {}) {
   const atmospheres = ['開心', '不開心', '認真學習', '心散', '一般'];
   const randomAtmosphere = atmospheres[Math.floor(Math.random() * atmospheres.length)];
   
+  // 為每筆課堂記錄添加唯一ID（複合主鍵：classDate + className + uniqueId）
+  const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
   return {
+    id: uniqueId,
     classDate: dateStr,
     className,
     classSize: 8 + Math.floor(Math.random() * 23),
@@ -1281,7 +1285,8 @@ function buildSampleClassContent(currentUser = {}) {
     satisfaction: Math.floor(Math.random() * 5) + 1,
     disciplineCount: Math.floor(Math.random() * 5),
     flexibility: Math.floor(Math.random() * 10) + 1,
-    individual: Math.floor(Math.random() * 101)
+    individual: Math.floor(Math.random() * 101),
+    createdAt: new Date().toISOString()
   };
 }
 
@@ -1483,7 +1488,11 @@ function bulkAddClassContent() {
       const totalPlanned = selectedTricks.reduce((a, b) => a + (b.plannedTime || 0), 0);
       const totalActual = selectedTricks.reduce((a, b) => a + (b.actualTime || 0), 0);
       
+      // 為每筆課堂添加唯一ID（確保primary key不重複）
+      const uniqueId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const classContent = {
+        id: uniqueId,
         classDate: dateStr,
         className: `${prefix}-${i}`,
         classSize: 8 + Math.floor(Math.random() * 23),
@@ -1511,7 +1520,8 @@ function bulkAddClassContent() {
         satisfaction: Math.floor(Math.random() * 5) + 1,
         disciplineCount: Math.floor(Math.random() * 5),
         flexibility: Math.floor(Math.random() * 10) + 1,
-        individual: Math.floor(Math.random() * 101)
+        individual: Math.floor(Math.random() * 101),
+        createdAt: new Date().toISOString()
       };
       
       records.push(classContent);
