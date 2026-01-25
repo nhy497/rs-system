@@ -1968,6 +1968,7 @@ function isWithinLast7Days(dateStr) {
 // 刷新統計
 function refreshStats() {
   let list = parseRecords();
+  console.log(`  │  └─ 讀取 ${list.length} 筆記錄，準備更新 recentList 與 byClassList`);
   const classF = getGlobalFilterClass();
   if (classF) list = list.filter(r => ((r.className || '').trim() || '—') === classF);
   const dateFrom = getFilterDateFrom(), dateTo = getFilterDateTo();
@@ -2040,6 +2041,7 @@ function refreshByClass() {
 // 動作記錄頁面
 function refreshActionsView() {
   let list = parseRecords();
+  console.log(`  │  └─ 讀取 ${list.length} 筆記錄，準備更新 actionsTable`);
   const sel = $('actionFilterClass'), filterVal = sel ? sel.value : '';
   const dateFrom = ($('actionDateFrom') && $('actionDateFrom').value) || '';
   const dateTo = ($('actionDateTo') && $('actionDateTo').value) || '';
@@ -2075,6 +2077,7 @@ function refreshActionsView() {
 // 統計分析
 function refreshAnalytics() {
   let list = parseRecords();
+  console.log(`  │  └─ 讀取 ${list.length} 筆記錄，準備更新 analyticsChart`);
   const classF = ($('analyticsFilterClass') && $('analyticsFilterClass').value) || '';
   const dateFrom = ($('analyticsDateFrom') && $('analyticsDateFrom').value) || '';
   const dateTo = ($('analyticsDateTo') && $('analyticsDateTo').value) || '';
@@ -2124,13 +2127,30 @@ function refreshAnalytics() {
 
 // 重新渲染所有視圖：學生管理、動作記錄、統計
 function refreshAllViews() {
+  console.log('🔄 refreshAllViews() 開始執行...');
+  
+  console.log('  ├─ populateGlobalFilterClass()');
   populateGlobalFilterClass();
+  
+  console.log('  ├─ populateQuickSelectClass()');
   populateQuickSelectClass();
+  
+  console.log('  ├─ renderClassPresets()');
   renderClassPresets();
+  
+  console.log('  ├─ refreshStats()');
   refreshStats();
+  
+  console.log('  ├─ updateSidebarStats()');
   updateSidebarStats();
+  
+  console.log('  ├─ refreshActionsView()');
   refreshActionsView();
+  
+  console.log('  └─ refreshAnalytics()');
   refreshAnalytics();
+  
+  console.log('✅ refreshAllViews() 完成');
 }
 
 // 班別詳情 Modal
@@ -2422,8 +2442,18 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshAllViews();
     console.log('✅ refreshAllViews() 完成');
     
+    // 診斷輸出
+    const finalList = parseRecords();
+    console.log(`\n📊 【儲存診斷報告】`);
+    console.log(`  • localStorage 最終筆數: ${finalList.length}`);
+    console.log(`  • localStorage 內容: ${localStorage.getItem(STORAGE_KEY)?.substring(0, 100) || '（空）'}...`);
+    console.log(`  • todayCount 元素: ${$('todayCount')?.textContent || '（缺失）'}`);
+    console.log(`  • totalStudents 元素: ${$('totalStudents')?.textContent || '（缺失）'}`);
+    console.log(`  • recentList 元素: ${$('recentList')?.childElementCount || 0} 項`);
+    console.log(`  • byClassList 元素: ${$('byClassList')?.childElementCount || 0} 項`);
+    
     toast('✓ 已儲存本堂記錄');
-    console.log('🎉 儲存完成！');
+    console.log('🎉 儲存完成！\n');
   });
 
   // 清空按鈕
