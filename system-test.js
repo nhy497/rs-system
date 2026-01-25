@@ -1097,38 +1097,16 @@ function getUserScopedKeyForClass(baseKey = 'rope-skip-checkpoints') {
   }
 }
 
-function safeEncodeBase64(str) {
-  try {
-    return btoa(unescape(encodeURIComponent(str)));
-  } catch {
-    // TextEncoder fallback for更完整UTF-8
-    const encoder = new TextEncoder();
-    const bytes = encoder.encode(str);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    return btoa(binary);
-  }
-}
-
-function safeDecodeBase64(b64) {
-  try {
-    return decodeURIComponent(escape(atob(b64)));
-  } catch {
-    const binary = atob(b64);
-    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-    const decoder = new TextDecoder();
-    return decoder.decode(bytes);
-  }
-}
-
 function loadClassRecordsForTest(scopedKey) {
   const raw = localStorage.getItem(scopedKey) || localStorage.getItem('rope-skip-checkpoints');
   if (!raw) return [];
   try {
-    return JSON.parse(safeDecodeBase64(raw));
+    // 優先嘗試直接 JSON 解析（新方式，避免 btoa 問題）
+    return JSON.parse(raw);
   } catch {
     try {
-      return JSON.parse(raw);
+      // 再試舊方式 base64 解碼（向後兼容）
+      return JSON.parse(atob(raw));
     } catch {
       return [];
     }
@@ -1136,8 +1114,12 @@ function loadClassRecordsForTest(scopedKey) {
 }
 
 function saveClassRecordsForTest(scopedKey, records) {
-  const encoded = safeEncodeBase64(JSON.stringify(records));
-  localStorage.setItem(scopedKey, encoded);
+  // 直接儲存 JSON 字符串，不編碼，避免 btoa Latin1 限制
+  try {
+    localStorage.setItem(scopedKey, JSON.stringify(records));
+  } catch (error) {
+    console.error('❌ 課堂內容儲存失敗:', error);
+  }
 }
 
 function buildSampleClassContent(currentUser = {}) {
