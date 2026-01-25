@@ -195,6 +195,98 @@ function createNewUser() {
 }
 
 /**
+ * 批量建立測試帳戶
+ */
+function bulkCreateUsers() {
+  const countInput = document.getElementById('bulk-user-count');
+  const prefixInput = document.getElementById('bulk-user-prefix');
+  const count = parseInt(countInput.value) || 10;
+  const prefix = prefixInput.value.trim() || 'test';
+  const containerId = 'bulk-create-results';
+  const logId = 'bulk-create-log';
+  
+  // 驗證數量
+  if (count < 10 || count > 100) {
+    addResult(containerId, '帳戶數量必須在 10-100 之間', 'fail');
+    addLog(logId, '帳戶數量超出範圍', 'error');
+    return;
+  }
+  
+  document.getElementById(containerId).innerHTML = '';
+  addLog(logId, `=== 批量建立 ${count} 個測試帳戶 ===`, 'info');
+  
+  try {
+    const users = localStorage.getItem('users');
+    let usersList = users ? JSON.parse(users) : [];
+    const startCount = usersList.length;
+    const createdUsers = [];
+    
+    for (let i = 1; i <= count; i++) {
+      const newUser = {
+        id: `user_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: `user_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
+        username: `${prefix}_${i}`,
+        password: `pass${i}`,
+        role: i % 10 === 1 ? 'creator' : 'user',
+        createdAt: new Date().toISOString()
+      };
+      usersList.push(newUser);
+      createdUsers.push(newUser);
+      
+      if (i % 10 === 0) {
+        addLog(logId, `已建立 ${i}/${count} 個帳戶...`, 'info');
+      }
+    }
+    
+    localStorage.setItem('users', JSON.stringify(usersList));
+    
+    addResult(containerId, `✅ 批量建立成功！`, 'pass');
+    addResult(containerId, `總計 ${count} 個帳戶已建立`, 'pass');
+    addResult(containerId, `帳戶範圍: ${prefix}_1 ~ ${prefix}_${count}`, 'info');
+    addResult(containerId, `帳戶密碼: pass1, pass2, ..., pass${count}`, 'info');
+    addResult(containerId, `Creator 帳戶: ${prefix}_1, ${prefix}_11, ${prefix}_21...`, 'info');
+    
+    addLog(logId, `✅ 批量建立完成！`, 'success');
+    addLog(logId, `共建立 ${count} 個帳戶，名稱前綴: ${prefix}`, 'success');
+    addLog(logId, `總用戶數: ${startCount} → ${usersList.length}`, 'success');
+    
+    refreshUserStats();
+    updateStats('login', true);
+  } catch (error) {
+    addResult(containerId, `批量建立失敗: ${error.message}`, 'fail');
+    addLog(logId, `錯誤: ${error.message}`, 'error');
+    updateStats('login', false);
+  }
+}
+
+/**
+ * 清除所有測試帳戶（保留 creator）
+ */
+function bulkClearUsers() {
+  if (!confirm('確定要清除所有測試帳戶嗎？（保留 creator 帳戶）')) {
+    return;
+  }
+  
+  try {
+    const users = localStorage.getItem('users');
+    let usersList = users ? JSON.parse(users) : [];
+    const beforeCount = usersList.length;
+    
+    usersList = usersList.filter(u => u.username === 'creator');
+    localStorage.setItem('users', JSON.stringify(usersList));
+    
+    addResult('bulk-create-results', `✅ 已清除 ${beforeCount - usersList.length} 個測試帳戶`, 'pass');
+    addLog('bulk-create-log', `清除完成：${beforeCount} → ${usersList.length} 個帳戶`, 'success');
+    
+    refreshUserStats();
+    updateStats('login', true);
+  } catch (error) {
+    addResult('bulk-create-results', `清除失敗: ${error.message}`, 'fail');
+    addLog('bulk-create-log', `錯誤: ${error.message}`, 'error');
+  }
+}
+
+/**
  * 刷新用戶統計
  */
 function refreshUserStats() {
@@ -1301,6 +1393,166 @@ function addTestClassContent() {
     addLog('storage-log', `保存鍵：${scopedKey}，目前共 ${records.length} 筆`, 'success');
   } catch (error) {
     addResult(containerId, `新增失敗: ${error.message}`, 'fail');
+  }
+}
+
+/**
+ * 批量新增課堂內容
+ */
+function bulkAddClassContent() {
+  const countInput = document.getElementById('bulk-class-count');
+  const prefixInput = document.getElementById('bulk-class-prefix');
+  const count = parseInt(countInput.value) || 10;
+  const prefix = prefixInput.value.trim() || '批量測試班';
+  const containerId = 'bulk-class-results';
+  const logId = 'bulk-class-log';
+  
+  // 驗證數量
+  if (count < 1 || count > 100) {
+    addResult(containerId, '課堂筆數必須在 1-100 之間', 'fail');
+    addLog(logId, '課堂筆數超出範圍', 'error');
+    return;
+  }
+  
+  const currentUserRaw = localStorage.getItem('current-user');
+  if (!currentUserRaw) {
+    addResult(containerId, '請先登入後再新增課堂', 'warn');
+    return;
+  }
+  
+  document.getElementById(containerId).innerHTML = '';
+  addLog(logId, `=== 批量新增 ${count} 筆課堂內容 ===`, 'info');
+  
+  try {
+    const currentUser = JSON.parse(currentUserRaw);
+    const scopedKey = getUserScopedKeyForClass();
+    let records = loadClassRecordsForTest(scopedKey) || [];
+    const startCount = records.length;
+    const today = new Date();
+    
+    // 生成 count 筆課堂資料
+    const tricks = [
+      { name: '單搖', detail: '基礎技巧', level: '初級', mastery: 80, plannedTime: 10, actualTime: 9, skillLevel: '初級' },
+      { name: '交叉跳', detail: '進階技巧', level: '中級', mastery: 60, plannedTime: 15, actualTime: 14, skillLevel: '中級' },
+      { name: '雙搖', detail: '難度技巧', level: '進階', mastery: 40, plannedTime: 20, actualTime: 18, skillLevel: '進階' }
+    ];
+    
+    for (let i = 1; i <= count; i++) {
+      const dateOffset = Math.floor((i - 1) / 5); // 每 5 筆資料相隔 1 天
+      const classDate = new Date(today);
+      classDate.setDate(classDate.getDate() - dateOffset);
+      const dateStr = classDate.toISOString().slice(0, 10);
+      
+      // 隨機選擇花式
+      const selectedTricks = tricks.slice(0, (i % 3) + 1);
+      const avgMastery = Math.round(selectedTricks.reduce((a, b) => a + b.mastery, 0) / selectedTricks.length);
+      const totalPlanned = selectedTricks.reduce((a, b) => a + (b.plannedTime || 0), 0);
+      const totalActual = selectedTricks.reduce((a, b) => a + (b.actualTime || 0), 0);
+      
+      const classContent = {
+        classDate: dateStr,
+        className: `${prefix}-${i}`,
+        classSize: 10 + (i % 20),
+        classLocation: `測試場地 ${i}`,
+        teachingRole: '主教練',
+        classStartTime: `${9 + (i % 8)}:00`,
+        classEndTime: `${10 + (i % 8)}:00`,
+        classDurationMins: 60,
+        notes: `批量測試課堂第 ${i} 筆`,
+        engagement: (i % 5) + 1,
+        atmosphere: ['開心', '認真學習', '一般'][i % 3],
+        tricks: selectedTricks,
+        mastery: avgMastery,
+        plannedTime: totalPlanned,
+        actualTime: totalActual,
+        skillLevel: selectedTricks[0]?.skillLevel || '初級',
+        helpOthers: 50 + (i % 50),
+        interaction: 50 + (i % 50),
+        teamwork: 50 + (i % 50),
+        selfPractice: 50 + (i % 50),
+        activeLearn: 50 + (i % 50),
+        positivity: (i % 5) + 1,
+        enthusiasm: (i % 5) + 1,
+        teachScore: 5 + (i % 5),
+        satisfaction: (i % 5) + 1,
+        disciplineCount: i % 20,
+        flexibility: 5 + (i % 5),
+        individual: 50 + (i % 50)
+      };
+      
+      records.push(classContent);
+      
+      if (i % 10 === 0) {
+        addLog(logId, `已新增 ${i}/${count} 筆課堂...`, 'info');
+      }
+    }
+    
+    saveClassRecordsForTest(scopedKey, records);
+    
+    addResult(containerId, `✅ 批量新增成功！`, 'pass');
+    addResult(containerId, `總計 ${count} 筆課堂已新增`, 'pass');
+    addResult(containerId, `課堂名稱: ${prefix}-1 ~ ${prefix}-${count}`, 'info');
+    addResult(containerId, `日期跨度: ${Math.floor((count - 1) / 5)} 天`, 'info');
+    
+    addLog(logId, `✅ 批量新增完成！`, 'success');
+    addLog(logId, `共新增 ${count} 筆課堂，名稱前綴: ${prefix}`, 'success');
+    addLog(logId, `總課堂數: ${startCount} → ${records.length}`, 'success');
+    addLog(logId, `保存鍵: ${scopedKey}`, 'success');
+    
+    updateStats('storage', true);
+  } catch (error) {
+    addResult(containerId, `批量新增失敗: ${error.message}`, 'fail');
+    addLog(logId, `錯誤: ${error.message}`, 'error');
+    updateStats('storage', false);
+  }
+}
+
+/**
+ * 查看所有課堂內容
+ */
+function bulkViewClassContent() {
+  const containerId = 'bulk-class-results';
+  document.getElementById(containerId).innerHTML = '';
+  
+  const scopedKey = getUserScopedKeyForClass();
+  const records = loadClassRecordsForTest(scopedKey);
+  
+  if (!records || records.length === 0) {
+    addResult(containerId, '尚無課堂內容', 'warn');
+    return;
+  }
+  
+  addResult(containerId, `📊 共 ${records.length} 筆課堂記錄`, 'info');
+  
+  // 顯示前 5 筆課堂摘要
+  records.slice(0, 5).forEach((c, idx) => {
+    const trickNames = (c.tricks || []).map(t => t.name).join('、') || '無';
+    addResult(containerId, `[${idx + 1}] ${c.className} (${c.classDate}) - 花式: ${trickNames}`, 'info');
+  });
+  
+  if (records.length > 5) {
+    addResult(containerId, `... 和 ${records.length - 5} 筆課堂`, 'info');
+  }
+}
+
+/**
+ * 清除所有課堂內容
+ */
+function bulkClearClassContent() {
+  if (!confirm('確定要清除所有課堂內容嗎？')) {
+    return;
+  }
+  
+  try {
+    const scopedKey = getUserScopedKeyForClass();
+    localStorage.removeItem(scopedKey);
+    localStorage.removeItem('rope-skip-checkpoints');
+    
+    addResult('bulk-class-results', `✅ 已清除所有課堂內容`, 'pass');
+    addLog('bulk-class-log', `清除完成`, 'success');
+  } catch (error) {
+    addResult('bulk-class-results', `清除失敗: ${error.message}`, 'fail');
+    addLog('bulk-class-log', `錯誤: ${error.message}`, 'error');
   }
 }
 

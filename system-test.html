@@ -356,7 +356,34 @@
       </div>
 
       <div class="test-section">
-        <h3><span>📊</span> 2. 用戶列表管理</h3>
+        <h3><span>⚡</span> 2. 批量建立測試帳戶</h3>
+        <div class="info-box">
+          快速建立 10-100 個無限測試帳戶，用於大量測試系統功能
+        </div>
+        
+        <div class="login-form">
+          <div class="form-group">
+            <label for="bulk-user-count">📊 建立帳戶數量 (10-100)</label>
+            <input type="number" id="bulk-user-count" min="10" max="100" value="10" placeholder="輸入數量">
+          </div>
+          
+          <div class="form-group">
+            <label for="bulk-user-prefix">🏷️ 帳戶名稱前綴 (選填)</label>
+            <input type="text" id="bulk-user-prefix" value="test" placeholder="例: test (預設: test_1, test_2...)">
+          </div>
+          
+          <div class="form-controls">
+            <button class="btn-success" onclick="bulkCreateUsers()">⚡ 批量建立帳戶</button>
+            <button onclick="bulkClearUsers()">🗑️ 清除測試帳戶</button>
+          </div>
+        </div>
+        
+        <div id="bulk-create-results"></div>
+        <div class="log-viewer" id="bulk-create-log"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>📊</span> 3. 用戶列表管理</h3>
         <div class="test-controls">
           <button onclick="listAllUsers()">📋 列出所有用戶</button>
           <button onclick="searchUser()">🔍 搜尋用戶</button>
@@ -540,7 +567,35 @@
       </div>
 
       <div class="test-section">
-        <h3><span>🔗</span> 3. 資料關聯測試</h3>
+        <h3><span>⚡</span> 3. 批量新增課堂內容</h3>
+        <div class="info-box">
+          快速新增 1-100 筆課堂內容資料，用於測試大量數據存儲和查詢
+        </div>
+        
+        <div class="login-form">
+          <div class="form-group">
+            <label for="bulk-class-count">📊 新增課堂筆數 (1-100)</label>
+            <input type="number" id="bulk-class-count" min="1" max="100" value="10" placeholder="輸入數量">
+          </div>
+          
+          <div class="form-group">
+            <label for="bulk-class-prefix">🏷️ 課堂名稱前綴 (選填)</label>
+            <input type="text" id="bulk-class-prefix" value="批量測試班" placeholder="例: 批量測試班 (預設: 批量測試班-1, 批量測試班-2...)">
+          </div>
+          
+          <div class="form-controls">
+            <button class="btn-success" onclick="bulkAddClassContent()">⚡ 批量新增課堂</button>
+            <button onclick="bulkViewClassContent()">📋 查看所有課堂</button>
+            <button class="btn-danger" onclick="bulkClearClassContent()">🗑️ 清除所有課堂</button>
+          </div>
+        </div>
+        
+        <div id="bulk-class-results"></div>
+        <div class="log-viewer" id="bulk-class-log"></div>
+      </div>
+
+      <div class="test-section">
+        <h3><span>🔗</span> 4. 資料關聯測試</h3>
         <div class="test-controls">
           <button onclick="testDataRelationship()">測試資料關聯</button>
           <button onclick="testUserDataIsolation()">測試用戶資料隔離</button>
