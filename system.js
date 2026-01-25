@@ -764,7 +764,17 @@ function initLoginPage() {
 
       const users = loadUsersFromStorage();
       const user = users.find((u) => u.username === username);
-      const isValid = user ? (user.passwordHash === hashPasswordCompat(password)) : false;
+      const inputHash = hashPasswordCompat(password);
+      const isValid = user ? (user.passwordHash === inputHash) : false;
+      
+      // 診斷輸出
+      console.log(`🔐 登入驗證 ${username}:`);
+      console.log(`  ├─ 找到用戶: ${user ? '是' : '否'}`);
+      if (user) {
+        console.log(`  ├─ 儲存的 passwordHash: ${user.passwordHash}`);
+        console.log(`  ├─ 輸入密碼 Hash: ${inputHash}`);
+        console.log(`  └─ 驗證結果: ${isValid ? '✅ 通過' : '❌ 失敗'}`);
+      }
 
       if (user && isValid) {
         // 建立會話數據 - 與 system-test.js 完全一致的格式
@@ -887,12 +897,14 @@ function initLoginPage() {
       // 允許創建無限用戶，即使名稱重複（與 system-test.js 一致）
       // 通過時間戳和隨機字符串確保每個用戶都有唯一的 ID
       
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const passwordHash = hashPasswordCompat(password);
+      
       const newUser = {
-        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        userId: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: userId,
+        userId: userId,
         username,
-        password: password,
-        passwordHash: hashPasswordCompat(password),
+        passwordHash: passwordHash,
         email: email || null,
         role: 'user',
         createdAt: new Date().toISOString()
@@ -900,8 +912,17 @@ function initLoginPage() {
 
       users.push(newUser);
       saveUsersToStorage(users);
-
-      console.log('✅ 用戶創建成功:', username, '| ID:', newUser.id);
+      
+      // 驗證儲存是否成功
+      const savedUsers = loadUsersFromStorage();
+      const verifyUser = savedUsers.find(u => u.username === username);
+      
+      console.log(`✅ 帳戶建立: ${username}`);
+      console.log(`  ├─ 密碼 Hash: ${passwordHash}`);
+      console.log(`  ├─ 儲存後驗證: ${verifyUser ? '✅ 成功' : '❌ 失敗'}`);
+      if (verifyUser) {
+        console.log(`  └─ 儲存的 Hash: ${verifyUser.passwordHash}`);
+      }
       showSuccess(`✅ 帳戶建立成功！用戶名: ${username}`);
 
       document.getElementById('signupUsername').value = '';
