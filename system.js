@@ -3,6 +3,12 @@
  * 整合系統核心模組 - 統一 JavaScript 檔案
  * v3.0: 完整整合版本（app + login + auth + storage + ui）
  * 
+ * 重要維護提示（避免分叉）：
+ * - 認證/會話：LOGIN_MANAGER 相關邏輯為單一真實來源，勿在其他檔案重建會話物件。
+ * - 存儲：所有課堂紀錄統一經 STORAGE_MANAGER + parseRecords/saveRecords；禁止直接寫入 localStorage 原始 key。
+ * - 重複/編輯：課堂表單的重複檢查、編輯模式提示需保持一致；新增變更請透過現有函式擴充，避免平行實作。
+ * - 開發測試：dev/* 已改為 dev-* key 隔離，若新增測試檔亦請採用隔離或只讀模式。
+ *
  * 模組結構：
  * 1. 全局常數和配置
  * 2. 存儲管理系統 (STORAGE_MANAGER)
@@ -139,16 +145,8 @@ const STORAGE_MANAGER = {
         return userId ? safe.filter(cp => cp.userId === userId) : safe;
       }
       return safe;
-      } catch (decodeError) {
-        console.warn('⚠️ Base64 解碼失敗，嘗試直接解析...');
-        const directParse = JSON.parse(encoded);
-        localStorage.setItem(this.KEYS.CHECKPOINTS, btoa(JSON.stringify(directParse)));
-        this.cache.checkpoints = directParse;
-        this.cache.lastSync = Date.now();
-        return directParse;
-      }
     } catch (error) {
-      console.error('❌ 讀取課堂記錄失敗:', error);
+      console.error('❌ getCheckpoints() 讀取失敗:', error);
       const backup = this.getBackup();
       if (backup && backup.checkpoints) {
         console.log('📦 從備份恢復課堂記錄');

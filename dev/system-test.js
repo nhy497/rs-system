@@ -3,6 +3,27 @@
  * 包含所有測試邏輯：登入狀態、資料儲存、用戶資料庫、Creator 界面
  */
 
+// 測試環境隔離：覆寫 localStorage 讀寫，避免污染正式資料鍵
+(function isolateTestStorage() {
+  const TEST_KEYS = new Set([
+    'users',
+    'rope-skip-checkpoints',
+    'rs-system-session',
+    'current-user',
+    'rs-system-coach-logs',
+    'rs-system-system-logs',
+    'rs-system-audit-logs'
+  ]);
+  const prefixKey = (key) => (TEST_KEYS.has(key) ? `dev-${key}` : key);
+  const origGet = localStorage.getItem.bind(localStorage);
+  const origSet = localStorage.setItem.bind(localStorage);
+  const origRemove = localStorage.removeItem.bind(localStorage);
+  localStorage.getItem = (key) => origGet(prefixKey(key));
+  localStorage.setItem = (key, val) => origSet(prefixKey(key), val);
+  localStorage.removeItem = (key) => origRemove(prefixKey(key));
+  console.log('🔒 dev/system-test.js 已啟用測試資料隔離 (dev-* keys)');
+})();
+
 // ==================== 全局變數 ====================
 let testResults = {
   login: { total: 0, pass: 0, fail: 0 },
