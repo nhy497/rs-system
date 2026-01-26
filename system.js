@@ -96,8 +96,8 @@ const STORAGE_MANAGER = {
 
   async getCheckpoints(userId = null) {
     try {
+      // 優先使用緩存
       if (this.cache.checkpoints && Date.now() - this.cache.lastSync < 300000) {
-        // 創作者可以查看所有記錄，普通用戶只能查看自己的
         const currentUser = getCurrentUser();
         if (currentUser && currentUser.role === 'creator') {
           return userId ? this.cache.checkpoints.filter(cp => cp.userId === userId) : this.cache.checkpoints;
@@ -105,22 +105,40 @@ const STORAGE_MANAGER = {
         return this.cache.checkpoints;
       }
 
+      // 從 localStorage 讀取（使用統一編碼）
       const encoded = localStorage.getItem(this.KEYS.CHECKPOINTS);
       if (!encoded) {
         this.cache.checkpoints = [];
+        this.cache.lastSync = Date.now();
+        console.log('📦 getCheckpoints() 讀取筆數: 0 (無數據)');
         return [];
       }
 
+      let decoded = [];
       try {
-        const decoded = JSON.parse(atob(encoded));
-        this.cache.checkpoints = decoded;
-        this.cache.lastSync = Date.now();
-        // 創作者可以查看所有記錄，普通用戶只能查看自己的
-        const currentUser = getCurrentUser();
-        if (currentUser && currentUser.role === 'creator') {
-          return userId ? decoded.filter(cp => cp.userId === userId) : decoded;
+        // 統一使用 encodeURIComponent + btoa 編碼方式
+        decoded = JSON.parse(decodeURIComponent(atob(encoded)));
+      } catch {
+        try {
+          // 兼容舊的 btoa 方式
+          decoded = JSON.parse(atob(encoded));
+        } catch {
+          // 最後嘗試直接解析
+          decoded = JSON.parse(encoded);
         }
-        return decoded;
+      }
+      
+      const safe = Array.isArray(decoded) ? decoded : [];
+      this.cache.checkpoints = safe;
+      this.cache.lastSync = Date.now();
+      console.log(`📦 getCheckpoints() 讀取筆數: ${safe.length}`);
+      
+      // 創作者可以查看所有記錄，普通用戶只能查看自己的
+      const currentUser = getCurrentUser();
+      if (currentUser && currentUser.role === 'creator') {
+        return userId ? safe.filter(cp => cp.userId === userId) : safe;
+      }
+      return safe;
       } catch (decodeError) {
         console.warn('⚠️ Base64 解碼失敗，嘗試直接解析...');
         const directParse = JSON.parse(encoded);
@@ -142,20 +160,14 @@ const STORAGE_MANAGER = {
   },
 
   async saveCheckpoints(records) {
-    // 檢查創作者權限 - 創作者不能新增課程記錄
-    const currentUser = getCurrentUser();
-    if (currentUser && currentUser.role === 'creator') {
-      console.warn('⚠️ 創作者帳戶不能新增或修改課程記錄');
-      toast('❌ 創作者帳戶僅限查看，不能新增課程記錄');
-      return false;
-    }
-    
+    // 統一存儲方法，與 saveRecords() 使用相同編碼
     let retryCount = 0;
     while (retryCount < this.CONFIG.MAX_RETRIES) {
       try {
         if (!Array.isArray(records)) throw new Error('數據格式無效');
         
         // 為每筆記錄添加用戶ID（如果尚未添加）
+        const currentUser = getCurrentUser();
         const recordsWithUserId = records.map(record => {
           if (!record.userId && currentUser) {
             return { ...record, userId: currentUser.userId || currentUser.id };
@@ -163,7 +175,10 @@ const STORAGE_MANAGER = {
           return record;
         });
 
-        const encoded = btoa(JSON.stringify(recordsWithUserId));
+        // 統一使用 encodeURIComponent + btoa 編碼方式
+        const jsonStr = JSON.stringify(recordsWithUserId);
+        const encoded = btoa(encodeURIComponent(jsonStr));
+        
         if (encoded.length > this.CONFIG.STORAGE_QUOTA) {
           console.warn('⚠️ 存儲空間不足');
           this.cleanupOldData(recordsWithUserId);
@@ -173,7 +188,10 @@ const STORAGE_MANAGER = {
         localStorage.setItem(this.KEYS.CHECKPOINTS, encoded);
         this.cache.checkpoints = recordsWithUserId;
         this.cache.lastSync = Date.now();
-        console.log(`✅ 保存 ${recordsWithUserId.length} 筆課堂記錄`);
+        console.log(`✅ STORAGE_MANAGER.saveCheckpoints() 保存 ${recordsWithUserId.length} 筆課堂記錄`);
+        if (recordsWithUserId.length > 0) {
+          console.log(`📊 範例記錄:`, recordsWithUserId[0]);
+        }
         return true;
       } catch (error) {
         retryCount++;
@@ -1881,50 +1899,101 @@ function updateClassDuration() {
 // （已移除用戶隔離邏輯 - 改用共享存儲避免資料遺失）
 
 // 記錄解析（共享存儲 - 所有登入用戶共用同一資料庫）
+// 統一版本：與 STORAGE_MANAGER.getCheckpoints() 使用相同邏輯
 function parseRecords() {
   try {
+    // 優先使用緩存（5分鐘內）
+    if (STORAGE_MANAGER.cache.checkpoints && Date.now() - STORAGE_MANAGER.cache.lastSync < 300000) {
+      console.log(`📦 parseRecords() 使用緩存: ${STORAGE_MANAGER.cache.checkpoints.length} 筆`);
+      return STORAGE_MANAGER.cache.checkpoints;
+    }
+    
     const encoded = localStorage.getItem(STORAGE_KEY);
-    if (!encoded) return [];
+    if (!encoded) {
+      console.log('📦 parseRecords() 讀取筆數: 0 (無數據)');
+      STORAGE_MANAGER.cache.checkpoints = [];
+      STORAGE_MANAGER.cache.lastSync = Date.now();
+      return [];
+    }
     
     let records = [];
     try {
-      // 嘗試新的 Unicode 編碼方式（支援中文）
+      // 統一編碼方式：encodeURIComponent + btoa（支援中文）
       records = JSON.parse(decodeURIComponent(atob(encoded)));
     } catch {
       try {
-        // 回退到舊的 btoa 方式（兼容舊資料）
+        // 兼容舊的 btoa 方式
         records = JSON.parse(atob(encoded));
       } catch {
         // 最後嘗試直接 JSON 解析
         records = JSON.parse(encoded);
       }
     }
+    
     const safe = Array.isArray(records) ? records : [];
     console.log(`📦 parseRecords() 讀取筆數: ${safe.length}`);
+    if (safe.length > 0) {
+      console.log(`📊 第一筆記錄範例:`, safe[0]);
+    }
+    
+    // 同步更新 STORAGE_MANAGER 緩存
+    STORAGE_MANAGER.cache.checkpoints = safe;
+    STORAGE_MANAGER.cache.lastSync = Date.now();
+    
     return safe;
   } catch (e) {
-    console.warn('❌ 讀取記錄失敗:', e);
+    console.error('❌ parseRecords() 讀取失敗:', e);
+    STORAGE_MANAGER.cache.checkpoints = [];
     return [];
   }
 }
 
+// 保存記錄（共享存儲）
+// 統一版本：與 STORAGE_MANAGER.saveCheckpoints() 使用相同邏輯
 function saveRecords(arr) {
   try {
     if (!Array.isArray(arr)) throw new Error('資料格式無效：必須是陣列');
     
-    // 使用 encodeURIComponent + btoa 支援中文與 Unicode 字元
-    const jsonStr = JSON.stringify(arr);
+    // 為每筆記錄添加用戶ID（如果尚未添加）
+    const currentUser = getCurrentUser();
+    const recordsWithUserId = arr.map(record => {
+      if (!record.userId && currentUser) {
+        return { ...record, userId: currentUser.userId || currentUser.id };
+      }
+      return record;
+    });
+    
+    // 統一編碼方式：encodeURIComponent + btoa（支援中文）
+    const jsonStr = JSON.stringify(recordsWithUserId);
     const encoded = btoa(encodeURIComponent(jsonStr));
     
+    // 檢查存儲空間
+    if (encoded.length > 4 * 1024 * 1024) { // 4MB 限制
+      console.warn('⚠️ 數據過大，嘗試清理舊記錄');
+      const sorted = recordsWithUserId.sort((a, b) => 
+        new Date(b.createdAt || b.classDate) - new Date(a.createdAt || a.classDate)
+      );
+      return saveRecords(sorted.slice(0, 500)); // 只保留最新 500 筆
+    }
+    
     localStorage.setItem(STORAGE_KEY, encoded);
-    console.log(`✅ 已儲存 ${arr.length} 筆課堂記錄 到 ${STORAGE_KEY}`);
+    
+    // 同步更新 STORAGE_MANAGER 緩存
+    STORAGE_MANAGER.cache.checkpoints = recordsWithUserId;
+    STORAGE_MANAGER.cache.lastSync = Date.now();
+    
+    console.log(`✅ saveRecords() 已儲存 ${recordsWithUserId.length} 筆課堂記錄`);
+    if (recordsWithUserId.length > 0) {
+      console.log(`📊 範例記錄:`, recordsWithUserId[0]);
+    }
   } catch (e) {
-    console.error('❌ 保存記錄失敗:', e);
+    console.error('❌ saveRecords() 保存失敗:', e);
     if (e.name === 'QuotaExceededError') {
       toast('❌ 存儲空間已滿，請清除舊記錄');
     } else {
       toast('❌ 無法保存數據：' + e.message);
     }
+    throw e; // 向上拋出錯誤以便調試
   }
 }
 
