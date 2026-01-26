@@ -299,11 +299,30 @@ const STORAGE_MANAGER = {
 
   async loadCache() {
     try {
-      this.cache.checkpoints = await this.getCheckpoints();
-      this.cache.presets = await this.getPresets();
+      // 直接從 localStorage 讀取，避免循環調用
+      const encoded = localStorage.getItem(this.KEYS.CHECKPOINTS);
+      if (encoded) {
+        try {
+          this.cache.checkpoints = JSON.parse(decodeURIComponent(atob(encoded)));
+        } catch {
+          try {
+            this.cache.checkpoints = JSON.parse(atob(encoded));
+          } catch {
+            this.cache.checkpoints = JSON.parse(encoded);
+          }
+        }
+      } else {
+        this.cache.checkpoints = [];
+      }
+      
+      const presetsRaw = localStorage.getItem(this.KEYS.PRESETS);
+      this.cache.presets = presetsRaw ? JSON.parse(presetsRaw) : [];
+      this.cache.lastSync = Date.now();
       console.log('✅ 快取已加載');
     } catch (error) {
       console.error('⚠️ 快取加載失敗:', error);
+      this.cache.checkpoints = [];
+      this.cache.presets = [];
     }
   },
 
