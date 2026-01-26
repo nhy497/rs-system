@@ -2570,8 +2570,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = parseRecords();
     console.log(`📚 讀取 ${list.length} 筆現有記錄`);
     
-    // 為課程記錄添加唯一ID和用戶ID
-    const currentUser = getCurrentUser();
+    // 為課程記錄添加唯一ID和用戶ID（使用前面已聲明的 currentUser）
     if (!d.id) {
       d.id = `checkpoint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
