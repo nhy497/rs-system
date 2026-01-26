@@ -94,9 +94,14 @@ const STORAGE_MANAGER = {
     }
   },
 
-  async getCheckpoints() {
+  async getCheckpoints(userId = null) {
     try {
       if (this.cache.checkpoints && Date.now() - this.cache.lastSync < 300000) {
+        // 創作者可以查看所有記錄，普通用戶只能查看自己的
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.role === 'creator') {
+          return userId ? this.cache.checkpoints.filter(cp => cp.userId === userId) : this.cache.checkpoints;
+        }
         return this.cache.checkpoints;
       }
 
@@ -110,6 +115,11 @@ const STORAGE_MANAGER = {
         const decoded = JSON.parse(atob(encoded));
         this.cache.checkpoints = decoded;
         this.cache.lastSync = Date.now();
+        // 創作者可以查看所有記錄，普通用戶只能查看自己的
+        const currentUser = getCurrentUser();
+        if (currentUser && currentUser.role === 'creator') {
+          return userId ? decoded.filter(cp => cp.userId === userId) : decoded;
+        }
         return decoded;
       } catch (decodeError) {
         console.warn('⚠️ Base64 解碼失敗，嘗試直接解析...');
@@ -132,22 +142,38 @@ const STORAGE_MANAGER = {
   },
 
   async saveCheckpoints(records) {
+    // 檢查創作者權限 - 創作者不能新增課程記錄
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.role === 'creator') {
+      console.warn('⚠️ 創作者帳戶不能新增或修改課程記錄');
+      toast('❌ 創作者帳戶僅限查看，不能新增課程記錄');
+      return false;
+    }
+    
     let retryCount = 0;
     while (retryCount < this.CONFIG.MAX_RETRIES) {
       try {
         if (!Array.isArray(records)) throw new Error('數據格式無效');
+        
+        // 為每筆記錄添加用戶ID（如果尚未添加）
+        const recordsWithUserId = records.map(record => {
+          if (!record.userId && currentUser) {
+            return { ...record, userId: currentUser.userId || currentUser.id };
+          }
+          return record;
+        });
 
-        const encoded = btoa(JSON.stringify(records));
+        const encoded = btoa(JSON.stringify(recordsWithUserId));
         if (encoded.length > this.CONFIG.STORAGE_QUOTA) {
           console.warn('⚠️ 存儲空間不足');
-          this.cleanupOldData(records);
+          this.cleanupOldData(recordsWithUserId);
           continue;
         }
 
         localStorage.setItem(this.KEYS.CHECKPOINTS, encoded);
-        this.cache.checkpoints = records;
+        this.cache.checkpoints = recordsWithUserId;
         this.cache.lastSync = Date.now();
-        console.log(`✅ 保存 ${records.length} 筆課堂記錄`);
+        console.log(`✅ 保存 ${recordsWithUserId.length} 筆課堂記錄`);
         return true;
       } catch (error) {
         retryCount++;
@@ -1420,24 +1446,88 @@ function refreshDataManagement() {
     if (usersEmpty) usersEmpty.hidden = true;
     const currentUser = getCurrentUser();
     if (usersList) {
+      // 獲取所有課程記錄來統計每個用戶的課程數
+      const allCheckpoints = STORAGE_MANAGER.cache.checkpoints || [];
+      
       usersList.innerHTML = users.map(user => {
         const createdDate = new Date(user.createdAt).toLocaleDateString('zh-HK');
         const isCurrentUser = currentUser && currentUser.id === user.id;
         const isCreatorRole = user.role === 'creator';
+        
+        // 統計該用戶的課程數量
+        const userCheckpointsCount = allCheckpoints.filter(cp => cp.userId === user.userId || cp.userId === user.id).length;
+        
         return `<div class="user-item">
           <div class="user-item-info">
             <div class="user-name">${escapeHtml(user.username)}${isCurrentUser ? ' (當前用戶)' : ''}</div>
             <div class="user-email">${escapeHtml(user.email || '無電郵')}</div>
-            <div class="user-created">建立於: ${createdDate}</div>
+            <div class="user-created">建立於: ${createdDate} | 課程記錄: ${userCheckpointsCount} 筆</div>
           </div>
           <div style="display: flex; align-items: center; gap: 0.8rem;">
             <span class="user-role ${isCreatorRole ? 'creator' : 'user'}">${isCreatorRole ? '👑 Creator' : '👤 用戶'}</span>
+            ${!isCreatorRole ? `<button class="btn btn-sm btn-primary-ghost" onclick="viewUserCheckpoints('${user.userId || user.id}', '${escapeHtml(user.username)}')" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">📋 查看課程</button>` : ''}
             ${isCurrentUser ? '<span style="color: #999;">⚠️ 無法刪除當前用戶</span>' : `<button class="btn btn-sm btn-danger-ghost" onclick="deleteUser('${user.id}', '${escapeHtml(user.username)}')" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">刪除</button>`}
           </div>
         </div>`;
       }).join('');
     }
   }
+}
+
+// 查看用戶課程記錄（僅創作者可用）
+function viewUserCheckpoints(userId, username) {
+  if (!isCreator()) {
+    toast('❌ 沒有權限執行此操作');
+    return;
+  }
+  
+  console.log(`🔍 創作者正在查看用戶 ${username} 的課程記錄`);
+  
+  // 獲取該用戶的所有課程記錄
+  const allCheckpoints = STORAGE_MANAGER.cache.checkpoints || [];
+  const userCheckpoints = allCheckpoints.filter(cp => cp.userId === userId || cp.userId === userId);
+  
+  if (userCheckpoints.length === 0) {
+    toast(`📋 用戶 ${username} 尚未建立任何課程記錄`);
+    return;
+  }
+  
+  // 創建彈窗顯示用戶課程
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-backdrop" onclick="this.parentElement.remove()"></div>
+    <div class="modal-dialog" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3>📋 ${escapeHtml(username)} 的課程記錄 (${userCheckpoints.length} 筆)</h3>
+        <button type="button" class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        ${userCheckpoints.sort((a, b) => new Date(b.date) - new Date(a.date)).map(cp => {
+          const date = new Date(cp.date).toLocaleDateString('zh-HK');
+          const studentCount = cp.studentRecords?.length || 0;
+          return `
+            <div class="card" style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa;">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                <div>
+                  <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">${escapeHtml(cp.className || '未命名班級')}</h4>
+                  <div style="color: #64748b; font-size: 0.9rem;">
+                    📅 ${date} | 👥 ${studentCount} 位學生
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-primary-ghost" onclick="viewCheckpointDetail('${cp.id}')" style="padding: 0.4rem 0.8rem;">查看詳情</button>
+              </div>
+              ${cp.notes ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: white; border-radius: 4px; font-size: 0.9rem;">📝 ${escapeHtml(cp.notes)}</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  modal.hidden = false;
+  toast(`✅ 已載入 ${username} 的 ${userCheckpoints.length} 筆課程記錄`);
 }
 
 // 刪除用戶

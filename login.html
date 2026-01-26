@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HKJRA 教練記錄系統 · 登入</title>
+  <title>教練記錄系統 · 登入</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -237,78 +237,9 @@
       </div>
     </div>
     
-    <div class="mode-indicator">本地存儲模式 · HKJRA v3.1</div>
+    <div class="mode-indicator">本地存儲模式 • v3.1</div>
   </div>
 
-  <!-- 系統核心模組（整合版 v3.1） -->
   <script src="system.js"></script>
-  
-  <script>
-    // 登入頁面初始化檢查 - 與 system-test.js 邏輯一致
-    (function() {
-      console.log('🔐 登入頁面已載入 - HKJRA 教練記錄系統 v3.1');
-      console.log('📊 LocalStorage 可用:', typeof localStorage !== 'undefined');
-      console.log('📊 系統模組加載:', typeof LOGIN_MANAGER !== 'undefined');
-      
-      // 檢查是否已登入 - 與 system-test.js 相同的檢查邏輯
-      try {
-        const session = localStorage.getItem('rs-system-session');
-        const user = localStorage.getItem('current-user');
-        
-        if (session && user) {
-          try {
-            const sessionData = JSON.parse(session);
-            const userData = JSON.parse(user);
-            
-            // 驗證必要欄位 - 確保數據結構完整
-            if (!sessionData.userId || !sessionData.sessionId || !userData.id) {
-              console.warn('⚠️ 會話數據不完整，清除並重新登入');
-              localStorage.removeItem('rs-system-session');
-              localStorage.removeItem('current-user');
-              return;
-            }
-            
-            // 如果會話有效，重定向到主頁面
-            if (sessionData.expiresAt && Date.now() < sessionData.expiresAt) {
-              console.log('✅ 檢測到有效會話');
-              console.log('📊 用戶:', userData.username, '| 角色:', userData.role || 'user');
-              console.log('📊 會話ID:', sessionData.sessionId);
-              console.log('⏰ 剩餘時間:', Math.round((sessionData.expiresAt - Date.now()) / 3600000), '小時');
-              console.log('🔄 重定向到主頁面...');
-              
-              setTimeout(() => {
-                window.location.href = 'index.html';
-              }, 500);
-            } else {
-              console.warn('⚠️ 會話已過期，清除數據');
-              localStorage.removeItem('rs-system-session');
-              localStorage.removeItem('current-user');
-            }
-          } catch (parseError) {
-            console.error('⚠️ 會話數據格式錯誤:', parseError);
-            localStorage.removeItem('rs-system-session');
-            localStorage.removeItem('current-user');
-          }
-        } else {
-          console.log('📝 未檢測到會話，顯示登入表單');
-        }
-      } catch (error) {
-        console.warn('⚠️ 會話檢查失敗:', error);
-      }
-      
-      // 顯示系統信息
-      try {
-        const users = localStorage.getItem('users');
-        if (users) {
-          const usersList = JSON.parse(users);
-          console.log('👥 系統用戶數:', usersList.length);
-        } else {
-          console.log('👥 系統用戶數: 0 (首次使用)');
-        }
-      } catch (error) {
-        console.warn('⚠️ 無法讀取用戶列表');
-      }
-    })();
-  </script>
 </body>
 </html>
