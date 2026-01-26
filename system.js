@@ -124,13 +124,18 @@ const STORAGE_MANAGER = {
       try {
         // 統一使用 encodeURIComponent + btoa 編碼方式
         decoded = JSON.parse(decodeURIComponent(atob(encoded)));
-      } catch {
+      } catch (e1) {
         try {
           // 兼容舊的 btoa 方式
           decoded = JSON.parse(atob(encoded));
-        } catch {
+        } catch (e2) {
           // 最後嘗試直接解析
-          decoded = JSON.parse(encoded);
+          try {
+            decoded = JSON.parse(encoded);
+          } catch (e3) {
+            console.warn('⚠️ 解析課堂記錄失敗:', e3);
+            decoded = [];
+          }
         }
       }
       
@@ -304,11 +309,15 @@ const STORAGE_MANAGER = {
       if (encoded) {
         try {
           this.cache.checkpoints = JSON.parse(decodeURIComponent(atob(encoded)));
-        } catch {
+        } catch (e1) {
           try {
             this.cache.checkpoints = JSON.parse(atob(encoded));
-          } catch {
-            this.cache.checkpoints = JSON.parse(encoded);
+          } catch (e2) {
+            try {
+              this.cache.checkpoints = JSON.parse(encoded);
+            } catch (e3) {
+              this.cache.checkpoints = [];
+            }
           }
         }
       } else {
@@ -1328,7 +1337,7 @@ function getClassPresets() {
   try {
     const raw = localStorage.getItem(CLASS_PRESETS_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  } catch (error) { return []; }
 }
 
 function saveClassPresets(arr) {
@@ -1937,13 +1946,18 @@ function parseRecords() {
     try {
       // 統一編碼方式：encodeURIComponent + btoa（支援中文）
       records = JSON.parse(decodeURIComponent(atob(encoded)));
-    } catch {
+    } catch (e1) {
       try {
         // 兼容舊的 btoa 方式
         records = JSON.parse(atob(encoded));
-      } catch {
-        // 最後嘗試直接 JSON 解析
-        records = JSON.parse(encoded);
+      } catch (e2) {
+        try {
+          // 最後嘗試直接 JSON 解析
+          records = JSON.parse(encoded);
+        } catch (e3) {
+          console.warn('⚠️ parseRecords() 解析失敗:', e3);
+          records = [];
+        }
       }
     }
     
@@ -2869,7 +2883,7 @@ window.systemDiagnosis = () => {
         localStorage.setItem('test', 'ok');
         localStorage.removeItem('test');
         return '✅ localStorage 正常';
-      } catch { return '❌ localStorage 失敗'; }
+      } catch (error) { return '❌ localStorage 失敗'; }
     },
     pouchdb: () => {
       return typeof PouchDB !== 'undefined' ? '✅ PouchDB 已加載' : '❌ PouchDB 未加載';
@@ -2885,7 +2899,7 @@ window.systemDiagnosis = () => {
       try {
         const test = btoa('test');
         return atob(test) === 'test' ? '✅ Base64 加密正常' : '❌ 加密失敗';
-      } catch { return '❌ Base64 加密錯誤'; }
+      } catch (error) { return '❌ Base64 加密錯誤'; }
     }
   };
   
