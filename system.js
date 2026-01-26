@@ -387,7 +387,7 @@ const AUTH_CONFIG = {
 // 用戶存儲設定（含舊版遺留鍵與阻擋名單）
 const USER_STORAGE_KEY = AUTH_CONFIG.USER_DB_KEY;
 const LEGACY_USER_KEY = 'users';
-const BLOCKED_USERNAMES = ['123', 'test', 'demo', 'admin'];
+const BLOCKED_USERNAMES = ['test', 'demo', 'admin']; // 移除 '123'，允許數字用戶名
 
 // 與舊版相容的雜湊函式，避免明碼儲存
 function hashPasswordCompat(password) {
@@ -417,7 +417,8 @@ function loadUsersFromStorage() {
       .filter(u => u && u.username)
       .filter(u => {
         const uname = (u.username || '').toLowerCase();
-        const isBlocked = BLOCKED_USERNAMES.includes(uname) || /^\d{1,4}$/.test(uname);
+        // 只阻擋特定保留名稱，允許數字用戶名
+        const isBlocked = BLOCKED_USERNAMES.includes(uname);
         if (isBlocked) {
           changed = true;
           return false;
@@ -836,17 +837,23 @@ function initLoginPage() {
       }
 
       const users = loadUsersFromStorage();
-      const user = users.find((u) => u.username === username);
       const inputHash = hashPasswordCompat(password);
-      const isValid = user ? (user.passwordHash === inputHash) : false;
+      
+      // 支援同名用戶：根據 username + passwordHash 組合匹配
+      const user = users.find((u) => u.username === username && u.passwordHash === inputHash);
+      const isValid = !!user;
       
       // 診斷輸出
       console.log(`🔐 登入驗證 ${username}:`);
-      console.log(`  ├─ 找到用戶: ${user ? '是' : '否'}`);
+      console.log(`  ├─ 找到匹配用戶: ${user ? '是 (ID: ' + user.id + ')' : '否'}`);
       if (user) {
+        console.log(`  ├─ 用戶 ID: ${user.id}`);
         console.log(`  ├─ 儲存的 passwordHash: ${user.passwordHash}`);
         console.log(`  ├─ 輸入密碼 Hash: ${inputHash}`);
-        console.log(`  └─ 驗證結果: ${isValid ? '✅ 通過' : '❌ 失敗'}`);
+        console.log(`  └─ 驗證結果: ✅ 通過`);
+      } else {
+        console.log(`  ├─ 輸入密碼 Hash: ${inputHash}`);
+        console.log(`  └─ 驗證結果: ❌ 失敗（用戶名或密碼錯誤）`);
       }
 
       if (user && isValid) {
@@ -949,10 +956,15 @@ function initLoginPage() {
       return;
     }
 
-    if (username.toLowerCase() === 'creator') {
+    // 只阻擋 creator（保留給系統）
+    const unameLower = username.toLowerCase();
+    if (unameLower === 'creator') {
       showError('❌ 無法建立創作者帳戶');
       return;
     }
+    
+    // 允許同名用戶，透過 user_id 區分
+    // 移除重複檢查，每個帳號都有唯一 user_id
 
     if (password.length < 4) {
       showError('❌ 密碼至少需要4個字符');
