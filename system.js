@@ -1388,6 +1388,30 @@ function updateUserInfo(username = null) {
     if (navData) {
       navData.hidden = user.role !== 'creator';
     }
+    
+    // 如果是 Creator，添加提示並禁用課程記錄表單
+    if (user.role === 'creator') {
+      console.log('👑 Creator 模式：僅限查看，不能新增課程記錄');
+      
+      // 在課堂概覽頁面頂部添加提示
+      const pageOverview = $('page-overview');
+      if (pageOverview && !$('creatorNotice')) {
+        const notice = document.createElement('div');
+        notice.id = 'creatorNotice';
+        notice.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; color: #856404;';
+        notice.innerHTML = '<strong>👑 Creator 模式</strong>：您的帳戶僅限查看所有用戶資料和課程記錄，不能新增課程記錄。請前往「用戶管理」查看其他用戶的課程。';
+        pageOverview.querySelector('.page-inner')?.prepend(notice);
+      }
+      
+      // 禁用保存按鈕
+      const btnSave = $('btnSave');
+      if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.textContent = '🔒 Creator 不能新增記錄';
+        btnSave.style.opacity = '0.6';
+        btnSave.style.cursor = 'not-allowed';
+      }
+    }
   } else {
     nameEl.textContent = '未登錄';
     roleEl.textContent = '訪客';
@@ -1528,6 +1552,20 @@ function viewUserCheckpoints(userId, username) {
   document.body.appendChild(modal);
   modal.hidden = false;
   toast(`✅ 已載入 ${username} 的 ${userCheckpoints.length} 筆課程記錄`);
+}
+
+// 查看課程詳情（供創作者查看用戶課程時使用）
+function viewCheckpointDetail(checkpointId) {
+  const allCheckpoints = STORAGE_MANAGER.cache.checkpoints || [];
+  const checkpoint = allCheckpoints.find(cp => cp.id === checkpointId);
+  
+  if (!checkpoint) {
+    toast('❌ 找不到該課程記錄');
+    return;
+  }
+  
+  // 使用現有的 showDetail 函數顯示詳情
+  showDetail(checkpoint);
 }
 
 // 刪除用戶
@@ -2477,6 +2515,14 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btnSave')?.addEventListener('click', () => {
     console.log('🔴 儲存按鈕被點擊');
     
+    // 檢查創作者權限 - 創作者不能新增課程記錄
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.role === 'creator') {
+      console.warn('⚠️ 創作者帳戶不能新增課程記錄');
+      toast('❌ 創作者帳戶僅限查看，不能新增課程記錄');
+      return;
+    }
+    
     const d = getFormData();
     console.log('📋 表單資料：', d);
     
@@ -2523,6 +2569,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const list = parseRecords();
     console.log(`📚 讀取 ${list.length} 筆現有記錄`);
+    
+    // 為課程記錄添加唯一ID和用戶ID
+    const currentUser = getCurrentUser();
+    if (!d.id) {
+      d.id = `checkpoint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+    if (!d.userId && currentUser) {
+      d.userId = currentUser.userId || currentUser.id;
+    }
+    if (!d.createdAt) {
+      d.createdAt = new Date().toISOString();
+    }
+    d.updatedAt = new Date().toISOString();
     
     const i = list.findIndex(r => r.classDate === d.classDate && r.className === d.className);
     const isNew = i < 0;
@@ -2580,6 +2639,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 清空按鈕
   $('btnClear')?.addEventListener('click', () => {
+    // 創作者也可以清空表單（不涉及數據修改）
     if (confirm('確定要清空本堂輸入嗎？')) clearForm();
   });
 
