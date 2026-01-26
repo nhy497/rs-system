@@ -161,6 +161,9 @@ const STORAGE_MANAGER = {
       return [];
     }
   },
+      return [];
+    }
+  },
 
   async saveCheckpoints(records) {
     // 統一存儲方法，與 saveRecords() 使用相同編碼
