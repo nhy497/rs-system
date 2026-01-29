@@ -1134,14 +1134,49 @@ const UI_MANAGER = {
 class StorageService {
   constructor() {
     this.db = null;
+    this.remoteDB = null;
+    this.syncHandler = null;
     this.changeListeners = [];
     this.changesFeed = null;
   }
 
-  async init(database) {
+  async init(database, remoteURL = null) {
     this.db = database;
+    
+    // 如果提供遠程 URL，啟用雲端同步
+    if (remoteURL) {
+      await this._setupSync(remoteURL);
+    }
+    
     this._startChangesFeed();
-    console.log('✅ 儲存服務已初始化');
+    console.log('✅ 儲存服務已初始化' + (remoteURL ? '（已啟用雲端同步）' : '（本地模式）'));
+  }
+
+  async _setupSync(remoteURL) {
+    try {
+      this.remoteDB = new PouchDB(remoteURL);
+      
+      // 雙向同步
+      this.syncHandler = this.db.sync(this.remoteDB, {
+        live: true,
+        retry: true
+      }).on('change', (info) => {
+        console.log('🔄 數據同步中:', info.direction);
+      }).on('paused', () => {
+        console.log('⏸️ 同步已暫停（等待變更）');
+      }).on('active', () => {
+        console.log('▶️ 同步重新啟動');
+      }).on('denied', (err) => {
+        console.error('❌ 同步被拒絕:', err);
+      }).on('error', (err) => {
+        console.error('❌ 同步錯誤:', err);
+      });
+      
+      console.log('✅ 雲端同步已啟用:', remoteURL);
+    } catch (error) {
+      console.error('❌ 設置雲端同步失敗:', error);
+      console.warn('⚠️ 將繼續使用本地模式');
+    }
   }
 
   _startChangesFeed() {
@@ -1644,10 +1679,12 @@ function deleteUser(userId, username) {
   try {
     const users = loadUsersFromStorage();
     const newUsers = users.filter(u => u.id !== userId);
-    localStorage.setItem('users', JSON.stringify(newUsers));
+    saveUsersToStorage(newUsers);
+    console.log(`✅ 已刪除用戶: ${username} (ID: ${userId})`);
     toast(`✓ 已刪除用戶「${username}」`);
     refreshDataManagement();
   } catch (e) {
+    console.error('❌ 刪除用戶失敗:', e);
     toast(`❌ 刪除失敗: ${e.message}`);
   }
 }
@@ -2533,15 +2570,28 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const currentUser = LOGIN_MANAGER.getCurrentUser();
         const userId = currentUser?.id || 'guest';
-        const dbName = `rs-system-${userId}`;
         
-        // 創建用戶隔離的數據庫
+        // 使用統一的數據庫名稱，不再按用戶隔離
+        // 這樣所有裝置都可以同步到同一個雲端數據庫
+        const dbName = `rs-system-shared`;
+        
+        // 創建本地數據庫
         const db = new PouchDB(dbName);
         
-        // 初始化儲存服務
-        await storageService.init(db);
+        // 檢查是否啟用雲端同步
+        const remoteURL = (typeof SYNC_CONFIG !== 'undefined' && SYNC_CONFIG.ENABLE_SYNC) 
+          ? SYNC_CONFIG.REMOTE_DB_URL 
+          : null;
+        
+        // 初始化儲存服務（帶雲端同步）
+        await storageService.init(db, remoteURL);
         
         console.log(`✅ PouchDB 初始化成功: ${dbName}`);
+        if (remoteURL) {
+          console.log(`🌐 雲端同步已啟用，所有裝置將共享數據`);
+        } else {
+          console.log(`💡 提示：若需跨裝置同步，請在 sync-config.js 設定遠程數據庫`);
+        }
         
         // 記錄系統事件
         if (typeof loggerService !== 'undefined') {
