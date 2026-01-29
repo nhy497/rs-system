@@ -1599,8 +1599,8 @@ function viewUserCheckpoints(userId, username) {
   console.log(`🔍 創作者正在查看用戶 ${username} 的課程記錄`);
   
   // 獲取該用戶的所有課程記錄
-  const allCheckpoints = STORAGE_MANAGER.cache.checkpoints || [];
-  const userCheckpoints = allCheckpoints.filter(cp => cp.userId === userId || cp.userId === userId);
+  const allCheckpoints = parseRecords();
+  const userCheckpoints = allCheckpoints.filter(cp => cp.userId === userId);
   
   if (userCheckpoints.length === 0) {
     toast(`📋 用戶 ${username} 尚未建立任何課程記錄`);
@@ -1618,19 +1618,21 @@ function viewUserCheckpoints(userId, username) {
         <button type="button" class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
       </div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        ${userCheckpoints.sort((a, b) => new Date(b.date) - new Date(a.date)).map(cp => {
-          const date = new Date(cp.date).toLocaleDateString('zh-HK');
-          const studentCount = cp.studentRecords?.length || 0;
+        ${userCheckpoints.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || '')).map(cp => {
+          const classSize = cp.classSize || 0;
           return `
             <div class="card" style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa;">
               <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                <div>
+                <div style="flex: 1;">
                   <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">${escapeHtml(cp.className || '未命名班級')}</h4>
                   <div style="color: #64748b; font-size: 0.9rem;">
-                    📅 ${date} | 👥 ${studentCount} 位學生
+                    📅 ${cp.classDate || '未設定日期'} | 👥 ${classSize} 人
                   </div>
                 </div>
-                <button class="btn btn-sm btn-primary-ghost" onclick="viewCheckpointDetail('${cp.id}')" style="padding: 0.4rem 0.8rem;">查看詳情</button>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button class="btn btn-sm btn-primary-ghost" onclick="viewCheckpointDetail('${cp.id || ''}')" style="padding: 0.4rem 0.8rem;">查看詳情</button>
+                  <button class="btn btn-sm btn-danger-ghost" onclick="deleteUserCheckpoint('${cp.id || ''}', '${userId}', '${escapeHtml(username)}')" style="padding: 0.4rem 0.8rem;">🗑️ 刪除</button>
+                </div>
               </div>
               ${cp.notes ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: white; border-radius: 4px; font-size: 0.9rem;">📝 ${escapeHtml(cp.notes)}</div>` : ''}
             </div>
@@ -1672,19 +1674,78 @@ function deleteUser(userId, username) {
     return;
   }
   
-  if (!confirm(`確定要刪除用戶「${username}」嗎？此操作無法恢復。`)) {
+  // 統計該用戶的課堂記錄數
+  const allRecords = parseRecords();
+  const userRecordsCount = allRecords.filter(r => r.userId === userId).length;
+  
+  const confirmMsg = userRecordsCount > 0 
+    ? `確定要刪除用戶「${username}」嗎？\n\n⚠️ 此操作將同時刪除該用戶的 ${userRecordsCount} 筆課堂記錄，且無法恢復。`
+    : `確定要刪除用戶「${username}」嗎？此操作無法恢復。`;
+  
+  if (!confirm(confirmMsg)) {
     return;
   }
   
   try {
+    // 1. 刪除用戶帳號
     const users = loadUsersFromStorage();
     const newUsers = users.filter(u => u.id !== userId);
     saveUsersToStorage(newUsers);
+    
+    // 2. 刪除該用戶的所有課堂記錄
+    if (userRecordsCount > 0) {
+      const remainingRecords = allRecords.filter(r => r.userId !== userId);
+      saveRecords(remainingRecords);
+      console.log(`🗑️ 已刪除 ${userRecordsCount} 筆課堂記錄`);
+    }
+    
     console.log(`✅ 已刪除用戶: ${username} (ID: ${userId})`);
-    toast(`✓ 已刪除用戶「${username}」`);
+    toast(`✓ 已刪除用戶「${username}」${userRecordsCount > 0 ? ` 及其 ${userRecordsCount} 筆課堂記錄` : ''}`);
     refreshDataManagement();
+    refreshAllViews(); // 刷新所有視圖
   } catch (e) {
     console.error('❌ 刪除用戶失敗:', e);
+    toast(`❌ 刪除失敗: ${e.message}`);
+  }
+}
+
+// 刪除用戶的單一課堂記錄
+function deleteUserCheckpoint(checkpointId, userId, username) {
+  if (!isCreator()) {
+    toast('❌ 沒有權限執行此操作');
+    return;
+  }
+  
+  if (!confirm(`確定要刪除這筆課堂記錄嗎？此操作無法恢復。`)) {
+    return;
+  }
+  
+  try {
+    const allRecords = parseRecords();
+    const record = allRecords.find(r => r.id === checkpointId);
+    
+    if (!record) {
+      toast('❌ 找不到該課堂記錄');
+      return;
+    }
+    
+    const newRecords = allRecords.filter(r => r.id !== checkpointId);
+    saveRecords(newRecords);
+    
+    console.log(`🗑️ 已刪除課堂記錄: ${record.className || '未命名'} (${record.classDate})`);
+    toast(`✓ 已刪除課堂記錄`);
+    
+    // 關閉當前彈窗並重新打開用戶課程列表
+    const modal = document.querySelector('.modal');
+    if (modal) modal.remove();
+    
+    // 延遲重新打開，確保數據已更新
+    setTimeout(() => {
+      viewUserCheckpoints(userId, username);
+    }, 300);
+    
+  } catch (e) {
+    console.error('❌ 刪除課堂記錄失敗:', e);
     toast(`❌ 刪除失敗: ${e.message}`);
   }
 }
