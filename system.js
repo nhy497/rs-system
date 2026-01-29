@@ -1881,6 +1881,7 @@ function getFormData() {
     classEndTime: endTime,
     classDurationMins: classDurationMins,
     notes: ($('notes')?.value || '').trim(),
+    attachments: window._currentAttachments || [],
     engagement: parseInt($('engagement')?.value || '3', 10),
     atmosphere: $q('[data-name="atmosphere"] .selected')?.textContent?.trim() || '',
     tricks: tricks.map(t => ({
@@ -1922,6 +1923,10 @@ function loadIntoForm(rec) {
   if ($('classEndTime')) $('classEndTime').value = rec.classEndTime || '';
   updateClassDuration();
   if ($('notes')) $('notes').value = rec.notes || '';
+  
+  // 載入附件
+  window._currentAttachments = rec.attachments || [];
+  displayAttachments();
   if ($('engagement')) $('engagement').value = rec.engagement ?? 3;
   document.querySelectorAll('[data-name="atmosphere"] button').forEach(b => {
     b.classList.toggle('selected', b.textContent.trim() === (rec.atmosphere || ''));
@@ -1985,6 +1990,9 @@ function clearForm() {
   if ($('classEndTime')) $('classEndTime').value = '';
   updateClassDuration();
   if ($('notes')) $('notes').value = '';
+  if ($('fileAttachment')) $('fileAttachment').value = '';
+  window._currentAttachments = [];
+  displayAttachments();
   if ($('engagement')) $('engagement').value = '3';
   $q('[data-name="atmosphere"] .selected')?.classList.remove('selected');
   tricks = [];
@@ -2015,6 +2023,113 @@ function clearForm() {
       q?.querySelectorAll('button').forEach(b => b.classList.toggle('active', String(b.dataset.v) === r.value));
     }
   });
+}
+
+// 文件附件管理
+window._currentAttachments = [];
+
+function displayAttachments() {
+  const preview = $('filePreview');
+  if (!preview) return;
+  
+  const attachments = window._currentAttachments || [];
+  if (attachments.length === 0) {
+    preview.innerHTML = '';
+    return;
+  }
+  
+  preview.innerHTML = attachments.map((file, index) => `
+    <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f1f5f9; border-radius: 4px; margin-top: 0.25rem;">
+      <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        📎 ${escapeHtml(file.name)} (${formatFileSize(file.size)})
+      </span>
+      <button type="button" onclick="downloadAttachment(${index})" class="btn btn-sm btn-primary-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">下載</button>
+      <button type="button" onclick="removeAttachment(${index})" class="btn btn-sm btn-danger-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">刪除</button>
+    </div>
+  `).join('');
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function removeAttachment(index) {
+  window._currentAttachments.splice(index, 1);
+  displayAttachments();
+  toast('已移除附件');
+}
+
+function downloadAttachment(index) {
+  const file = window._currentAttachments[index];
+  if (!file) return;
+  
+  try {
+    const link = document.createElement('a');
+    link.href = file.data;
+    link.download = file.name;
+    link.click();
+    toast('開始下載附件');
+  } catch (e) {
+    console.error('下載失敗:', e);
+    toast('❌ 下載失敗');
+  }
+}
+
+async function handleFileUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  
+  // 檢查文件類型
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+  
+  if (!allowedTypes.includes(file.type)) {
+    toast('❌ 只支援 PDF 或 Word 文檔');
+    event.target.value = '';
+    return;
+  }
+  
+  // 檢查文件大小（限制 5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    toast('❌ 文件大小不能超過 5MB');
+    event.target.value = '';
+    return;
+  }
+  
+  try {
+    // 讀取文件為 Base64
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      window._currentAttachments = window._currentAttachments || [];
+      window._currentAttachments.push({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        data: e.target.result,
+        uploadedAt: new Date().toISOString()
+      });
+      
+      displayAttachments();
+      toast(`✓ 已添加附件: ${file.name}`);
+      event.target.value = ''; // 清空 input 以便再次上傳
+    };
+    
+    reader.onerror = function() {
+      toast('❌ 文件讀取失敗');
+      event.target.value = '';
+    };
+    
+    reader.readAsDataURL(file);
+  } catch (e) {
+    console.error('文件上傳失敗:', e);
+    toast('❌ 文件上傳失敗');
+    event.target.value = '';
+  }
 }
 
 // 課堂時長計算
@@ -2582,6 +2697,21 @@ function showDetail(rec) {
   
   if ($('detailTitle')) $('detailTitle').textContent = `課堂詳情 · ${rec.classDate || '–'}`;
   if ($('detailBody')) {
+    // 附件區域
+    let attachmentsHtml = '';
+    if (rec.attachments && rec.attachments.length > 0) {
+      attachmentsHtml = `
+        <dt>附件</dt>
+        <dd>
+          ${rec.attachments.map((file, index) => `
+            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #f1f5f9; border-radius: 4px; margin-top: 0.25rem;">
+              <span style="flex: 1;">📎 ${escapeHtml(file.name)} (${formatFileSize(file.size)})</span>
+              <button type="button" onclick="downloadAttachmentFromDetail(${index}, ${JSON.stringify(file).replace(/"/g, '&quot;')})" class="btn btn-sm btn-primary-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">下載</button>
+            </div>
+          `).join('')}
+        </dd>`;
+    }
+    
     $('detailBody').innerHTML = `
       <dl>
         <dt>基本資料</dt><dd>${rec.classDate || '–'} | ${escapeHtml(rec.className || '–')} | 人數 ${rec.classSize ?? '–'}</dd>
@@ -2589,6 +2719,7 @@ function showDetail(rec) {
         ${rec.teachingRole ? `<dt>教學角色</dt><dd>${escapeHtml(rec.teachingRole)}</dd>` : ''}
         <dt>課堂時間</dt><dd>${durationStr}</dd>
         <dt>備注</dt><dd>${rec.notes ? escapeHtml(rec.notes).replace(/\n/g, '<br>') : '—'}</dd>
+        ${attachmentsHtml}
         <dt>投入度</dt><dd>開心指數 ${rec.engagement ?? '–'}/5 · 課堂氣氛 ${escapeHtml(rec.atmosphere || '–')}</dd>
         <dt>技能進步</dt><dd>教學花式：${tricksStr} · 掌握 ${rec.mastery ?? '–'}% · 預算/實際 ${rec.plannedTime ?? '–'}/${rec.actualTime ?? '–'} 分鐘 · 技巧等級 ${escapeHtml(rec.skillLevel || '–')}</dd>
         <dt>團隊協作</dt><dd>幫助他人 ${rec.helpOthers ?? '–'}% · 互動 ${rec.interaction ?? '–'}% · 小組合作 ${rec.teamwork ?? '–'}%</dd>
@@ -2601,6 +2732,20 @@ function showDetail(rec) {
   }
   const modal = $('detailModal');
   if (modal) modal.hidden = false;
+}
+
+// 從詳情頁面下載附件
+function downloadAttachmentFromDetail(index, file) {
+  try {
+    const link = document.createElement('a');
+    link.href = file.data;
+    link.download = file.name;
+    link.click();
+    toast('開始下載附件');
+  } catch (e) {
+    console.error('下載失敗:', e);
+    toast('❌ 下載失敗');
+  }
 }
 
 // ============================================================================
@@ -2939,6 +3084,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if ($('trickName')) $('trickName').focus();
     renderTricks();
   });
+
+  // 文件上傳
+  $('fileAttachment')?.addEventListener('change', handleFileUpload);
 
   // 導航
   $qa('.nav-item[data-page]').forEach(el => {
