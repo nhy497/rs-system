@@ -2743,10 +2743,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // 清除所有
   $('btnDeleteAll')?.addEventListener('click', () => {
     if (!confirm('確定要永久清除所有記錄嗎？此操作無法復原。')) return;
+    
+    // 清除 localStorage
     localStorage.removeItem(STORAGE_KEY);
+    
+    // 強制清除緩存
+    if (STORAGE_MANAGER && STORAGE_MANAGER.cache) {
+      STORAGE_MANAGER.cache.checkpoints = null;
+    }
+    
+    // 清除表單
     clearForm();
+    
+    // 刷新所有視圖
     refreshAllViews();
+    
     toast('已清除所有記錄');
+    console.log('🗑️ 已清除所有課堂記錄');
   });
 
   // 儲存按鈕
