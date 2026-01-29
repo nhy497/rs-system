@@ -1687,22 +1687,29 @@ function deleteUser(userId, username) {
   }
   
   try {
-    // 1. 刪除用戶帳號
-    const users = loadUsersFromStorage();
-    const newUsers = users.filter(u => u.id !== userId);
-    saveUsersToStorage(newUsers);
-    
-    // 2. 刪除該用戶的所有課堂記錄
+    // 1. 刪除該用戶的所有課堂記錄（先刪除記錄）
     if (userRecordsCount > 0) {
       const remainingRecords = allRecords.filter(r => r.userId !== userId);
       saveRecords(remainingRecords);
       console.log(`🗑️ 已刪除 ${userRecordsCount} 筆課堂記錄`);
     }
     
+    // 2. 刪除用戶帳號
+    const users = loadUsersFromStorage();
+    const newUsers = users.filter(u => u.id !== userId);
+    saveUsersToStorage(newUsers);
+    
     console.log(`✅ 已刪除用戶: ${username} (ID: ${userId})`);
     toast(`✓ 已刪除用戶「${username}」${userRecordsCount > 0 ? ` 及其 ${userRecordsCount} 筆課堂記錄` : ''}`);
+    
+    // 強制清除緩存
+    if (STORAGE_MANAGER && STORAGE_MANAGER.cache) {
+      STORAGE_MANAGER.cache.checkpoints = null;
+    }
+    
+    // 刷新所有視圖
+    refreshAllViews();
     refreshDataManagement();
-    refreshAllViews(); // 刷新所有視圖
   } catch (e) {
     console.error('❌ 刪除用戶失敗:', e);
     toast(`❌ 刪除失敗: ${e.message}`);
@@ -1734,6 +1741,14 @@ function deleteUserCheckpoint(checkpointId, userId, username) {
     
     console.log(`🗑️ 已刪除課堂記錄: ${record.className || '未命名'} (${record.classDate})`);
     toast(`✓ 已刪除課堂記錄`);
+    
+    // 強制清除緩存
+    if (STORAGE_MANAGER && STORAGE_MANAGER.cache) {
+      STORAGE_MANAGER.cache.checkpoints = null;
+    }
+    
+    // 刷新所有視圖和統計
+    refreshAllViews();
     
     // 關閉當前彈窗並重新打開用戶課程列表
     const modal = document.querySelector('.modal');
