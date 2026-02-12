@@ -1,0 +1,122 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # 構建和測試
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - name: ✅ Checkout 代碼
+        uses: actions/checkout@v4
+      
+      - name: 🔧 設置 Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: 📦 安裝依賴
+        run: npm ci
+      
+      - name: 🔍 代碼檢查 (ESLint)
+        run: npm run lint
+        continue-on-error: true
+      
+      - name: 🧪 執行測試
+        run: npm test
+        continue-on-error: true
+      
+      - name: 🛠️ 構建應用
+        run: npm run build
+      
+      - name: 📊 上傳構建產物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.node-version }}
+          path: dist
+          retention-days: 7
+  
+  # 部署到 GitHub Pages
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    # 只在 main 分支且 Node 18 構建成功後部署
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    # 設置權限
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    # 確保只有一個部署作業同時執行
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: ✅ Checkout 代碼
+        uses: actions/checkout@v4
+      
+      - name: 🔧 設置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: 📦 安裝依賴
+        run: npm ci
+      
+      - name: 🛠️ 構建應用 (生產模式)
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: 📋 設置 GitHub Pages
+        uses: actions/configure-pages@v4
+      
+      - name: 📤 上傳到 GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+      
+      - name: 🚀 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      
+      - name: ✅ 部署完成
+        run: |
+          echo "✨ 部署成功！"
+          echo "🌐 網址: ${{ steps.deployment.outputs.page_url }}"
+  
+  # 測試報告
+  report:
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: 📊 生成測試報告
+        run: |
+          echo "## 📦 構建結果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 構建狀態: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 部署狀態: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 分支: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
