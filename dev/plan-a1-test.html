@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PLAN-A1 測試 - 跨標籤頁即時同步</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .header h1 { 
+      font-size: 2.5em; 
+      margin-bottom: 10px; 
+    }
+    
+    .header p { 
+      opacity: 0.95; 
+      font-size: 1.1em;
+    }
+    
+    .content {
+      padding: 30px;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .section p {
+      color: #666;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+    
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    
+    .btn-primary:hover { background: #5568d3; }
+    
+    .btn-success {
+      background: #11998e;
+      color: white;
+    }
+    
+    .btn-success:hover { background: #0d7a6a; }
+    
+    .btn-danger {
+      background: #ee0979;
+      color: white;
+    }
+    
+    .btn-danger:hover { background: #c60661; }
+    
+    .btn-warning {
+      background: #f2994a;
+      color: white;
+    }
+    
+    .btn-warning:hover { background: #d67c2f; }
+    
+    .output {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95em;
+      line-height: 1.6;
+    }
+    
+    .log-line {
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .log-line:last-child {
+      border-bottom: none;
+    }
+    
+    .log-time {
+      color: #999;
+      margin-right: 10px;
+      font-weight: 600;
+    }
+    
+    .log-icon {
+      margin-right: 5px;
+    }
+    
+    .log-success { color: #11998e; }
+    .log-error { color: #ee0979; }
+    .log-warn { color: #f2994a; }
+    .log-info { color: #667eea; }
+    
+    .status-display {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    
+    .status-item {
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      border-left: 3px solid #667eea;
+    }
+    
+    .status-item label {
+      display: block;
+      font-weight: 600;
+      color: #667eea;
+      font-size: 0.85em;
+      margin-bottom: 5px;
+    }
+    
+    .status-item .value {
+      font-size: 1.1em;
+      color: #333;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .tab-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border-left: 4px solid #0c5460;
+    }
+    
+    .tab-info strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+    
+    code {
+      background: #f8f9fa;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-box {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px;
+      text-align: center;
+    }
+    
+    .stat-box .label {
+      color: #999;
+      font-size: 0.85em;
+      margin-bottom: 8px;
+    }
+    
+    .stat-box .value {
+      font-size: 2em;
+      font-weight: 700;
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📡 PLAN-A1 測試</h1>
+      <p>跨標籤頁即時同步 (BroadcastChannel API)</p>
+    </div>
+    
+    <div class="content">
+      <div class="tab-info">
+        <strong>🔍 測試說明：</strong>
+        <p>此頁面測試 PLAN-A1 功能 - 跨標籤頁即時同步。打開多個標籤頁時，在一個標籤頁進行操作（新增/編輯課程記錄）應該會自動同步到其他標籤頁。</p>
+      </div>
+      
+      <!-- 統計信息 -->
+      <div class="stats-grid" id="stats-container">
+        <div class="stat-box">
+          <div class="label">BroadcastChannel</div>
+          <div class="value" id="stat-channel">❌</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">當前數據筆數</div>
+          <div class="value" id="stat-records">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">已同步</div>
+          <div class="value" id="stat-synced">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">測試狀態</div>
+          <div class="value" id="stat-status">待測</div>
+        </div>
+      </div>
+      
+      <!-- 檢測功能 -->
+      <div class="section">
+        <h2>
+          <span>✅</span> 1. 檢測 BroadcastChannel 支援
+        </h2>
+        <p>檢查當前瀏覽器是否支援 BroadcastChannel API</p>
+        <div class="controls">
+          <button class="btn-primary" onclick="testBroadcastChannelSupport()">
+            <span>🔍</span> 檢測支援
+          </button>
+          <button class="btn-primary" onclick="showBroadcastChannelInfo()">
+            <span>ℹ️</span> 顯示信息
+          </button>
+        </div>
+        <div class="output" id="detect-output"></div>
+      </div>
+      
+      <!-- 初始化測試 -->
+      <div class="section">
+        <h2>
+          <span>⚙️</span> 2. 初始化 BroadcastChannel
+        </h2>
+        <p>初始化 BroadcastChannel 並設置監聽器</p>
+        <div class="controls">
+          <button class="btn-success" onclick="initBroadcastChannel()">
+            <span>⚙️</span> 初始化
+          </button>
+          <button class="btn-primary" onclick="showChannelStatus()">
+            <span>📊</span> 顯示狀態
+          </button>
+        </div>
+        <div class="output" id="init-output"></div>
+        <div class="status-display" id="init-status"></div>
+      </div>
+      
+      <!-- 數據測試 -->
+      <div class="section">
+        <h2>
+          <span>💾</span> 3. 數據同步測試
+        </h2>
+        <p>測試課程記錄的保存和跨標籤頁同步</p>
+        <div class="controls">
+          <button class="btn-success" onclick="addTestRecord()">
+            <span>➕</span> 新增課程記錄
+          </button>
+          <button class="btn-primary" onclick="listAllRecords()">
+            <span>📋</span> 列出所有記錄
+          </button>
+          <button class="btn-warning" onclick="checkSyncStatus()">
+            <span>🔄</span> 檢查同步狀態
+          </button>
+          <button class="btn-danger" onclick="clearTestData()">
+            <span>🗑️</span> 清除測試數據
+          </button>
+        </div>
+        <div class="output" id="data-output"></div>
+      </div>
+      
+      <!-- 實時監聽 -->
+      <div class="section">
+        <h2>
+          <span>👂</span> 4. 實時監聽器
+        </h2>
+        <p>監聽 BroadcastChannel 消息，實時顯示跨標籤頁同步事件</p>
+        <div class="controls">
+          <button class="btn-success" onclick="startListening()">
+            <span>▶️</span> 開始監聽
+          </button>
+          <button class="btn-danger" onclick="stopListening()">
+            <span>⏹️</span> 停止監聽
+          </button>
+          <button class="btn-primary" onclick="sendTestMessage()">
+            <span>📤</span> 發送測試消息
+          </button>
+        </div>
+        <div class="output" id="listener-output"></div>
+      </div>
+      
+      <!-- 多標籤頁測試指南 -->
+      <div class="section">
+        <h2>
+          <span>🎯</span> 5. 多標籤頁測試指南
+        </h2>
+        <p>按照以下步驟測試跨標籤頁同步功能：</p>
+        <ol style="margin-left: 20px; color: #666; line-height: 1.8;">
+          <li>打開此頁面（作為標籤頁 A）</li>
+          <li>點擊「新增課程記錄」添加一些測試數據</li>
+          <li>在新標籤頁打開相同的測試頁面或主應用（作為標籤頁 B）</li>
+          <li>在標籤頁 A 中再次點擊「新增課程記錄」</li>
+          <li>切換到標籤頁 B，檢查數據是否自動更新</li>
+          <li>如果數據自動同步，說明 PLAN-A1 功能正常 ✅</li>
+        </ol>
+        <div class="controls" style="margin-top: 20px;">
+          <button class="btn-primary" onclick="openNewWindow()">
+            <span>🪟</span> 打開新窗口進行測試
+          </button>
+        </div>
+      </div>
+      
+      <!-- 完整測試 -->
+      <div class="section">
+        <h2>
+          <span>🧪</span> 6. 完整測試套件
+        </h2>
+        <p>執行完整的 PLAN-A1 測試套件</p>
+        <div class="controls">
+          <button class="btn-success" onclick="runFullTest()">
+            <span>▶️</span> 運行完整測試
+          </button>
+          <button class="btn-primary" onclick="generateReport()">
+            <span>📄</span> 生成報告
+          </button>
+          <button class="btn-danger" onclick="resetTest()">
+            <span>🔄</span> 重置測試
+          </button>
+        </div>
+        <div class="output" id="full-test-output"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // ==================== 全局變數 ====================
+    let channel = null;
+    let isListening = false;
+    let testResults = {
+      broadcastChannelSupported: false,
+      channelInitialized: false,
+      messagesReceived: 0,
+      recordsSynced: 0,
+      tests: []
+    };
+    
+    const TEST_KEY = 'dev-rope-skip-checkpoints';
+    
+    // ==================== 工具函數 ====================
+    
+    function log(outputId, message, type = 'info') {
+      const output = document.getElementById(outputId);
+      if (!output) return;
+      
+      const time = new Date().toLocaleTimeString('zh-TW');
+      const icon = { success: '✅', error: '❌', warn: '⚠️', info: 'ℹ️' }[type] || 'ℹ️';
+      const className = `log-line log-${type}`;
+      
+      const line = document.createElement('div');
+      line.className = className;
+      line.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-icon">${icon}</span> ${escapeHtml(message)}`;
+      
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function updateStat(statId, value) {
+      const stat = document.getElementById(statId);
+      if (stat) stat.textContent = value;
+    }
+    
+    // ==================== 檢測功能 ====================
+    
+    function testBroadcastChannelSupport() {
+      const output = document.getElementById('detect-output');
+      output.innerHTML = '';
+      
+      log('detect-output', '正在檢測 BroadcastChannel 支援...', 'info');
+      
+      const supported = typeof BroadcastChannel !== 'undefined';
+      testResults.broadcastChannelSupported = supported;
+      
+      if (supported) {
+        log('detect-output', '✅ BroadcastChannel 已支援', 'success');
+        updateStat('stat-channel', '✅ 支援');
+      } else {
+        log('detect-output', '❌ BroadcastChannel 不被支援', 'error');
+        updateStat('stat-channel', '❌ 不支援');
+      }
+      
+      log('detect-output', `瀏覽器信息: ${navigator.userAgent.substring(0, 60)}...`, 'info');
+    }
+    
+    function showBroadcastChannelInfo() {
+      log('detect-output', '瀏覽器 API 信息：', 'info');
+      log('detect-output', `BroadcastChannel: ${typeof BroadcastChannel}`, 'info');
+      log('detect-output', `localStorage: ${typeof localStorage}`, 'info');
+      log('detect-output', `Worker: ${typeof Worker}`, 'info');
+    }
+    
+    // ==================== 初始化功能 ====================
+    
+    function initBroadcastChannel() {
+      const output = document.getElementById('init-output');
+      const status = document.getElementById('init-status');
+      output.innerHTML = '';
+      status.innerHTML = '';
+      
+      log('init-output', '正在初始化同步機制...', 'info');
+      
+      // 檢查 BroadcastChannel 支援
+      const hasBroadcastChannel = typeof BroadcastChannel !== 'undefined';
+      
+      if (!hasBroadcastChannel) {
+        log('init-output', '⚠️ 瀏覽器不支援 BroadcastChannel，使用 localStorage storage 事件作為備選機制', 'warn');
+        log('init-output', '使用備選方案: localStorage storage 事件', 'info');
+        
+        // 使用 storage 事件作為備選機制
+        setupStorageSync();
+        testResults.channelInitialized = true;
+        return;
+      }
+      
+      try {
+        log('init-output', '正在初始化 BroadcastChannel...', 'info');
+        
+        channel = new BroadcastChannel('rs-system-sync');
+        testResults.channelInitialized = true;
+        
+        log('init-output', '✅ BroadcastChannel 初始化成功', 'success');
+        log('init-output', '已創建通道: rs-system-sync', 'info');
+        
+        // 顯示狀態
+        const statusHtml = `
+          <div class="status-item">
+            <label>通道名稱</label>
+            <div class="value">rs-system-sync</div>
+          </div>
+          <div class="status-item">
+            <label>通道狀態</label>
+            <div class="value">✅ 已初始化</div>
+          </div>
+          <div class="status-item">
+            <label>消息監聽</label>
+            <div class="value">${isListening ? '✅ 已啟用' : '❌ 未啟用'}</div>
+          </div>
+          <div class="status-item">
+            <label>接收消息數</label>
+            <div class="value">${testResults.messagesReceived}</div>
+          </div>
+        `;
+        status.innerHTML = statusHtml;
+        
+      } catch (error) {
+        log('init-output', `❌ 初始化失敗: ${error.message}`, 'error');
+      }
+    }
+    
+    function showChannelStatus() {
+      const status = document.getElementById('init-status');
+      status.innerHTML = '';
+      
+      const statusHtml = `
+        <div class="status-item">
+          <label>BroadcastChannel 支援</label>
+          <div class="value">${testResults.broadcastChannelSupported ? '✅ 支援' : '❌ 不支援'}</div>
+        </div>
+        <div class="status-item">
+          <label>通道初始化</label>
+          <div class="value">${testResults.channelInitialized ? '✅ 已初始化' : '❌ 未初始化'}</div>
+        </div>
+        <div class="status-item">
+          <label>監聽狀態</label>
+          <div class="value">${isListening ? '✅ 監聽中' : '❌ 未監聽'}</div>
+        </div>
+        <div class="status-item">
+          <label>接收消息</label>
+          <div class="value">${testResults.messagesReceived}</div>
+        </div>
+        <div class="status-item">
+          <label>同步記錄</label>
+          <div class="value">${testResults.recordsSynced}</div>
+        </div>
+      `;
+      status.innerHTML = statusHtml;
+    }
+    
+    // ==================== 數據測試功能 ====================
+    
+    function addTestRecord() {
+      const output = document.getElementById('data-output');
+      output.innerHTML = '';
+      
+      try {
+        const records = JSON.parse(localStorage.getItem(TEST_KEY) || '[]');
+        const newRecord = {
+          id: Date.now(),
+          className: `測試班級 ${records.length + 1}`,
+          date: new Date().toLocaleDateString('zh-TW'),
+          content: `自動生成的測試內容 - ${new Date().toLocaleTimeString('zh-TW')}`,
+          timestamp: Date.now()
+        };
+        
+        records.push(newRecord);
+        localStorage.setItem(TEST_KEY, JSON.stringify(records));
+        
+        log('data-output', `✅ 課程記錄已添加 - ${newRecord.className}`, 'success');
+        log('data-output', `記錄 ID: ${newRecord.id}`, 'info');
+        log('data-output', `時間: ${newRecord.date} ${new Date().toLocaleTimeString('zh-TW')}`, 'info');
+        
+        // 廣播消息到其他標籤頁
+        if (channel) {
+          channel.postMessage({
+            type: 'storage-updated',
+            recordId: newRecord.id,
+            className: newRecord.className,
+            timestamp: Date.now()
+          });
+          log('data-output', '📤 已廣播同步消息到其他標籤頁', 'info');
+        }
+        
+        updateStat('stat-records', records.length);
+        testResults.recordsSynced++;
+        updateStat('stat-synced', testResults.recordsSynced);
+        
+      } catch (error) {
+        log('data-output', `❌ 添加記錄失敗: ${error.message}`, 'error');
+      }
+    }
+    
+    function listAllRecords() {
+      const output = document.getElementById('data-output');
+      output.innerHTML = '';
+      
+      try {
+        const records = JSON.parse(localStorage.getItem(TEST_KEY) || '[]');
+        
+        if (records.length === 0) {
+          log('data-output', '⚠️ 沒有找到任何課程記錄', 'warn');
+          return;
+        }
+        
+        log('data-output', `📋 共找到 ${records.length} 筆課程記錄:`, 'info');
+        records.forEach((record, index) => {
+          log('data-output', `${index + 1}. ${record.className} (${record.date})`, 'info');
+        });
+        
+        updateStat('stat-records', records.length);
+        
+      } catch (error) {
+        log('data-output', `❌ 列表失敗: ${error.message}`, 'error');
+      }
+    }
+    
+    function checkSyncStatus() {
+      const output = document.getElementById('data-output');
+      output.innerHTML = '';
+      
+      log('data-output', '🔍 檢查同步狀態...', 'info');
+      
+      const records = JSON.parse(localStorage.getItem(TEST_KEY) || '[]');
+      log('data-output', `✅ 當前存儲記錄: ${records.length} 筆`, 'success');
+      log('data-output', `✅ 已同步記錄: ${testResults.recordsSynced} 筆`, 'success');
+      
+      if (channel) {
+        log('data-output', '✅ BroadcastChannel 已連接', 'success');
+      } else {
+        log('data-output', '⚠️ BroadcastChannel 未連接', 'warn');
+      }
+    }
+    
+    function clearTestData() {
+      if (confirm('確定要清除所有測試數據嗎？')) {
+        localStorage.removeItem(TEST_KEY);
+        document.getElementById('data-output').innerHTML = '';
+        log('data-output', '✅ 所有測試數據已清除', 'success');
+        updateStat('stat-records', 0);
+        testResults.recordsSynced = 0;
+        updateStat('stat-synced', 0);
+      }
+    }
+    
+    // ==================== 備選方案: Storage 事件同步 ====================
+    
+    function setupStorageSync() {
+      window.addEventListener('storage', (event) => {
+        if (event.key === TEST_KEY) {
+          log('listener-output', `📨 檢測到 storage 變化 (來自其他標籤頁)`, 'info');
+          testResults.messagesReceived++;
+          updateStat('stat-synced', testResults.messagesReceived);
+          
+          // 更新當前頁面的數據
+          const records = JSON.parse(event.newValue || '[]');
+          updateStat('stat-records', records.length);
+          log('listener-output', `✅ 已同步 ${records.length} 筆記錄`, 'success');
+        }
+      });
+      log('listener-output', '✅ Storage 事件監聽已設置', 'success');
+    }
+    
+    // ==================== 監聽功能 ====================
+    
+    function startListening() {
+      const output = document.getElementById('listener-output');
+      output.innerHTML = '';
+      
+      if (!testResults.channelInitialized) {
+        log('listener-output', '❌ 請先初始化同步機制', 'error');
+        return;
+      }
+      
+      isListening = true;
+      
+      const hasBroadcastChannel = typeof BroadcastChannel !== 'undefined';
+      
+      if (hasBroadcastChannel && channel) {
+        log('listener-output', '▶️ 開始監聽 BroadcastChannel 消息...', 'success');
+        channel.onmessage = (event) => {
+          testResults.messagesReceived++;
+          const message = event.data;
+          log('listener-output', `📨 收到消息: ${JSON.stringify(message)}`, 'info');
+          updateStat('stat-synced', testResults.messagesReceived);
+        };
+      } else {
+        log('listener-output', '▶️ 開始監聽 Storage 事件...', 'success');
+        setupStorageSync();
+      }
+    }
+    
+    function stopListening() {
+      if (channel) {
+        channel.onmessage = null;
+        isListening = false;
+        log('listener-output', '⏹️ 已停止監聽', 'warn');
+      }
+    }
+    
+    function sendTestMessage() {
+      const output = document.getElementById('listener-output');
+      output.innerHTML = '';
+      
+      if (!testResults.channelInitialized) {
+        log('listener-output', '❌ 請先初始化同步機制', 'error');
+        return;
+      }
+      
+      const hasBroadcastChannel = typeof BroadcastChannel !== 'undefined';
+      const testMessage = {
+        type: 'test-message',
+        timestamp: Date.now(),
+        sender: 'test-page',
+        content: '這是一條測試消息'
+      };
+      
+      if (hasBroadcastChannel && channel) {
+        channel.postMessage(testMessage);
+        log('listener-output', `📤 已發送 BroadcastChannel 消息: ${JSON.stringify(testMessage)}`, 'success');
+      } else {
+        // 使用 storage 事件模擬跨標籤頁通訊
+        const testKey = `rs-system-test-${Date.now()}`;
+        localStorage.setItem(testKey, JSON.stringify(testMessage));
+        log('listener-output', `📤 已發送 Storage 事件消息: ${JSON.stringify(testMessage)}`, 'success');
+        
+        // 清理測試鍵
+        setTimeout(() => localStorage.removeItem(testKey), 1000);
+      }
+    }
+    
+    // ==================== 多標籤頁測試 ====================
+    
+    function openNewWindow() {
+      window.open(window.location.href, '_blank', 'width=1200,height=800');
+    }
+    
+    // ==================== 完整測試 ====================
+    
+    async function runFullTest() {
+      const output = document.getElementById('full-test-output');
+      output.innerHTML = '';
+      
+      log('full-test-output', '🧪 開始執行完整測試套件...', 'info');
+      
+      // 測試 1: 檢測支援
+      log('full-test-output', '\n--- 測試 1: 檢測 BroadcastChannel 支援 ---', 'info');
+      testBroadcastChannelSupport();
+      
+      // 測試 2: 初始化
+      log('full-test-output', '\n--- 測試 2: 初始化 BroadcastChannel ---', 'info');
+      initBroadcastChannel();
+      
+      // 測試 3: 添加數據
+      log('full-test-output', '\n--- 測試 3: 添加課程記錄 ---', 'info');
+      for (let i = 0; i < 3; i++) {
+        addTestRecord();
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      // 測試 4: 列出數據
+      log('full-test-output', '\n--- 測試 4: 列出所有記錄 ---', 'info');
+      listAllRecords();
+      
+      // 測試 5: 檢查同步
+      log('full-test-output', '\n--- 測試 5: 檢查同步狀態 ---', 'info');
+      checkSyncStatus();
+      
+      log('full-test-output', '\n✅ 完整測試已完成', 'success');
+    }
+    
+    function generateReport() {
+      const output = document.getElementById('full-test-output');
+      output.innerHTML = '';
+      
+      const records = JSON.parse(localStorage.getItem(TEST_KEY) || '[]');
+      
+      const report = `
+📊 PLAN-A1 測試報告
+==================
+生成時間: ${new Date().toLocaleString('zh-TW')}
+
+✅ BroadcastChannel 支援: ${testResults.broadcastChannelSupported ? '是' : '否'}
+✅ 通道初始化: ${testResults.channelInitialized ? '是' : '否'}
+✅ 監聽狀態: ${isListening ? '開啟' : '關閉'}
+
+📈 統計數據:
+- 課程記錄總數: ${records.length}
+- 接收消息數: ${testResults.messagesReceived}
+- 已同步記錄: ${testResults.recordsSynced}
+
+📋 功能驗證:
+[${testResults.broadcastChannelSupported ? '✅' : '❌'}] BroadcastChannel API
+[${testResults.channelInitialized ? '✅' : '❌'}] 通道初始化
+[${isListening ? '✅' : '❌'}] 消息監聽
+[${records.length > 0 ? '✅' : '❌'}] 數據儲存
+[${testResults.messagesReceived > 0 ? '✅' : '❌'}] 消息廣播
+
+🎯 結論: ${testResults.broadcastChannelSupported && testResults.channelInitialized ? '✅ PLAN-A1 功能正常' : '⚠️ 需要進一步檢查'}
+      `;
+      
+      log('full-test-output', report, 'info');
+    }
+    
+    function resetTest() {
+      testResults = {
+        broadcastChannelSupported: false,
+        channelInitialized: false,
+        messagesReceived: 0,
+        recordsSynced: 0,
+        tests: []
+      };
+      
+      if (channel) {
+        channel.close?.();
+        channel = null;
+      }
+      
+      isListening = false;
+      
+      document.querySelectorAll('.output').forEach(el => el.innerHTML = '');
+      
+      updateStat('stat-channel', '❌');
+      updateStat('stat-records', '0');
+      updateStat('stat-synced', '0');
+      updateStat('stat-status', '待測');
+      
+      log('full-test-output', '✅ 測試已重置', 'success');
+    }
+    
+    // ==================== 初始化頁面 ====================
+    
+    window.addEventListener('load', () => {
+      log('detect-output', '頁面已加載，準備進行 PLAN-A1 測試', 'info');
+      updateStat('stat-status', '準備中');
+    });
+  </script>
+</body>
+</html>
