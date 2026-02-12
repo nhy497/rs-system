@@ -1,5 +1,10 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// ES 模組中的 __dirname 替代方案
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
   // GitHub Pages 基礎路徑
@@ -23,9 +28,14 @@ export default defineConfig({
       },
       output: {
         // 手動分割 chunks
-        manualChunks: {
+        manualChunks(id) {
           // 第三方庫
-          'vendor-pouchdb': ['pouchdb', 'pouchdb-find']
+          if (id.includes('node_modules')) {
+            if (id.includes('pouchdb')) {
+              return 'vendor-pouchdb';
+            }
+            return 'vendor';
+          }
         },
         
         // 文件命名策略
@@ -73,7 +83,7 @@ export default defineConfig({
   
   // 優化配置
   optimizeDeps: {
-    include: ['pouchdb', 'pouchdb-find'],
+    include: [],
     exclude: [] // 排除不需要預打包的模組
   },
   
