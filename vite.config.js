@@ -1,27 +1,31 @@
 import { defineConfig } from 'vite';
-import { visualizer } from 'rollup-plugin-visualizer';
+import { resolve } from 'path';
 
 export default defineConfig({
   // GitHub Pages 基礎路徑
   base: '/rs-system/',
   
-  // 構建配置
+  // 根目錄為專案根目錄
+  root: './',
+  
+  // 多頁應用配置
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     
-    // 代碼分割優化
+    // 多頁入口
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        login: resolve(__dirname, 'login.html'),
+        'clear-cache': resolve(__dirname, 'clear-cache.html'),
+        'test-save-refresh': resolve(__dirname, 'test-save-refresh.html')
+      },
       output: {
         // 手動分割 chunks
         manualChunks: {
           // 第三方庫
-          'vendor-pouchdb': ['pouchdb', 'pouchdb-find'],
-          
-          // 核心模組（未來模組化後使用）
-          // 'storage': ['./src/modules/storage/index.js'],
-          // 'auth': ['./src/modules/auth/index.js'],
-          // 'ui': ['./src/modules/ui/index.js']
+          'vendor-pouchdb': ['pouchdb', 'pouchdb-find']
         },
         
         // 文件命名策略
@@ -50,16 +54,7 @@ export default defineConfig({
   // 開發伺服器配置
   server: {
     port: 3000,
-    open: true,
-    
-    // 代理配置（如果需要）
-    proxy: {
-      // '/api': {
-      //   target: 'http://localhost:5984',
-      //   changeOrigin: true,
-      //   rewrite: (path) => path.replace(/^\/api/, '')
-      // }
-    },
+    open: '/index.html',
     
     // CORS
     cors: true,
@@ -76,20 +71,10 @@ export default defineConfig({
     open: true
   },
   
-  // 插件
-  plugins: [
-    // 構建分析工具（只在 analyze 模式啟用）
-    process.env.ANALYZE && visualizer({
-      open: true,
-      gzipSize: true,
-      brotliSize: true,
-      filename: 'dist/stats.html'
-    })
-  ].filter(Boolean),
-  
   // 優化配置
   optimizeDeps: {
-    include: ['pouchdb', 'pouchdb-find']
+    include: ['pouchdb', 'pouchdb-find'],
+    exclude: [] // 排除不需要預打包的模組
   },
   
   // CSS 配置
@@ -97,11 +82,11 @@ export default defineConfig({
     devSourcemap: true
   },
   
-  // 實驗性功能
-  experimental: {
-    // 渲染優化
-    renderBuiltUrl(filename) {
-      return '/' + filename;
+  // 解析配置
+  resolve: {
+    alias: {
+      // 可以在這裡添加路徑別名
+      // '@': resolve(__dirname, 'src')
     }
   }
 });
