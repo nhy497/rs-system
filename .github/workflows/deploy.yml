@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          # 移除 cache: 'npm' 因為沒有 package-lock.json
       
       - name: 📦 安裝依賴
         run: npm install --legacy-peer-deps
@@ -79,7 +79,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18.x'
-          cache: 'npm'
+          # 移除 cache: 'npm' 因為沒有 package-lock.json
       
       - name: 📦 安裝依賴
         run: npm install --legacy-peer-deps
