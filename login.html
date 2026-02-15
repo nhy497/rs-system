@@ -8,8 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="logger-service.js?v=20260126_6" defer></script>
-  <script src="system.js?v=20260126_6" defer></script>
+  
+  <!-- ✅ 修復：移除錯誤版本號 -->
+  <script src="logger-service.js" defer></script>
+  <script src="system.js" defer></script>
   
   <style>
     * {
@@ -242,6 +244,195 @@
     
     <div class="mode-indicator">本地存儲模式 • v3.1</div>
   </div>
+
+  <script>
+    // ⭐ 主控台輸出 - 人性化訊息
+    console.log('%c🚀 教練記錄系統 - 登入頁面', 'color: #667eea; font-size: 16px; font-weight: bold;');
+    console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #cbd5e1;');
+    console.log('✅ 頁面已載入');
+    console.log('📝 等待使用者操作...');
+
+    // 等待 system.js 和 LOGIN_MANAGER 加載完成
+    function initLoginPage() {
+      if (typeof LOGIN_MANAGER === 'undefined') {
+        console.log('⌛ 等待 LOGIN_MANAGER 加載...');
+        setTimeout(initLoginPage, 100);
+        return;
+      }
+
+      console.log('✅ LOGIN_MANAGER 已就緒');
+      console.log('✅ 認證系統準備完成');
+
+      // 登入表單提交
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault(); // 防止表單默認重載
+        console.log('%c🔑 登入處理開始', 'color: #0ea5e9; font-weight: bold;');
+        
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        
+        console.log(`👤 使用者名稱: ${username}`);
+        
+        const btn = document.getElementById('btnLogin');
+        btn.disabled = true;
+        btn.textContent = '登入中...';
+        
+        try {
+          const result = await LOGIN_MANAGER.login(username, password);
+          console.log('📡 登入結果:', result);
+          
+          if (result.success) {
+            console.log('%c✅ 登入成功！', 'color: #10b981; font-size: 14px; font-weight: bold;');
+            console.log(`🎉 歡迎回來，${result.user.username}！`);
+            console.log(`👑 權限: ${result.user.role === 'creator' ? '創建者' : '一般使用者'}`);
+            
+            showMessage('success', `歡迎回來，${result.user.username}！`);
+            
+            // ⭐ 登入成功後跳轉到 index.html
+            console.log('🔀 正在跳轉至主頁...');
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1000);
+          } else {
+            console.log('%c❌ 登入失敗', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+            console.log(`⚠️  原因: ${result.message}`);
+            showMessage('error', result.message || '使用者名稱或密碼錯誤');
+            btn.disabled = false;
+            btn.textContent = '登入';
+          }
+        } catch (error) {
+          console.error('%c❌ 登入錯誤', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+          console.error('🐛 錯誤詳情:', error);
+          showMessage('error', '登入過程發生錯誤，請稍後再試');
+          btn.disabled = false;
+          btn.textContent = '登入';
+        }
+      });
+
+      // 註冊表單提交
+      document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault(); // 防止表單默認重載
+        console.log('%c✏️ 註冊處理開始', 'color: #8b5cf6; font-weight: bold;');
+        
+        const username = document.getElementById('signupUsername').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const email = document.getElementById('signupEmail').value.trim();
+        
+        console.log(`👤 新使用者: ${username}`);
+        if (email) console.log(`📧 電郵: ${email}`);
+        
+        if (password.length < 4) {
+          console.log('%c⚠️  密碼太短', 'color: #f59e0b;');
+          showMessage('error', '密碼至少需要4個字元');
+          return;
+        }
+        
+        const btn = document.getElementById('btnSignup');
+        btn.disabled = true;
+        btn.textContent = '處理中...';
+        
+        try {
+          const result = await LOGIN_MANAGER.register(username, password, email);
+          console.log('📡 註冊結果:', result);
+          
+          if (result.success) {
+            console.log('%c✅ 註冊成功！', 'color: #10b981; font-size: 14px; font-weight: bold;');
+            console.log(`🎉 歡迎加入，${username}！`);
+            
+            showMessage('success', '帳戶建立成功！正在登入...');
+            
+            // ⭐ 註冊成功後自動登入並跳轉
+            console.log('🔑 自動登入中...');
+            const loginResult = await LOGIN_MANAGER.login(username, password);
+            
+            if (loginResult.success) {
+              console.log('✅ 自動登入成功');
+              console.log('🔀 正在跳轉至主頁...');
+              setTimeout(() => {
+                window.location.href = 'index.html';
+              }, 1500);
+            } else {
+              console.log('⚠️  自動登入失敗，請手動登入');
+              setTimeout(() => {
+                switchToLogin();
+              }, 2000);
+            }
+          } else {
+            console.log('%c❌ 註冊失敗', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+            console.log(`⚠️  原因: ${result.message}`);
+            showMessage('error', result.message || '註冊失敗，請再試一次');
+            btn.disabled = false;
+            btn.textContent = '建立帳戶';
+          }
+        } catch (error) {
+          console.error('%c❌ 註冊錯誤', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+          console.error('🐛 錯誤詳情:', error);
+          showMessage('error', '註冊過程發生錯誤，請稍後再試');
+          btn.disabled = false;
+          btn.textContent = '建立帳戶';
+        }
+      });
+
+      // 切換表單
+      document.getElementById('switchToSignup').addEventListener('click', () => {
+        console.log('🔄 切換至註冊表單');
+        switchToSignup();
+      });
+
+      document.getElementById('switchToLogin').addEventListener('click', () => {
+        console.log('🔄 切換至登入表單');
+        switchToLogin();
+      });
+
+      console.log('%c✅ 登入頁面初始化完成', 'color: #10b981; font-size: 14px; font-weight: bold;');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
+
+    // 顯示訊息
+    function showMessage(type, text) {
+      const errorMsg = document.getElementById('errorMsg');
+      const successMsg = document.getElementById('successMsg');
+      
+      errorMsg.classList.remove('show');
+      successMsg.classList.remove('show');
+      
+      if (type === 'error') {
+        errorMsg.textContent = text;
+        errorMsg.classList.add('show');
+        console.log(`🚨 錯誤訊息: ${text}`);
+      } else {
+        successMsg.textContent = text;
+        successMsg.classList.add('show');
+        console.log(`✅ 成功訊息: ${text}`);
+      }
+    }
+
+    // 切換表單
+    function switchToSignup() {
+      document.getElementById('loginSection').classList.remove('active');
+      document.getElementById('signupSection').classList.add('active');
+      document.getElementById('toSignupSection').style.display = 'none';
+      document.getElementById('toLoginSection').style.display = 'block';
+      document.getElementById('errorMsg').classList.remove('show');
+      document.getElementById('successMsg').classList.remove('show');
+    }
+
+    function switchToLogin() {
+      document.getElementById('signupSection').classList.remove('active');
+      document.getElementById('loginSection').classList.add('active');
+      document.getElementById('toLoginSection').style.display = 'none';
+      document.getElementById('toSignupSection').style.display = 'block';
+      document.getElementById('errorMsg').classList.remove('show');
+      document.getElementById('successMsg').classList.remove('show');
+    }
+
+    // 頁面加載完成後初始化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initLoginPage);
+    } else {
+      initLoginPage();
+    }
+  </script>
 
 </body>
 </html>
