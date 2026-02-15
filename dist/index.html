@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>教練記錄系統 · 跳繩課堂 Checkpoint</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>◇</text></svg>">
+  
+  <!-- ⭐ [PLAN-A1] 跨標籤頁同步樣式 -->
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- PouchDB 核心庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb@8.0.1/dist/pouchdb.min.js" defer></script>
+  <!-- PouchDB 相容索引外掛 -->
+  <script src="https://cdn.jsdelivr.net/npm/pouchdb-find@8.0.1/dist/pouchdb.find.min.js" defer></script>
+  
+  <!-- 📝 [PLAN-A1] 主控台增強器（最先加載） -->
+  <script src="console-enhancer.js" defer></script>
+  
+  <!-- 雲端同步配置 -->
+  <script src="sync-config.js" defer></script>
+  
+  <!-- 日誌記錄系統 -->
+  <script src="logger-service.js" defer></script>
+  
+  <!-- ⭐ [PLAN-A1] 跨標籤頁同步工具（在 system.js 之前） -->
+  <script src="sync-utils.js" defer></script>
+  
+  <!-- 系統核心模組（整合版 v3.1.1） -->
+  <script src="system.js" defer></script>
+  <link rel="stylesheet" crossorigin href="/rs-system/assets/main-BQtgIkXj.css">
+</head>
+<body>
+  <div class="app">
+    <!-- 側邊欄 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon">◇</span>
+        <span class="brand-text">教練記錄系統</span>
+      </div>
+
+      <!-- 用戶信息區 -->
+      <div class="sidebar-user" id="sidebarUser">
+        <div class="user-avatar">👤</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebarUserName">未登錄</div>
+          <div class="user-role" id="sidebarUserRole">訪客</div>
+        </div>
+        <button type="button" class="btn-collapse-sidebar" id="btnCollapseSidebar" aria-label="收起側邊欄" title="收起側邊欄">
+          <span class="collapse-icon">◄</span>
+        </button>
+      </div>
+
+      <!-- 快速統計 -->
+      <div class="sidebar-stats">
+        <div class="stat-item">
+          <div class="stat-label">今日課堂</div>
+          <div class="stat-value" id="todayCount">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">學生總數</div>
+          <div class="stat-value" id="totalStudents">0</div>
+        </div>
+      </div>
+
+      <!-- 主菜單 -->
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">主菜單</div>
+        <a href="#" class="nav-item active" data-page="overview">
+          <span class="nav-icon">▣</span>
+          <span class="nav-label">課堂概覽</span>
+        </a>
+        <a href="#" class="nav-item" data-page="students">
+          <span class="nav-icon">◎</span>
+          <span class="nav-label">學生管理</span>
+        </a>
+        <a href="#" class="nav-item" data-page="actions">
+          <span class="nav-icon">◆</span>
+          <span class="nav-label">動作記錄</span>
+        </a>
+        <a href="#" class="nav-item" data-page="analytics">
+          <span class="nav-icon">▤</span>
+          <span class="nav-label">統計分析</span>
+        </a>
+
+        <div class="nav-section-title">工具</div>
+        <a href="#" class="nav-item" id="navData" data-page="data" hidden>
+          <span class="nav-icon">👥</span>
+          <span class="nav-label">用戶管理</span>
+        </a>
+        <a href="#" class="nav-item" id="btnExport">
+          <span class="nav-icon">⬇️</span>
+          <span class="nav-label">導出數據</span>
+        </a>
+        <a href="#" class="nav-item" id="btnSettings">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">系統設置</span>
+        </a>
+      </nav>
+
+      <!-- 底部信息 -->
+      <div class="sidebar-footer">
+        <div class="footer-info">
+          <div class="footer-tag">合作</div>
+          <div class="footer-version">v3.1.1</div>
+        </div>
+        <button type="button" class="btn-logout" id="btnLogout" aria-label="登出">
+          <span class="logout-icon">🚪</span>
+          <span>登出</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主體 -->
+    <div class="main-wrap">
+      <!-- 頂部工具條 -->
+      <header class="topbar">
+        <button type="button" class="topbar-menu" id="sidebarToggle" aria-label="選單">☰</button>
+        <h1 class="topbar-title" id="topbarTitle">課堂概覽</h1>
+        <div class="topbar-meta">
+          <div class="topbar-filter">
+            <label for="globalFilterClass">班別</label>
+            <select id="globalFilterClass">
+              <option value="">全部</option>
+            </select>
+          </div>
+          <span class="topbar-date" id="topbarDate"></span>
+        </div>
+      </header>
+
+      <!-- 內容區 -->
+      <main class="content">
+        <!-- 頁面：課堂概覽 -->
+        <section id="page-overview" class="page active">
+          <div class="page-inner overview-grid">
+            <!-- 基本資料 -->
+            <div class="card">
+              <h2 class="card-title">📋 基本資料</h2>
+              <div class="card-body form-grid-3">
+                <div class="field">
+                  <label for="classDate">課堂日期 <span class="required">*</span></label>
+                  <input type="date" id="classDate" required>
+                </div>
+                <div class="field">
+                  <label for="className">班級名稱</label>
+                  <div class="quick-class-wrap">
+                    <input type="text" id="className" placeholder="例：P3A / 初級班">
+                    <label for="quickSelectClass">快速選擇</label>
+                    <select id="quickSelectClass">
+                      <option value="">—</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="classSize">人數 <span class="required">*</span></label>
+                  <input type="number" id="classSize" min="0" placeholder="人數">
+                </div>
+              </div>
+              <!-- 班級預設按鈕容器（由JS添加） -->
+              <div id="classPresetsContainer" class="class-presets" style="display: none;"></div>
+              
+              <!-- 課堂時間 -->
+              <div class="field-row">
+                <div class="field">
+                  <label for="classStartTime">開始時間</label>
+                  <input type="time" id="classStartTime">
+                </div>
+                <div class="field">
+                  <label for="classEndTime">結束時間</label>
+                  <input type="time" id="classEndTime">
+                </div>
+              </div>
+              
+              <!-- 課堂時長顯示 -->
+              <div id="classDuration" class="time-duration-display">課堂時長：—</div>
+              
+              <!-- 課堂位置與教學角色 -->
+              <div class="field-row">
+                <div class="field">
+                  <label for="classLocation">課堂位置</label>
+                  <input type="text" id="classLocation" placeholder="例：操場、體育館">
+                </div>
+                <div class="field">
+                  <label for="teachingRole">教學角色</label>
+                  <input type="text" id="teachingRole" placeholder="例：主教練、助教">
+                </div>
+              </div>
+              
+              <!-- 備注 -->
+              <div class="field" style="padding: 0 1.25rem 1.25rem;">
+                <label for="notes">備注</label>
+                <textarea id="notes" rows="2" placeholder="課堂觀察、待跟進、下堂預告…"></textarea>
+                
+                <div style="margin-top: 0.75rem;">
+                  <label for="fileAttachment" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #64748b;">📎 附件（PDF/Word）</label>
+                  <input type="file" id="fileAttachment" accept=".pdf,.doc,.docx" style="font-size: 0.9rem;">
+                  <div id="filePreview" style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 投入度 -->
+            <div class="card card-engagement">
+              <h2 class="card-title">😊 投入度</h2>
+              <div class="card-body">
+                <div class="field">
+                  <label>開心指數 <span class="range-val" id="val-engagement">3</span>/5</label>
+                  <div class="slider-row">
+                    <input type="range" id="engagement" min="1" max="5" value="3">
+                    <div class="quick-btns" data-target="engagement">
+                      <button type="button" data-v="1">1</button>
+                      <button type="button" data-v="2">2</button>
+                      <button type="button" data-v="3" class="active">3</button>
+                      <button type="button" data-v="4">4</button>
+                      <button type="button" data-v="5">5</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>課堂氣氛 <span class="required">*</span></label>
+                  <div class="option-btns" data-name="atmosphere">
+                    <button type="button" data-v="開心">開心</button>
+                    <button type="button" data-v="不開心">不開心</button>
+                    <button type="button" data-v="認真學習">認真學習</button>
+                    <button type="button" data-v="心散">心散</button>
+                    <button type="button" data-v="一般">一般</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 技能進步 -->
+            <div class="card card-skills">
+              <h2 class="card-title">🎯 技能進步</h2>
+              <div class="card-body">
+                <div class="field">
+                  <label>教學花式 <span class="required">*</span></label>
+                  <div id="tricksList" class="tricks-list"></div>
+                  <div class="trick-item add-trick">
+                    <input type="text" id="trickName" placeholder="花式名稱">
+                    <input type="text" id="trickDetail" placeholder="教學細節（選填）">
+                    <button type="button" id="addTrick" class="btn-add">+ 新增</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>掌握比例 <span class="range-val" id="val-mastery">50</span>%</label>
+                  <div class="slider-row">
+                    <input type="range" id="mastery" min="0" max="100" value="50">
+                    <div class="quick-btns quick-pct" data-target="mastery">
+                      <button type="button" data-v="0">0%</button>
+                      <button type="button" data-v="25">25%</button>
+                      <button type="button" data-v="50" class="active">50%</button>
+                      <button type="button" data-v="75">75%</button>
+                      <button type="button" data-v="100">100%</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="plannedTime">預算教學時間（分鐘）</label>
+                    <input type="number" id="plannedTime" min="0" placeholder="分鐘">
+                  </div>
+                  <div class="field">
+                    <label for="actualTime">實際教學時間（分鐘）</label>
+                    <input type="number" id="actualTime" min="0" placeholder="分鐘">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>技巧等級進度</label>
+                  <div class="option-btns" data-name="skillLevel">
+                    <button type="button" data-v="初級">初級</button>
+                    <button type="button" data-v="中級">中級</button>
+                    <button type="button" data-v="進階">進階</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 團隊協作 -->
+            <div class="card card-team">
+              <h2 class="card-title">🤝 團隊協作</h2>
+              <div class="card-body">
+                <div class="field">
+                  <label>主動幫助他人 <span class="range-val" id="val-helpOthers">50</span>%</label>
+                  <div class="slider-row">
+                    <input type="range" id="helpOthers" min="0" max="100" value="50">
+                    <div class="quick-btns quick-pct" data-target="helpOthers">
+                      <button type="button" data-v="0">0%</button>
+                      <button type="button" data-v="25">25%</button>
+                      <button type="button" data-v="50" class="active">50%</button>
+                      <button type="button" data-v="75">75%</button>
+                      <button type="button" data-v="100">100%</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>同學互動 <span class="range-val" id="val-interaction">50</span>%</label>
+                  <div class="slider-row">
+                    <input type="range" id="interaction" min="0" max="100" value="50">
+                    <div class="quick-btns quick-pct" data-target="interaction">
+                      <button type="button" data-v="0">0%</button>
+                      <button type="button" data-v="25">25%</button>
+                      <button type="button" data-v="50" class="active">50%</button>
+                      <button type="button" data-v="75">75%</button>
+                      <button type="button" data-v="100">100%</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>小組合作意願 <span class="range-val" id="val-teamwork">50</span>%</label>
+                  <div class="slider-row">
+                    <input type="range" id="teamwork" min="0" max="100" value="50">
+                    <div class="quick-btns quick-pct" data-target="teamwork">
+                      <button type="button" data-v="0">0%</button>
+                      <button type="button" data-v="25">25%</button>
+                      <button type="button" data-v="50" class="active">50%</button>
+                      <button type="button" data-v="75">75%</button>
+                      <button type="button" data-v="100">100%</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 心理與自信 -->
+            <div class="card card-psych">
+              <h2 class="card-title">💡 心理與自信</h2>
+              <div class="card-body">
+                <div class="field">
+                  <label>自發練習 <span class="range-val" id="val-selfPractice">50</span>%</label>
+                  <div class="slider-row">
+                    <input type="range" id="selfPractice" min="0" max="100" value="50">
+                    <div class="quick-btns quick-pct" data-target="selfPractice">
+                      <button type="button" data-v="0">0%</button>
+                      <button type="button" data-v="25">25%</button>
+                      <button type="button" data-v="50" class="active">50%</button>
+                      <button type="button" data-v="75">75%</button>
+                      <button type="button" data-v="100">100%</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>主動學習 <span class="range-val" id="val-activeLearn">50</span>%</label>
+                  <div class="slider-row">
+                    <input type="range" id="activeLearn" min="0" max="100" value="50">
+                    <div class="quick-btns quick-pct" data-target="activeLearn">
+                      <button type="button" data-v="0">0%</button>
+                      <button type="button" data-v="25">25%</button>
+                      <button type="button" data-v="50" class="active">50%</button>
+                      <button type="button" data-v="75">75%</button>
+                      <button type="button" data-v="100">100%</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>課堂積極性 <span class="range-val" id="val-positivity">3</span>/5</label>
+                  <div class="slider-row">
+                    <input type="range" id="positivity" min="1" max="5" value="3">
+                    <div class="quick-btns" data-target="positivity">
+                      <button type="button" data-v="1">1</button>
+                      <button type="button" data-v="2">2</button>
+                      <button type="button" data-v="3" class="active">3</button>
+                      <button type="button" data-v="4">4</button>
+                      <button type="button" data-v="5">5</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>學習熱情 <span class="range-val" id="val-enthusiasm">3</span>/5</label>
+                  <div class="slider-row">
+                    <input type="range" id="enthusiasm" min="1" max="5" value="3">
+                    <div class="quick-btns" data-target="enthusiasm">
+                      <button type="button" data-v="1">1</button>
+                      <button type="button" data-v="2">2</button>
+                      <button type="button" data-v="3" class="active">3</button>
+                      <button type="button" data-v="4">4</button>
+                      <button type="button" data-v="5">5</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 教練教學質量 -->
+            <div class="card">
+              <h2 class="card-title">教練教學質量</h2>
+              <div class="card-body">
+                <div class="field">
+                  <label>教學評分 <span class="range-val" id="val-teachScore">7</span>/10</label>
+                  <div class="slider-row">
+                    <input type="range" id="teachScore" min="1" max="10" value="7">
+                    <div class="quick-btns" data-target="teachScore">
+                      <button type="button" data-v="1">1</button>
+                      <button type="button" data-v="5">5</button>
+                      <button type="button" data-v="7" class="active">7</button>
+                      <button type="button" data-v="10">10</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>學生滿意度 <span class="range-val" id="val-satisfaction">3</span>/5</label>
+                  <div class="slider-row">
+                    <input type="range" id="satisfaction" min="1" max="5" value="3">
+                    <div class="quick-btns" data-target="satisfaction">
+                      <button type="button" data-v="1">1</button>
+                      <button type="button" data-v="2">2</button>
+                      <button type="button" data-v="3" class="active">3</button>
+                      <button type="button" data-v="4">4</button>
+                      <button type="button" data-v="5">5</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="disciplineCount">課堂紀律介入次數</label>
+                  <input type="number" id="disciplineCount" min="0" placeholder="次數">
+                </div>
+                <div class="field">
+                  <label>教學靈活性 <span class="range-val" id="val-flexibility">7</span>/10</label>
+                  <div class="slider-row">
+                    <input type="range" id="flexibility" min="1" max="10" value="7">
+                    <div class="quick-btns" data-target="flexibility">
+                      <button type="button" data-v="1">1</button>
+                      <button type="button" data-v="5">5</button>
+                      <button type="button" data-v="7" class="active">7</button>
+                      <button type="button" data-v="10">10</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>個別化教學 <span class="range-val" id="val-individual">50</span>%</label>
+                  <div class="slider-row">
+                    <input type="range" id="individual" min="0" max="100" value="50">
+                    <div class="quick-btns quick-pct" data-target="individual">
+                      <button type="button" data-v="0">0%</button>
+                      <button type="button" data-v="25">25%</button>
+                      <button type="button" data-v="50" class="active">50%</button>
+                      <button type="button" data-v="75">75%</button>
+                      <button type="button" data-v="100">100%</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 操作 -->
+            <div class="card card-actions">
+              <div class="card-body flex-row gap-m">
+                <button type="button" id="btnSave" class="btn btn-primary">儲存本堂記錄</button>
+                <button type="button" id="btnClear" class="btn btn-ghost">清空本堂輸入</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 頁面：學生管理 -->
+        <section id="page-students" class="page">
+          <div class="page-inner">
+            <!-- 搜尋和排序工具 -->
+            <div class="card">
+              <h2 class="card-title">🔍 搜尋和排序</h2>
+              <div class="card-body">
+                <div class="search-box" style="margin-bottom: 1rem;">
+                  <input type="text" id="studentSearch" placeholder="搜尋班級名稱或日期（例：P3A、2025-01-20）...">
+                </div>
+                <div class="sort-toolbar">
+                  <label for="sortBy">排序方式：</label>
+                  <select id="sortBy">
+                    <option value="date-desc">最新課程優先</option>
+                    <option value="date-asc">最舊課程優先</option>
+                    <option value="name-asc">班級名稱 (A→Z)</option>
+                    <option value="mastery-desc">掌握度 (高→低)</option>
+                    <option value="engagement-desc">開心指數 (高→低)</option>
+                  </select>
+                  <span class="sort-icon">⚙</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 篩選 -->
+            <div class="card">
+              <h2 class="card-title">📅 日期篩選</h2>
+              <div class="filter-row">
+                <div class="field-inline">
+                  <label for="filterDateFrom">日期起</label>
+                  <input type="date" id="filterDateFrom">
+                </div>
+                <div class="field-inline">
+                  <label for="filterDateTo">日期訖</label>
+                  <input type="date" id="filterDateTo">
+                </div>
+              </div>
+            </div>
+            
+            <div class="students-grid">
+            <div class="card">
+              <h2 class="card-title">📚 按班別</h2>
+              <div class="card-body">
+                <ul id="byClassList" class="by-class-list"></ul>
+              </div>
+            </div>
+            <div class="card">
+              <h2 class="card-title">⏱ 最近 10 堂課</h2>
+              <div class="card-body">
+                <ul id="recentList" class="recent-list"></ul>
+              </div>
+            </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 頁面：動作記錄 -->
+        <section id="page-actions" class="page">
+          <div class="page-inner">
+            <div class="card">
+              <h2 class="card-title">教學花式記錄</h2>
+              <div class="filter-row">
+                <div class="field-inline">
+                  <label for="actionFilterClass">班別</label>
+                  <select id="actionFilterClass">
+                    <option value="">全部</option>
+                  </select>
+                </div>
+                <div class="field-inline">
+                  <label for="actionDateFrom">日期起</label>
+                  <input type="date" id="actionDateFrom">
+                </div>
+                <div class="field-inline">
+                  <label for="actionDateTo">日期訖</label>
+                  <input type="date" id="actionDateTo">
+                </div>
+                <div class="field-inline">
+                  <label for="actionSkillLevel">技巧等級</label>
+                  <select id="actionSkillLevel">
+                    <option value="">全部</option>
+                    <option value="初級">初級</option>
+                    <option value="中級">中級</option>
+                    <option value="進階">進階</option>
+                  </select>
+                </div>
+              </div>
+              <div class="card-body card-body-table">
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>日期</th>
+                        <th>班級</th>
+                        <th>花式名稱</th>
+                        <th>教學細節</th>
+                        <th>掌握比例</th>
+                      </tr>
+                    </thead>
+                    <tbody id="actionsTableBody"></tbody>
+                  </table>
+                </div>
+                <p id="actionsEmpty" class="empty-hint" hidden>尚無教學花式記錄</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 頁面：統計分析 -->
+        <section id="page-analytics" class="page">
+          <div class="page-inner">
+            <div class="card">
+              <h2 class="card-title">篩選</h2>
+              <div class="filter-row">
+                <div class="field-inline">
+                  <label for="analyticsFilterClass">班別</label>
+                  <select id="analyticsFilterClass">
+                    <option value="">全部</option>
+                  </select>
+                </div>
+                <div class="field-inline">
+                  <label for="analyticsDateFrom">日期起</label>
+                  <input type="date" id="analyticsDateFrom">
+                </div>
+                <div class="field-inline">
+                  <label for="analyticsDateTo">日期訖</label>
+                  <input type="date" id="analyticsDateTo">
+                </div>
+              </div>
+            </div>
+            <!-- 統計 strip（簡潔，非卡片）-->
+            <div class="stats-strip">
+              <span>總記錄 <strong id="statTotal">0</strong></span>
+              <span class="sep">|</span>
+              <span>本週 <strong id="statWeek">0</strong></span>
+              <span class="sep">|</span>
+              <span>平均(1–5) <strong id="statAvg">–</strong></span>
+              <span class="sep">|</span>
+              <span>最近 <strong id="statUpdated">–</strong></span>
+            </div>
+            <!-- 班別統計（簡化為表格） -->
+            <div class="card">
+              <h2 class="card-title">班別統計</h2>
+              <div class="card-body">
+                <div id="analyticsChart" class="analytics-table"></div>
+                <p id="analyticsEmpty" class="empty-hint" hidden>尚無記錄</p>
+              </div>
+            </div>
+            <!-- 數據管理 -->
+            <div class="card">
+              <h2 class="card-title">數據管理</h2>
+              <div class="card-body flex-row gap-m">
+                <button type="button" id="btnExport" class="btn btn-ghost">匯出全部記錄（CSV）</button>
+                <button type="button" id="btnDeleteAll" class="btn btn-danger-ghost">清除所有記錄</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 頁面：用戶管理（僅 Creator 可見） -->
+        <section id="page-data" class="page" hidden>
+          <div class="page-inner">
+            <!-- 用戶列表 -->
+            <div class="card">
+              <h2 class="card-title">👥 系統用戶</h2>
+              <div class="card-body">
+                <div id="usersList" class="users-list"></div>
+                <p id="usersEmpty" class="empty-hint" hidden>尚無用戶</p>
+              </div>
+            </div>
+
+            <!-- 系統統計 -->
+            <div class="card">
+              <h2 class="card-title">📊 系統統計</h2>
+              <div class="card-body">
+                <div class="stats-grid">
+                  <div class="stat-card">
+                    <div class="stat-label">總用戶數</div>
+                    <div class="stat-number" id="statTotalUsers">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Creator 數</div>
+                    <div class="stat-number" id="statCreatorCount">0</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">普通用戶</div>
+                    <div class="stat-number" id="statUserCount">0</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div id="classDetailModal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="classDetailTitle">班別細節</h3>
+        <button type="button" id="closeClassDetail" class="modal-close" aria-label="關閉">&times;</button>
+      </div>
+      <div id="classDetailBody" class="modal-body"></div>
+    </div>
+  </div>
+  <div id="detailModal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="detailTitle">課堂詳情</h3>
+        <button type="button" id="closeDetail" class="modal-close" aria-label="關閉">&times;</button>
+      </div>
+      <div id="detailBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- 會話檢查腳本 -->
+  <script>
+    // ⭐ 修復：寬鬆的會話檢查 - 確保用戶已登入
+    (function() {
+      try {
+        console.log('%c🔐 檢查用戶會話...', 'color: #0ea5e9; font-weight: bold;');
+        
+        const session = localStorage.getItem('rs-system-session');
+        const currentUser = localStorage.getItem('current-user');
+
+        // 第一層檢查：檢查是否存在基本會話數據
+        if (!session || !currentUser) {
+          console.warn('⚠️ 未檢測到會話，重定向到登入頁面');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        // 第二層檢查：解析並驗證會話數據
+        try {
+          const sessionData = JSON.parse(session);
+          const userData = JSON.parse(currentUser);
+
+          console.log('📊 會話數據:', { 
+            userId: sessionData.userId, 
+            sessionId: sessionData.sessionId ? '✅' : '❌',
+            expiresAt: sessionData.expiresAt ? new Date(sessionData.expiresAt).toLocaleString('zh-HK') : '無過期時間'
+          });
+          console.log('👤 用戶資料:', { 
+            id: userData.id, 
+            username: userData.username, 
+            role: userData.role || 'user' 
+          });
+
+          // ⭐ 修復：基本檢查 - 確保必要欄位存在
+          if (!sessionData.userId || !sessionData.sessionId || !userData.id) {
+            console.warn('⚠️ 會話資料不完整，重定向到登入頁面');
+            console.log('🐞 錯誤詳情:', {
+              hasUserId: !!sessionData.userId,
+              hasSessionId: !!sessionData.sessionId,
+              hasUserDataId: !!userData.id
+            });
+            localStorage.removeItem('rs-system-session');
+            localStorage.removeItem('current-user');
+            window.location.href = 'login.html';
+            return;
+          }
+
+          // ⭐ 修復：寬鬆的過期檢查 - 允許無 expiresAt 或未過期
+          if (sessionData.expiresAt) {
+            const now = Date.now();
+            const expiresAt = sessionData.expiresAt;
+            
+            if (now > expiresAt) {
+              console.warn('⚠️ 會話已過期，重定向到登入頁面');
+              console.log('🕒 過期時間:', new Date(expiresAt).toLocaleString('zh-HK'));
+              console.log('🕒 當前時間:', new Date(now).toLocaleString('zh-HK'));
+              localStorage.removeItem('rs-system-session');
+              localStorage.removeItem('current-user');
+              window.location.href = 'login.html';
+              return;
+            } else {
+              const remainingHours = Math.floor((expiresAt - now) / (1000 * 60 * 60));
+              console.log(`⏰ 會話剩餘時間: ${remainingHours} 小時`);
+            }
+          } else {
+            console.log('✅ 會話無過期時間（長期有效）');
+          }
+
+          // 記錄日誌（如果日誌服務可用）
+          if (typeof loggerService !== 'undefined') {
+            loggerService.logSystemEvent('session_validated', `用戶 ${userData.username} 會話驗證成功`, 'info');
+          }
+
+          console.log('%c✅ 會話有效，應用將啟動', 'color: #10b981; font-size: 14px; font-weight: bold;');
+          console.log(`👤 當前用戶: ${userData.username} | 角色: ${userData.role || 'user'}`);
+          console.log('──────────────────────────────');
+        } catch (parseError) {
+          console.error('⚠️ 會話資料格式錯誤:', parseError);
+          console.log('🐞 原始 session:', session);
+          console.log('🐞 原始 currentUser:', currentUser);
+          localStorage.removeItem('rs-system-session');
+          localStorage.removeItem('current-user');
+          window.location.href = 'login.html';
+        }
+      } catch (error) {
+        console.error('❌ 會話檢查發生未預期的錯誤:', error);
+        window.location.href = 'login.html';
+      }
+    })();
+  </script>
+</body>
+</html>
