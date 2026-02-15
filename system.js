@@ -1556,27 +1556,28 @@ function updateUserInfo(username = null) {
       navData.hidden = user.role !== 'creator';
     }
     
-    // 如果是 Creator，添加提示並禁用課程記錄表單
+    // 如果是 Creator，添加提示並修改保存按鈕為測試模式
     if (user.role === 'creator') {
-      console.log('👑 Creator 模式：僅限查看，不能新增課程記錄');
+      console.log('👑 Creator 模式：測試模式已啟用');
       
       // 在課堂概覽頁面頂部添加提示
       const pageOverview = $('page-overview');
       if (pageOverview && !$('creatorNotice')) {
         const notice = document.createElement('div');
         notice.id = 'creatorNotice';
-        notice.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; color: #856404;';
-        notice.innerHTML = '<strong>👑 Creator 模式</strong>：您的帳戶僅限查看所有用戶資料和課程記錄，不能新增課程記錄。請前往「用戶管理」查看其他用戶的課程。';
+        notice.style.cssText = 'background: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; color: #1565c0;';
+        notice.innerHTML = '<strong>👑 Creator 測試模式</strong>：您可以使用測試模式新增課堂記錄來測試功能。所有保存的記錄會標記為「Creator 測試」。';
         pageOverview.querySelector('.page-inner')?.prepend(notice);
       }
       
-      // 禁用保存按鈕
+      // 修改保存按鈕為測試模式
       const btnSave = $('btnSave');
       if (btnSave) {
-        btnSave.disabled = true;
-        btnSave.textContent = '🔒 Creator 不能新增記錄';
-        btnSave.style.opacity = '0.6';
-        btnSave.style.cursor = 'not-allowed';
+        btnSave.disabled = false;
+        btnSave.textContent = '💾 儲存（Creator 測試模式）';
+        btnSave.style.opacity = '1';
+        btnSave.style.cursor = 'pointer';
+        btnSave.style.background = '#2196f3';
       }
     }
   } else {
@@ -1953,6 +1954,7 @@ function getFormData() {
     classSize: ($('classSize')?.value || '').trim() ? parseInt($('classSize').value, 10) : null,
     classLocation: ($('classLocation')?.value || '').trim(),
     teachingRole: ($('teachingRole')?.value || '').trim(),
+    classLanguage: ($('classLanguage')?.value || '繁體中文').trim(),
     classStartTime: startTime,
     classEndTime: endTime,
     classDurationMins: classDurationMins,
@@ -1995,6 +1997,7 @@ function loadIntoForm(rec) {
   if ($('classSize')) $('classSize').value = rec.classSize != null ? rec.classSize : '';
   if ($('classLocation')) $('classLocation').value = rec.classLocation || '';
   if ($('teachingRole')) $('teachingRole').value = rec.teachingRole || '';
+  if ($('classLanguage')) $('classLanguage').value = rec.classLanguage || '繁體中文';
   if ($('classStartTime')) $('classStartTime').value = rec.classStartTime || '';
   if ($('classEndTime')) $('classEndTime').value = rec.classEndTime || '';
   updateClassDuration();
@@ -2557,7 +2560,8 @@ function refreshStats() {
     const recent = list.slice(0, 10);
     ul.innerHTML = recent.length === 0 ? '<li class="empty">尚無記錄</li>' : recent.map(r => {
       const meta = [r.className, r.classSize != null ? `人數 ${r.classSize}` : ''].filter(Boolean).join(' · ');
-      return `<li data-date="${escapeHtml(r.classDate || '')}">${r.classDate || '–'}${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}</li>`;
+      const testBadge = r.creatorTestMode ? '<span style="color: #2196f3; font-size: 0.8rem;">🧪</span> ' : '';
+      return `<li data-date="${escapeHtml(r.classDate || '')}">${testBadge}${r.classDate || '–'}${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}</li>`;
     }).join('');
     ul.querySelectorAll('li[data-date]').forEach(li => {
       li.onclick = () => { const rec = list.find(r => r.classDate === li.dataset.date); if (rec) showDetail(rec); };
@@ -2773,6 +2777,15 @@ function showDetail(rec) {
   
   if ($('detailTitle')) $('detailTitle').textContent = `課堂詳情 · ${rec.classDate || '–'}`;
   if ($('detailBody')) {
+    // Creator 測試模式標記
+    let testModeHtml = '';
+    if (rec.creatorTestMode) {
+      testModeHtml = `
+        <div style="background: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; color: #1565c0; font-size: 0.9rem;">
+          🧪 <strong>Creator 測試模式記錄</strong> - 此記錄由 Creator 帳戶建立用於測試
+        </div>`;
+    }
+    
     // 附件區域
     let attachmentsHtml = '';
     if (rec.attachments && rec.attachments.length > 0) {
@@ -2789,10 +2802,12 @@ function showDetail(rec) {
     }
     
     $('detailBody').innerHTML = `
+      ${testModeHtml}
       <dl>
         <dt>基本資料</dt><dd>${rec.classDate || '–'} | ${escapeHtml(rec.className || '–')} | 人數 ${rec.classSize ?? '–'}</dd>
         ${rec.classLocation ? `<dt>課堂位置</dt><dd>${escapeHtml(rec.classLocation)}</dd>` : ''}
         ${rec.teachingRole ? `<dt>教學角色</dt><dd>${escapeHtml(rec.teachingRole)}</dd>` : ''}
+        ${rec.classLanguage ? `<dt>課堂語言</dt><dd>${escapeHtml(rec.classLanguage)}</dd>` : ''}
         <dt>課堂時間</dt><dd>${durationStr}</dd>
         <dt>備注</dt><dd>${rec.notes ? escapeHtml(rec.notes).replace(/\n/g, '<br>') : '—'}</dd>
         ${attachmentsHtml}
@@ -2987,12 +3002,12 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btnSave')?.addEventListener('click', () => {
     console.log('🔴 儲存按鈕被點擊');
     
-    // 檢查創作者權限 - 創作者不能新增課程記錄
+    // Creator 以測試模式新增記錄
     const currentUser = getCurrentUser();
-    if (currentUser && currentUser.role === 'creator') {
-      console.warn('⚠️ 創作者帳戶不能新增課程記錄');
-      toast('❌ 創作者帳戶僅限查看，不能新增課程記錄');
-      return;
+    const isCreatorTestMode = currentUser && currentUser.role === 'creator';
+    
+    if (isCreatorTestMode) {
+      console.log('👑 Creator 測試模式：允許新增記錄');
     }
     
     const d = getFormData();
@@ -3053,6 +3068,12 @@ document.addEventListener('DOMContentLoaded', () => {
       d.createdAt = new Date().toISOString();
     }
     d.updatedAt = new Date().toISOString();
+    
+    // 標記 Creator 測試模式記錄
+    if (isCreatorTestMode) {
+      d.creatorTestMode = true;
+      console.log('🧪 標記為 Creator 測試模式記錄');
+    }
     
     const i = list.findIndex(r => r.classDate === d.classDate && r.className === d.className);
     const isNew = i < 0;
