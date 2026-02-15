@@ -1954,7 +1954,6 @@ function getFormData() {
     classSize: ($('classSize')?.value || '').trim() ? parseInt($('classSize').value, 10) : null,
     classLocation: ($('classLocation')?.value || '').trim(),
     teachingRole: ($('teachingRole')?.value || '').trim(),
-    classLanguage: ($('classLanguage')?.value || '繁體中文').trim(),
     classStartTime: startTime,
     classEndTime: endTime,
     classDurationMins: classDurationMins,
@@ -1997,7 +1996,6 @@ function loadIntoForm(rec) {
   if ($('classSize')) $('classSize').value = rec.classSize != null ? rec.classSize : '';
   if ($('classLocation')) $('classLocation').value = rec.classLocation || '';
   if ($('teachingRole')) $('teachingRole').value = rec.teachingRole || '';
-  if ($('classLanguage')) $('classLanguage').value = rec.classLanguage || '繁體中文';
   if ($('classStartTime')) $('classStartTime').value = rec.classStartTime || '';
   if ($('classEndTime')) $('classEndTime').value = rec.classEndTime || '';
   updateClassDuration();
@@ -2807,7 +2805,6 @@ function showDetail(rec) {
         <dt>基本資料</dt><dd>${rec.classDate || '–'} | ${escapeHtml(rec.className || '–')} | 人數 ${rec.classSize ?? '–'}</dd>
         ${rec.classLocation ? `<dt>課堂位置</dt><dd>${escapeHtml(rec.classLocation)}</dd>` : ''}
         ${rec.teachingRole ? `<dt>教學角色</dt><dd>${escapeHtml(rec.teachingRole)}</dd>` : ''}
-        ${rec.classLanguage ? `<dt>課堂語言</dt><dd>${escapeHtml(rec.classLanguage)}</dd>` : ''}
         <dt>課堂時間</dt><dd>${durationStr}</dd>
         <dt>備注</dt><dd>${rec.notes ? escapeHtml(rec.notes).replace(/\n/g, '<br>') : '—'}</dd>
         ${attachmentsHtml}
