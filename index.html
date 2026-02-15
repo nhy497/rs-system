@@ -679,9 +679,11 @@
 
   <!-- 會話檢查腳本 -->
   <script>
-    // 改進的會話檢查 - 確保用戶已登入
+    // ⭐ 修復：寬鬆的會話檢查 - 確保用戶已登入
     (function() {
       try {
+        console.log('%c🔐 檢查用戶會話...', 'color: #0ea5e9; font-weight: bold;');
+        
         const session = localStorage.getItem('rs-system-session');
         const currentUser = localStorage.getItem('current-user');
 
@@ -697,22 +699,50 @@
           const sessionData = JSON.parse(session);
           const userData = JSON.parse(currentUser);
 
-          // 驗證必要欄位
+          console.log('📊 會話數據:', { 
+            userId: sessionData.userId, 
+            sessionId: sessionData.sessionId ? '✅' : '❌',
+            expiresAt: sessionData.expiresAt ? new Date(sessionData.expiresAt).toLocaleString('zh-HK') : '無過期時間'
+          });
+          console.log('👤 用戶資料:', { 
+            id: userData.id, 
+            username: userData.username, 
+            role: userData.role || 'user' 
+          });
+
+          // ⭐ 修復：基本檢查 - 確保必要欄位存在
           if (!sessionData.userId || !sessionData.sessionId || !userData.id) {
             console.warn('⚠️ 會話資料不完整，重定向到登入頁面');
+            console.log('🐞 錯誤詳情:', {
+              hasUserId: !!sessionData.userId,
+              hasSessionId: !!sessionData.sessionId,
+              hasUserDataId: !!userData.id
+            });
             localStorage.removeItem('rs-system-session');
             localStorage.removeItem('current-user');
             window.location.href = 'login.html';
             return;
           }
 
-          // 驗證會話是否過期（寬鬆檢查）
-          if (sessionData.expiresAt && Date.now() > sessionData.expiresAt) {
-            console.warn('⚠️ 會話已過期，重定向到登入頁面');
-            localStorage.removeItem('rs-system-session');
-            localStorage.removeItem('current-user');
-            window.location.href = 'login.html';
-            return;
+          // ⭐ 修復：寬鬆的過期檢查 - 允許無 expiresAt 或未過期
+          if (sessionData.expiresAt) {
+            const now = Date.now();
+            const expiresAt = sessionData.expiresAt;
+            
+            if (now > expiresAt) {
+              console.warn('⚠️ 會話已過期，重定向到登入頁面');
+              console.log('🕒 過期時間:', new Date(expiresAt).toLocaleString('zh-HK'));
+              console.log('🕒 當前時間:', new Date(now).toLocaleString('zh-HK'));
+              localStorage.removeItem('rs-system-session');
+              localStorage.removeItem('current-user');
+              window.location.href = 'login.html';
+              return;
+            } else {
+              const remainingHours = Math.floor((expiresAt - now) / (1000 * 60 * 60));
+              console.log(`⏰ 會話剩餘時間: ${remainingHours} 小時`);
+            }
+          } else {
+            console.log('✅ 會話無過期時間（長期有效）');
           }
 
           // 記錄日誌（如果日誌服務可用）
@@ -720,10 +750,13 @@
             loggerService.logSystemEvent('session_validated', `用戶 ${userData.username} 會話驗證成功`, 'info');
           }
 
-          console.log('✅ 會話有效，應用將啟動');
-          console.log('📊 當前用戶:', userData.username, '| 角色:', userData.role || 'user');
+          console.log('%c✅ 會話有效，應用將啟動', 'color: #10b981; font-size: 14px; font-weight: bold;');
+          console.log(`👤 當前用戶: ${userData.username} | 角色: ${userData.role || 'user'}`);
+          console.log('──────────────────────────────');
         } catch (parseError) {
           console.error('⚠️ 會話資料格式錯誤:', parseError);
+          console.log('🐞 原始 session:', session);
+          console.log('🐞 原始 currentUser:', currentUser);
           localStorage.removeItem('rs-system-session');
           localStorage.removeItem('current-user');
           window.location.href = 'login.html';
