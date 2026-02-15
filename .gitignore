@@ -17,6 +17,6 @@ npm-debug.log*
 node_modules/
 package-lock.json
 
-# Build output
+# Build output and cache
 dist/
 .vite/
