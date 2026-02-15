@@ -12,3 +12,11 @@ desktop.ini
 # Logs
 *.log
 npm-debug.log*
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+.vite/
