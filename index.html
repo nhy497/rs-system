@@ -20,19 +20,19 @@
   <script src="https://cdn.jsdelivr.net/npm/pouchdb-find@8.0.1/dist/pouchdb.find.min.js" defer></script>
   
   <!-- 📝 [PLAN-A1] 主控台增強器（最先加載） -->
-  <script src="console-enhancer.js" defer></script>
+  <script type="module" src="console-enhancer.js"></script>
   
   <!-- 雲端同步配置 -->
-  <script src="sync-config.js" defer></script>
+  <script type="module" src="sync-config.js"></script>
   
   <!-- 日誌記錄系統 -->
-  <script src="logger-service.js" defer></script>
+  <script type="module" src="logger-service.js"></script>
   
   <!-- ⭐ [PLAN-A1] 跨標籤頁同步工具（在 system.js 之前） -->
-  <script src="sync-utils.js" defer></script>
+  <script type="module" src="sync-utils.js"></script>
   
   <!-- 系統核心模組（整合版 v3.1.1） -->
-  <script src="system.js" defer></script>
+  <script type="module" src="system.js"></script>
 </head>
 <body>
   <div class="app">
