@@ -3413,4 +3413,16 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 }
 
+// 將對象附加到 window 以便在 ES 模組中也能使用
+if (typeof window !== 'undefined') {
+  window.STORAGE_MANAGER = STORAGE_MANAGER;
+  window.LOGIN_MANAGER = LOGIN_MANAGER;
+  window.UI_MANAGER = UI_MANAGER;
+  window.storageService = storageService;
+  window.getCurrentUser = getCurrentUser;
+  window.isCreator = isCreator;
+  window.parseRecords = parseRecords;
+  window.saveRecords = saveRecords;
+}
+
 console.log('✅ system.js 已加載完成 - HKJRA 教練記錄系統 v3.0');

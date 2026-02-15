@@ -9,6 +9,14 @@ desktop.ini
 *.swo
 *~
 
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+.vite/
+
 # Logs
 *.log
 npm-debug.log*

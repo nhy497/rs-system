@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>教練記錄系統 · 登入</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>◇</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- ✅ 修復：添加 type="module" 讓 Vite 正確打包 -->
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .login-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem;
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .login-header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: #1e293b;
+      font-weight: 700;
+    }
+    
+    .login-header p {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+    
+    .message {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border-left: 4px solid;
+      display: none;
+      font-size: 0.85rem;
+    }
+    
+    .error-msg {
+      background: #fee2e2;
+      color: #dc2626;
+      border-left-color: #dc2626;
+    }
+    
+    .success-msg {
+      background: #d1fae5;
+      color: #059669;
+      border-left-color: #059669;
+    }
+    
+    .message.show {
+      display: block;
+    }
+    
+    .form-section {
+      display: none;
+    }
+    
+    .form-section.active {
+      display: block;
+    }
+    
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    
+    .form-group label {
+      font-weight: 500;
+      color: #1e293b;
+      font-size: 0.9rem;
+    }
+    
+    .form-group input {
+      padding: 0.7rem 0.9rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-group input::placeholder {
+      color: #cbd5e1;
+    }
+    
+    .btn-login {
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 0.5rem;
+      font-family: inherit;
+    }
+    
+    .btn-login:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .toggle-form {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    .toggle-form p {
+      color: #64748b;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+    }
+    
+    .btn-toggle {
+      color: #667eea;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+    }
+    
+    .btn-toggle:hover {
+      color: #764ba2;
+    }
+    
+    .mode-indicator {
+      text-align: center;
+      color: #cbd5e1;
+      font-size: 0.75rem;
+      margin-top: 1rem;
+    }
+  </style>
+  <script type="module" crossorigin src="/rs-system/assets/system-DwE87owx.js"></script>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-header">
+      <h1>◇ 教練記錄系統</h1>
+      <p> 跳繩課堂管理平臺</p>
+    </div>
+    
+    <div class="error-msg message" id="errorMsg"></div>
+    <div class="success-msg message" id="successMsg"></div>
+    
+    <!-- 登入表單 -->
+    <div id="loginSection" class="form-section active">
+      <form class="login-form" id="loginForm">
+        <div class="form-group">
+          <label for="loginUsername">使用者名稱</label>
+          <input type="text" id="loginUsername" placeholder="輸入您的使用者名稱" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">密碼</label>
+          <input type="password" id="loginPassword" placeholder="輸入您的密碼" required>
+        </div>
+        <button type="submit" class="btn-login" id="btnLogin">登入</button>
+      </form>
+    </div>
+    
+    <!-- 註冊表單 -->
+    <div id="signupSection" class="form-section">
+      <form class="login-form" id="signupForm">
+        <div class="form-group">
+          <label for="signupUsername">使用者名稱</label>
+          <input type="text" id="signupUsername" placeholder="建立新的使用者名稱" required>
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">密碼</label>
+          <input type="password" id="signupPassword" placeholder="建立新密碼 (最少4個字)" required>
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">電郵 <span style="color: #999;">(可選)</span></label>
+          <input type="email" id="signupEmail" placeholder="您的電郵地址 (可選)">
+        </div>
+        <button type="submit" class="btn-login" id="btnSignup">建立帳戶</button>
+      </form>
+    </div>
+    
+    <!-- 表單切換 -->
+    <div class="toggle-form">
+      <div id="toSignupSection" style="display: block;">
+        <p>沒有帳戶?</p>
+        <button type="button" class="btn-toggle" id="switchToSignup">建立新帳戶</button>
+      </div>
+      <div id="toLoginSection" style="display: none;">
+        <p>已有帳戶?</p>
+        <button type="button" class="btn-toggle" id="switchToLogin">返回登入</button>
+      </div>
+    </div>
+    
+    <div class="mode-indicator">本地存儲模式 • v3.1</div>
+  </div>
+
+  <script>
+    // ⭐ 主控台輸出 - 人性化訊息
+    console.log('%c🚀 教練記錄系統 - 登入頁面', 'color: #667eea; font-size: 16px; font-weight: bold;');
+    console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #cbd5e1;');
+    console.log('✅ 頁面已載入');
+    console.log('📝 等待使用者操作...');
+
+    // 等待 system.js 和 LOGIN_MANAGER 加載完成
+    function initLoginPage() {
+      if (typeof LOGIN_MANAGER === 'undefined') {
+        console.log('⌛ 等待 LOGIN_MANAGER 加載...');
+        setTimeout(initLoginPage, 100);
+        return;
+      }
+
+      console.log('✅ LOGIN_MANAGER 已就緒');
+      console.log('✅ 認證系統準備完成');
+
+      // 登入表單提交
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault(); // 防止表單默認重載
+        console.log('%c🔑 登入處理開始', 'color: #0ea5e9; font-weight: bold;');
+        
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        
+        console.log(`👤 使用者名稱: ${username}`);
+        
+        const btn = document.getElementById('btnLogin');
+        btn.disabled = true;
+        btn.textContent = '登入中...';
+        
+        try {
+          const result = await LOGIN_MANAGER.login(username, password);
+          console.log('📡 登入結果:', result);
+          
+          if (result.success) {
+            console.log('%c✅ 登入成功！', 'color: #10b981; font-size: 14px; font-weight: bold;');
+            console.log(`🎉 歡迎回來，${result.user.username}！`);
+            console.log(`👑 權限: ${result.user.role === 'creator' ? '創建者' : '一般使用者'}`);
+            
+            showMessage('success', `歡迎回來，${result.user.username}！`);
+            
+            // ⭐ 登入成功後跳轉到 index.html
+            console.log('🔀 正在跳轉至主頁...');
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1000);
+          } else {
+            console.log('%c❌ 登入失敗', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+            console.log(`⚠️  原因: ${result.message}`);
+            showMessage('error', result.message || '使用者名稱或密碼錯誤');
+            btn.disabled = false;
+            btn.textContent = '登入';
+          }
+        } catch (error) {
+          console.error('%c❌ 登入錯誤', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+          console.error('🐛 錯誤詳情:', error);
+          showMessage('error', '登入過程發生錯誤，請稍後再試');
+          btn.disabled = false;
+          btn.textContent = '登入';
+        }
+      });
+
+      // 註冊表單提交
+      document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault(); // 防止表單默認重載
+        console.log('%c✏️ 註冊處理開始', 'color: #8b5cf6; font-weight: bold;');
+        
+        const username = document.getElementById('signupUsername').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const email = document.getElementById('signupEmail').value.trim();
+        
+        console.log(`👤 新使用者: ${username}`);
+        if (email) console.log(`📧 電郵: ${email}`);
+        
+        if (password.length < 4) {
+          console.log('%c⚠️  密碼太短', 'color: #f59e0b;');
+          showMessage('error', '密碼至少需要4個字元');
+          return;
+        }
+        
+        const btn = document.getElementById('btnSignup');
+        btn.disabled = true;
+        btn.textContent = '處理中...';
+        
+        try {
+          const result = await LOGIN_MANAGER.register(username, password, email);
+          console.log('📡 註冊結果:', result);
+          
+          if (result.success) {
+            console.log('%c✅ 註冊成功！', 'color: #10b981; font-size: 14px; font-weight: bold;');
+            console.log(`🎉 歡迎加入，${username}！`);
+            
+            showMessage('success', '帳戶建立成功！正在登入...');
+            
+            // ⭐ 註冊成功後自動登入並跳轉
+            console.log('🔑 自動登入中...');
+            const loginResult = await LOGIN_MANAGER.login(username, password);
+            
+            if (loginResult.success) {
+              console.log('✅ 自動登入成功');
+              console.log('🔀 正在跳轉至主頁...');
+              setTimeout(() => {
+                window.location.href = 'index.html';
+              }, 1500);
+            } else {
+              console.log('⚠️  自動登入失敗，請手動登入');
+              setTimeout(() => {
+                switchToLogin();
+              }, 2000);
+            }
+          } else {
+            console.log('%c❌ 註冊失敗', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+            console.log(`⚠️  原因: ${result.message}`);
+            showMessage('error', result.message || '註冊失敗，請再試一次');
+            btn.disabled = false;
+            btn.textContent = '建立帳戶';
+          }
+        } catch (error) {
+          console.error('%c❌ 註冊錯誤', 'color: #ef4444; font-size: 14px; font-weight: bold;');
+          console.error('🐛 錯誤詳情:', error);
+          showMessage('error', '註冊過程發生錯誤，請稍後再試');
+          btn.disabled = false;
+          btn.textContent = '建立帳戶';
+        }
+      });
+
+      // 切換表單
+      document.getElementById('switchToSignup').addEventListener('click', () => {
+        console.log('🔄 切換至註冊表單');
+        switchToSignup();
+      });
+
+      document.getElementById('switchToLogin').addEventListener('click', () => {
+        console.log('🔄 切換至登入表單');
+        switchToLogin();
+      });
+
+      console.log('%c✅ 登入頁面初始化完成', 'color: #10b981; font-size: 14px; font-weight: bold;');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
+
+    // 顯示訊息
+    function showMessage(type, text) {
+      const errorMsg = document.getElementById('errorMsg');
+      const successMsg = document.getElementById('successMsg');
+      
+      errorMsg.classList.remove('show');
+      successMsg.classList.remove('show');
+      
+      if (type === 'error') {
+        errorMsg.textContent = text;
+        errorMsg.classList.add('show');
+        console.log(`🚨 錯誤訊息: ${text}`);
+      } else {
+        successMsg.textContent = text;
+        successMsg.classList.add('show');
+        console.log(`✅ 成功訊息: ${text}`);
+      }
+    }
+
+    // 切換表單
+    function switchToSignup() {
+      document.getElementById('loginSection').classList.remove('active');
+      document.getElementById('signupSection').classList.add('active');
+      document.getElementById('toSignupSection').style.display = 'none';
+      document.getElementById('toLoginSection').style.display = 'block';
+      document.getElementById('errorMsg').classList.remove('show');
+      document.getElementById('successMsg').classList.remove('show');
+    }
+
+    function switchToLogin() {
+      document.getElementById('signupSection').classList.remove('active');
+      document.getElementById('loginSection').classList.add('active');
+      document.getElementById('toLoginSection').style.display = 'none';
+      document.getElementById('toSignupSection').style.display = 'block';
+      document.getElementById('errorMsg').classList.remove('show');
+      document.getElementById('successMsg').classList.remove('show');
+    }
+
+    // 頁面加載完成後初始化
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initLoginPage);
+    } else {
+      initLoginPage();
+    }
+  </script>
+
+</body>
+</html>
