@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>清除緩存測試</title>
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      background: #f0f0f0;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔧 系統緩存清除工具</h1>
+    <p>如果遇到「currentUser has already been declared」錯誤，請使用此工具清除緩存。</p>
+    
+    <h3>步驟 1: 清除 localStorage</h3>
+    <button onclick="clearLocalStorage()">清除 localStorage</button>
+    
+    <h3>步驟 2: 清除 sessionStorage</h3>
+    <button onclick="clearSessionStorage()">清除 sessionStorage</button>
+    
+    <h3>步驟 3: 重新加載系統</h3>
+    <button onclick="reloadSystem()">前往登入頁面</button>
+    
+    <h3>步驟 4: 測試創作者登入</h3>
+    <button onclick="testCreatorLogin()">測試創作者帳戶</button>
+    
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    const status = document.getElementById('status');
+    
+    function log(message, type = 'info') {
+      status.className = 'status ' + type;
+      status.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+    }
+    
+    function clearLocalStorage() {
+      try {
+        localStorage.clear();
+        log('✅ localStorage 已清除', 'success');
+      } catch (e) {
+        log('❌ 清除 localStorage 失敗: ' + e.message, 'error');
+      }
+    }
+    
+    function clearSessionStorage() {
+      try {
+        sessionStorage.clear();
+        log('✅ sessionStorage 已清除', 'success');
+      } catch (e) {
+        log('❌ 清除 sessionStorage 失敗: ' + e.message, 'error');
+      }
+    }
+    
+    function reloadSystem() {
+      log('🔄 重定向到登入頁面...', 'success');
+      setTimeout(() => {
+        window.location.href = 'login.html?v=' + Date.now();
+      }, 1000);
+    }
+    
+    function testCreatorLogin() {
+      log('🔍 檢查 system.js 文件...', 'info');
+      
+      fetch('system.js?v=' + Date.now())
+        .then(response => response.text())
+        .then(code => {
+          // 檢查 currentUser 聲明次數
+          const matches = code.match(/const currentUser/g);
+          log(`📊 找到 ${matches ? matches.length : 0} 個 'const currentUser' 聲明`, 'info');
+          
+          // 檢查 btnSave 事件監聽器
+          const btnSaveMatch = code.match(/\$\('btnSave'\)\?\.addEventListener\('click',[\s\S]*?\}\);/);
+          if (btnSaveMatch) {
+            const btnSaveCode = btnSaveMatch[0];
+            const currentUserInBtnSave = btnSaveCode.match(/const currentUser/g);
+            log(`📋 btnSave 事件監聽器中有 ${currentUserInBtnSave ? currentUserInBtnSave.length : 0} 個 'const currentUser' 聲明`, 
+                currentUserInBtnSave && currentUserInBtnSave.length > 1 ? 'error' : 'success');
+          }
+          
+          log('✅ 檢查完成！如果顯示多於 1 個聲明，表示有錯誤。', 'info');
+          log('💡 請按 Ctrl+Shift+R 強制刷新瀏覽器緩存', 'info');
+        })
+        .catch(e => {
+          log('❌ 無法載入 system.js: ' + e.message, 'error');
+        });
+    }
+    
+    log('🎯 工具已就緒，請依照步驟執行', 'success');
+  </script>
+</body>
+</html>
