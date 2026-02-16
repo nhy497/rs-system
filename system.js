@@ -3413,4 +3413,15 @@ if (typeof module !== 'undefined' && module.exports) {
   };
 }
 
+// ES Module 全局綁定（供 Vite 構建後使用）
+if (typeof window !== 'undefined') {
+  window.STORAGE_MANAGER = STORAGE_MANAGER;
+  window.LOGIN_MANAGER = LOGIN_MANAGER;
+  window.UI_MANAGER = UI_MANAGER;
+  window.getCurrentUser = getCurrentUser;
+  window.parseRecords = parseRecords;
+  window.saveRecords = saveRecords;
+  window.showToast = showToast;
+}
+
 console.log('✅ system.js 已加載完成 - HKJRA 教練記錄系統 v3.0');
