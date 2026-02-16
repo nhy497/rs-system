@@ -1558,25 +1558,23 @@ function updateUserInfo(username = null) {
     
     // 如果是 Creator，添加提示並禁用課程記錄表單
     if (user.role === 'creator') {
-      console.log('👑 Creator 模式：僅限查看，不能新增課程記錄');
+      console.log('👑 Creator 測試模式：允許建立測試記錄');
       
       // 在課堂概覽頁面頂部添加提示
       const pageOverview = $('page-overview');
       if (pageOverview && !$('creatorNotice')) {
         const notice = document.createElement('div');
         notice.id = 'creatorNotice';
-        notice.style.cssText = 'background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; color: #856404;';
-        notice.innerHTML = '<strong>👑 Creator 模式</strong>：您的帳戶僅限查看所有用戶資料和課程記錄，不能新增課程記錄。請前往「用戶管理」查看其他用戶的課程。';
+        notice.style.cssText = 'background: #d1ecf1; border: 2px solid #3498db; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; color: #0c5460;';
+        notice.innerHTML = '<strong>🧪 Creator 測試模式</strong>：您可以建立測試記錄。測試記錄會被標記並與正常記錄區分顯示。';
         pageOverview.querySelector('.page-inner')?.prepend(notice);
       }
       
-      // 禁用保存按鈕
+      // 更新保存按鈕為測試模式
       const btnSave = $('btnSave');
       if (btnSave) {
-        btnSave.disabled = true;
-        btnSave.textContent = '🔒 Creator 不能新增記錄';
-        btnSave.style.opacity = '0.6';
-        btnSave.style.cursor = 'not-allowed';
+        btnSave.textContent = '💾 儲存（Creator 測試模式）';
+        btnSave.style.backgroundColor = '#3498db';
       }
     }
   } else {
@@ -2556,8 +2554,9 @@ function refreshStats() {
   if (ul) {
     const recent = list.slice(0, 10);
     ul.innerHTML = recent.length === 0 ? '<li class="empty">尚無記錄</li>' : recent.map(r => {
+      const testModeIndicator = r.creatorTestMode ? '🧪 ' : '';
       const meta = [r.className, r.classSize != null ? `人數 ${r.classSize}` : ''].filter(Boolean).join(' · ');
-      return `<li data-date="${escapeHtml(r.classDate || '')}">${r.classDate || '–'}${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}</li>`;
+      return `<li data-date="${escapeHtml(r.classDate || '')}">${testModeIndicator}${r.classDate || '–'}${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}</li>`;
     }).join('');
     ul.querySelectorAll('li[data-date]').forEach(li => {
       li.onclick = () => { const rec = list.find(r => r.classDate === li.dataset.date); if (rec) showDetail(rec); };
@@ -2773,6 +2772,12 @@ function showDetail(rec) {
   
   if ($('detailTitle')) $('detailTitle').textContent = `課堂詳情 · ${rec.classDate || '–'}`;
   if ($('detailBody')) {
+    // Creator 測試模式橫幅
+    let testModeBanner = '';
+    if (rec.creatorTestMode) {
+      testModeBanner = '<div style="background: #3498db; color: white; padding: 12px; margin-bottom: 16px; border-radius: 6px; text-align: center; font-weight: 600;">🧪 Creator 測試模式記錄</div>';
+    }
+    
     // 附件區域
     let attachmentsHtml = '';
     if (rec.attachments && rec.attachments.length > 0) {
@@ -2789,6 +2794,7 @@ function showDetail(rec) {
     }
     
     $('detailBody').innerHTML = `
+      ${testModeBanner}
       <dl>
         <dt>基本資料</dt><dd>${rec.classDate || '–'} | ${escapeHtml(rec.className || '–')} | 人數 ${rec.classSize ?? '–'}</dd>
         ${rec.classLocation ? `<dt>課堂位置</dt><dd>${escapeHtml(rec.classLocation)}</dd>` : ''}
@@ -2987,14 +2993,6 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btnSave')?.addEventListener('click', () => {
     console.log('🔴 儲存按鈕被點擊');
     
-    // 檢查創作者權限 - 創作者不能新增課程記錄
-    const currentUser = getCurrentUser();
-    if (currentUser && currentUser.role === 'creator') {
-      console.warn('⚠️ 創作者帳戶不能新增課程記錄');
-      toast('❌ 創作者帳戶僅限查看，不能新增課程記錄');
-      return;
-    }
-    
     const d = getFormData();
     console.log('📋 表單資料：', d);
     
@@ -3042,7 +3040,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = parseRecords();
     console.log(`📚 讀取 ${list.length} 筆現有記錄`);
     
-    // 為課程記錄添加唯一ID和用戶ID（使用前面已聲明的 currentUser）
+    // 為課程記錄添加唯一ID和用戶ID
+    const currentUser = getCurrentUser();
     if (!d.id) {
       d.id = `checkpoint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
@@ -3053,6 +3052,12 @@ document.addEventListener('DOMContentLoaded', () => {
       d.createdAt = new Date().toISOString();
     }
     d.updatedAt = new Date().toISOString();
+    
+    // 標記 Creator 測試模式
+    if (currentUser && currentUser.role === 'creator') {
+      d.creatorTestMode = true;
+      console.log('%c🧪 標記為 Creator 測試模式記錄', 'color: #3498db; font-weight: bold');
+    }
     
     const i = list.findIndex(r => r.classDate === d.classDate && r.className === d.className);
     const isNew = i < 0;
@@ -3411,6 +3416,17 @@ if (typeof module !== 'undefined' && module.exports) {
     parseRecords,
     saveRecords
   };
+}
+
+// ES Module 全局綁定（供 Vite 構建後使用）
+if (typeof window !== 'undefined') {
+  window.STORAGE_MANAGER = STORAGE_MANAGER;
+  window.LOGIN_MANAGER = LOGIN_MANAGER;
+  window.UI_MANAGER = UI_MANAGER;
+  window.getCurrentUser = getCurrentUser;
+  window.parseRecords = parseRecords;
+  window.saveRecords = saveRecords;
+  window.showToast = showToast;
 }
 
 console.log('✅ system.js 已加載完成 - HKJRA 教練記錄系統 v3.0');
