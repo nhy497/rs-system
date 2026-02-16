@@ -22,9 +22,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        login: resolve(__dirname, 'login.html'),
-        'clear-cache': resolve(__dirname, 'clear-cache.html'),
-        'test-save-refresh': resolve(__dirname, 'test-save-refresh.html')
+        login: resolve(__dirname, 'login.html')
+        // 開發工具不包含在構建中，已移至 dev/ 目錄
+        // - clear-cache.html -> dev/clear-cache.html
+        // - test-save-refresh.html -> dev/test-save-refresh.html
       },
       output: {
         // 手動分割 chunks
