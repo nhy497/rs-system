@@ -128,13 +128,13 @@ export async function initApp(options = {}) {
  * 
  * 在登入頁面自動設置登入/註冊表單處理邏輯。
  * 
- * @returns {boolean} 初始化是否成功
+ * @returns {Promise<boolean>} 初始化是否成功
  * 
  * @example
  * // 在 login.html 中使用
- * initLoginPage();
+ * await initLoginPage();
  */
-export function initLoginPage() {
+export async function initLoginPage() {
   const { LoginPageInit } = await import('./init/login-page-init.js');
   return LoginPageInit.init();
 }
@@ -183,27 +183,6 @@ export function isModuleAvailable(moduleName) {
 // 預設匯出
 // ============================================================================
 
-/**
- * 預設匯出所有 API
- */
-export default {
-  // 初始化
-  AppInit,
-  LoginPageInit,
-  APP_CONFIG,
-  getConfig,
-  getConfigFromEnv,
-  validateConfig,
-  printConfig,
-  
-  // 快速 API
-  initApp,
-  initLoginPage,
-  getAppInfo,
-  isModuleAvailable,
-  
-  // 版本資訊
-  VERSION,
-  BUILD_DATE,
-  VERSION_INFO
-};
+// Note: 預設匯出已移除，請使用具名匯入
+// import { initApp, APP_CONFIG } from './src/main.js';
+

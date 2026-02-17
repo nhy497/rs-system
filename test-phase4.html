@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 4 模組測試</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-section h2 {
+      margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    .test-item {
+      padding: 10px;
+      margin: 5px 0;
+      border-left: 3px solid #ddd;
+      background: #f9f9f9;
+    }
+    .test-item.pass {
+      border-left-color: #4CAF50;
+      background: #e8f5e9;
+    }
+    .test-item.fail {
+      border-left-color: #f44336;
+      background: #ffebee;
+    }
+    .test-item.pending {
+      border-left-color: #FF9800;
+      background: #fff3e0;
+    }
+    pre {
+      background: #263238;
+      color: #aed581;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .badge.pass { background: #4CAF50; color: white; }
+    .badge.fail { background: #f44336; color: white; }
+    .badge.pending { background: #FF9800; color: white; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Phase 4 模組測試</h1>
+  
+  <div class="test-section">
+    <h2>1. 模組載入測試</h2>
+    <div id="module-tests"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>2. API 可用性測試</h2>
+    <div id="api-tests"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>3. 配置測試</h2>
+    <div id="config-tests"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>4. 向後相容測試</h2>
+    <div id="compat-tests"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>5. Console 輸出</h2>
+    <pre id="console-output"></pre>
+  </div>
+
+  <script type="module">
+    // 捕獲 console 輸出
+    const consoleOutput = document.getElementById('console-output');
+    const originalLog = console.log;
+    const logs = [];
+    
+    console.log = function(...args) {
+      logs.push(args.join(' '));
+      consoleOutput.textContent = logs.join('\n');
+      originalLog.apply(console, args);
+    };
+
+    // 測試輔助函式
+    function addTestResult(containerId, testName, passed, message = '') {
+      const container = document.getElementById(containerId);
+      const div = document.createElement('div');
+      div.className = `test-item ${passed ? 'pass' : 'fail'}`;
+      div.innerHTML = `
+        <strong>${testName}</strong>
+        <span class="badge ${passed ? 'pass' : 'fail'}">${passed ? '✓ PASS' : '✗ FAIL'}</span>
+        ${message ? `<br><small>${message}</small>` : ''}
+      `;
+      container.appendChild(div);
+    }
+
+    function addPendingTest(containerId, testName, message = '') {
+      const container = document.getElementById(containerId);
+      const div = document.createElement('div');
+      div.className = 'test-item pending';
+      div.innerHTML = `
+        <strong>${testName}</strong>
+        <span class="badge pending">⏳ PENDING</span>
+        ${message ? `<br><small>${message}</small>` : ''}
+      `;
+      container.appendChild(div);
+    }
+
+    // 開始測試
+    console.log('='.repeat(60));
+    console.log('開始 Phase 4 模組測試');
+    console.log('='.repeat(60));
+
+    // 測試 1: 模組載入
+    console.log('\n[測試 1] 模組載入測試');
+    
+    try {
+      const { APP_CONFIG } = await import('./src/init/config.js');
+      addTestResult('module-tests', 'config.js 載入', true, 'APP_CONFIG 已載入');
+      console.log('✓ config.js 載入成功');
+    } catch (error) {
+      addTestResult('module-tests', 'config.js 載入', false, error.message);
+      console.error('✗ config.js 載入失敗:', error);
+    }
+
+    try {
+      const { AppInit } = await import('./src/init/app-init.js');
+      addTestResult('module-tests', 'app-init.js 載入', true, 'AppInit 已載入');
+      console.log('✓ app-init.js 載入成功');
+    } catch (error) {
+      addTestResult('module-tests', 'app-init.js 載入', false, error.message);
+      console.error('✗ app-init.js 載入失敗:', error);
+    }
+
+    try {
+      const { LoginPageInit } = await import('./src/init/login-page-init.js');
+      addTestResult('module-tests', 'login-page-init.js 載入', true, 'LoginPageInit 已載入');
+      console.log('✓ login-page-init.js 載入成功');
+    } catch (error) {
+      addTestResult('module-tests', 'login-page-init.js 載入', false, error.message);
+      console.error('✗ login-page-init.js 載入失敗:', error);
+    }
+
+    try {
+      const mainModule = await import('./src/main.js');
+      addTestResult('module-tests', 'main.js 載入', true, `匯出 ${Object.keys(mainModule).length} 個 API`);
+      console.log('✓ main.js 載入成功');
+    } catch (error) {
+      addTestResult('module-tests', 'main.js 載入', false, error.message);
+      console.error('✗ main.js 載入失敗:', error);
+    }
+
+    try {
+      const legacyBridge = await import('./src/compat/legacy-bridge.js');
+      addTestResult('module-tests', 'legacy-bridge.js 載入', true, 'legacyAPI 已載入');
+      console.log('✓ legacy-bridge.js 載入成功');
+    } catch (error) {
+      addTestResult('module-tests', 'legacy-bridge.js 載入', false, error.message);
+      console.error('✗ legacy-bridge.js 載入失敗:', error);
+    }
+
+    // 測試 2: API 可用性
+    console.log('\n[測試 2] API 可用性測試');
+    
+    try {
+      const { initApp, initLoginPage, getAppInfo } = await import('./src/main.js');
+      
+      addTestResult('api-tests', 'initApp 函式', typeof initApp === 'function', `type: ${typeof initApp}`);
+      addTestResult('api-tests', 'initLoginPage 函式', typeof initLoginPage === 'function', `type: ${typeof initLoginPage}`);
+      addTestResult('api-tests', 'getAppInfo 函式', typeof getAppInfo === 'function', `type: ${typeof getAppInfo}`);
+      
+      const appInfo = getAppInfo();
+      addTestResult('api-tests', 'getAppInfo() 執行', appInfo && appInfo.version === '3.0.0', `version: ${appInfo?.version}`);
+      
+      console.log('✓ 主要 API 函式可用');
+    } catch (error) {
+      addTestResult('api-tests', 'API 測試', false, error.message);
+      console.error('✗ API 測試失敗:', error);
+    }
+
+    // 測試 3: 配置
+    console.log('\n[測試 3] 配置測試');
+    
+    try {
+      const { APP_CONFIG, getConfig, validateConfig } = await import('./src/init/config.js');
+      
+      addTestResult('config-tests', 'APP_CONFIG.APP_NAME', APP_CONFIG.APP_NAME === 'RS-System', `值: ${APP_CONFIG.APP_NAME}`);
+      addTestResult('config-tests', 'APP_CONFIG.APP_VERSION', APP_CONFIG.APP_VERSION === '3.0.0', `值: ${APP_CONFIG.APP_VERSION}`);
+      addTestResult('config-tests', 'APP_CONFIG.FEATURES', typeof APP_CONFIG.FEATURES === 'object', `keys: ${Object.keys(APP_CONFIG.FEATURES).length}`);
+      
+      const devConfig = getConfig('development');
+      addTestResult('config-tests', 'getConfig("development")', devConfig.DEBUG === true, `DEBUG: ${devConfig.DEBUG}`);
+      
+      const isValid = validateConfig(APP_CONFIG);
+      addTestResult('config-tests', 'validateConfig()', isValid === true, `結果: ${isValid}`);
+      
+      console.log('✓ 配置測試通過');
+    } catch (error) {
+      addTestResult('config-tests', '配置測試', false, error.message);
+      console.error('✗ 配置測試失敗:', error);
+    }
+
+    // 測試 4: 向後相容
+    console.log('\n[測試 4] 向後相容測試');
+    
+    try {
+      const { setupLegacyGlobals, legacyAPI, getMigrationStatus } = await import('./src/compat/legacy-bridge.js');
+      
+      addTestResult('compat-tests', 'setupLegacyGlobals 函式', typeof setupLegacyGlobals === 'function', '可用');
+      addTestResult('compat-tests', 'legacyAPI 物件', typeof legacyAPI === 'object', `keys: ${Object.keys(legacyAPI).length}`);
+      addTestResult('compat-tests', 'getMigrationStatus 函式', typeof getMigrationStatus === 'function', '可用');
+      
+      const status = getMigrationStatus();
+      addTestResult('compat-tests', 'getMigrationStatus()', status && typeof status.warningsCount === 'number', `warnings: ${status?.warningsCount}`);
+      
+      console.log('✓ 向後相容層測試通過');
+    } catch (error) {
+      addTestResult('compat-tests', '向後相容測試', false, error.message);
+      console.error('✗ 向後相容測試失敗:', error);
+    }
+
+    // Phase 1-3 模組檢查
+    console.log('\n[信息] Phase 1-3 模組狀態');
+    addPendingTest('module-tests', 'Phase 1-3 模組', '待實現：constants, utils, core, services, ui');
+
+    console.log('\n' + '='.repeat(60));
+    console.log('測試完成！');
+    console.log('='.repeat(60));
+  </script>
+</body>
+</html>
