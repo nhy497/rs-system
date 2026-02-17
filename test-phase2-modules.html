@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>階段 2 模組測試 - 核心服務</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+    h1 { color: #333; border-bottom: 3px solid #2196f3; padding-bottom: 10px; }
+    .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .test-section h2 { color: #2196f3; margin-top: 0; }
+    .result { background: #f9f9f9; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 14px; border-left: 4px solid #4caf50; }
+    .result.fail { border-left-color: #f44336; }
+    button { background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+    button:hover { background: #1976d2; }
+  </style>
+</head>
+<body>
+  <h1>🔧 階段 2：核心服務模組測試</h1>
+
+  <div class="test-section">
+    <h2>測試 1：模組匯入</h2>
+    <div id="test-import" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 2：STORAGE_MANAGER API</h2>
+    <div id="test-storage" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 3：RecordsService API</h2>
+    <div id="test-records" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 4：LOGIN_MANAGER API</h2>
+    <div id="test-login" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 5：無循環依賴</h2>
+    <div id="test-deps" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 6：完整性驗證</h2>
+    <button onclick="runAllTests()">執行所有測試</button>
+    <div id="test-summary" class="result"></div>
+  </div>
+
+  <script type="module">
+    async function runAllTests() {
+      const results = [];
+      
+      // 測試 1: 模組匯入
+      try {
+        const { STORAGE_MANAGER, LOGIN_MANAGER, RecordsService } = await import('./src/main.js');
+        document.getElementById('test-import').textContent = '✅ 所有模組匯入成功';
+        document.getElementById('test-import').className = 'result';
+        results.push(true);
+      } catch (e) {
+        document.getElementById('test-import').textContent = '❌ 匯入失敗：' + e.message;
+        document.getElementById('test-import').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 2: STORAGE_MANAGER
+      try {
+        const { STORAGE_MANAGER } = await import('./src/main.js');
+        const hasLoadData = typeof STORAGE_MANAGER.loadData === 'function';
+        const hasSaveData = typeof STORAGE_MANAGER.saveData === 'function';
+        document.getElementById('test-storage').textContent = 
+          hasLoadData && hasSaveData ? 
+          '✅ STORAGE_MANAGER API 完整 (loadData, saveData)' : 
+          '❌ STORAGE_MANAGER API 不完整';
+        document.getElementById('test-storage').className = hasLoadData && hasSaveData ? 'result' : 'result fail';
+        results.push(hasLoadData && hasSaveData);
+      } catch (e) {
+        document.getElementById('test-storage').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-storage').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 3: RecordsService
+      try {
+        const { RecordsService } = await import('./src/main.js');
+        const hasGetAll = typeof RecordsService.getAllRecords === 'function';
+        const hasCreate = typeof RecordsService.createRecord === 'function';
+        document.getElementById('test-records').textContent = 
+          hasGetAll && hasCreate ? 
+          '✅ RecordsService API 完整 (getAllRecords, createRecord)' : 
+          '❌ RecordsService API 不完整';
+        document.getElementById('test-records').className = hasGetAll && hasCreate ? 'result' : 'result fail';
+        results.push(hasGetAll && hasCreate);
+      } catch (e) {
+        document.getElementById('test-records').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-records').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 4: LOGIN_MANAGER
+      try {
+        const { LOGIN_MANAGER } = await import('./src/main.js');
+        const hasCheck = typeof LOGIN_MANAGER.checkSession === 'function';
+        const hasLogin = typeof LOGIN_MANAGER.login === 'function';
+        document.getElementById('test-login').textContent = 
+          hasCheck && hasLogin ? 
+          '✅ LOGIN_MANAGER API 完整 (checkSession, login)' : 
+          '❌ LOGIN_MANAGER API 不完整';
+        document.getElementById('test-login').className = hasCheck && hasLogin ? 'result' : 'result fail';
+        results.push(hasCheck && hasLogin);
+      } catch (e) {
+        document.getElementById('test-login').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-login').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 5: 無循環依賴
+      try {
+        await import('./src/main.js');
+        document.getElementById('test-deps').textContent = '✅ 無循環依賴錯誤';
+        document.getElementById('test-deps').className = 'result';
+        results.push(true);
+      } catch (e) {
+        document.getElementById('test-deps').textContent = '❌ 循環依賴：' + e.message;
+        document.getElementById('test-deps').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試摘要
+      const passed = results.filter(r => r).length;
+      const total = results.length;
+      document.getElementById('test-summary').textContent = 
+        `測試完成：${passed}/${total} 通過`;
+      document.getElementById('test-summary').className = 
+        passed === total ? 'result' : 'result fail';
+    }
+
+    window.runAllTests = runAllTests;
+    runAllTests();
+  </script>
+</body>
+</html>
