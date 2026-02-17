@@ -3,6 +3,17 @@
   "version": "3.1.0",
   "description": "跳繩課堂記錄系統 - HKJRA 教練記錄系統",
   "type": "module",
+  "main": "./src/main.js",
+  "browser": "./src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/main.js",
+      "browser": "./src/index.js"
+    },
+    "./init/*": "./src/init/*",
+    "./compat/*": "./src/compat/*",
+    "./examples/*": "./src/examples/*"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
