@@ -148,7 +148,7 @@ export class StorageService {
       console.error('❌ 新增課堂記錄失敗:', error);
       throw error;
     }
-  },
+  }
 
   /**
    * 更新課堂記錄
