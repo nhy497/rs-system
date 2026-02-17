@@ -1,10 +1,10 @@
 /**
- * 认证配置 - 密码加密与认证设置
+ * 認證配置 - 密碼加密與認證設置
  * @module core/auth-config
  */
 
 /**
- * 认证配置对象
+ * 認證配置對象
  */
 export const AUTH_CONFIG = {
   STORAGE_KEY: 'rs-system-auth',
@@ -15,24 +15,24 @@ export const AUTH_CONFIG = {
 };
 
 /**
- * 用户存储键名
+ * 用戶儲存鍵名
  */
 export const USER_STORAGE_KEY = AUTH_CONFIG.USER_DB_KEY;
 
 /**
- * 旧版用户存储键名（用于数据迁移）
+ * 舊版用戶儲存鍵名（用於數據遷移）
  */
 export const LEGACY_USER_KEY = 'users';
 
 /**
- * 被阻止的用户名列表
+ * 被阻止的用戶名列表
  */
 export const BLOCKED_USERNAMES = ['test', 'demo', 'admin'];
 
 /**
- * 与旧版兼容的密码哈希函数
- * @param {string} password - 明文密码
- * @returns {string} 哈希后的密码
+ * 與舊版兼容的密碼雜湊函數
+ * @param {string} password - 明文密碼
+ * @returns {string} 雜湊後的密碼
  */
 export function hashPasswordCompat(password) {
   let hash = 0;
@@ -45,9 +45,9 @@ export function hashPasswordCompat(password) {
 }
 
 /**
- * 从存储中加载用户数据
- * 包含旧版迁移、阻止测试账号、自动添加 Creator 账号
- * @returns {Array} 用户数组
+ * 從儲存中加載用戶數據
+ * 包含舊版遷移、阻止測試帳號、自動添加 Creator 帳號
+ * @returns {Array} 用戶數組
  */
 export function loadUsersFromStorage() {
   try {
@@ -140,8 +140,8 @@ export function loadUsersFromStorage() {
 }
 
 /**
- * 保存用户数据到存储
- * @param {Array} users - 用户数组
+ * 保存用戶數據到儲存
+ * @param {Array} users - 用戶數組
  */
 export function saveUsersToStorage(users) {
   try {

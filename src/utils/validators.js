@@ -1,12 +1,12 @@
 /**
- * 数据验证工具函数
+ * 數據驗證工具函數
  * @module utils/validators
  */
 
 /**
- * 检查是否为必填项
- * @param {*} value - 要检查的值
- * @returns {boolean} 是否为有效值
+ * 檢查是否為必填項
+ * @param {*} value - 要檢查的值
+ * @returns {boolean} 是否為有效值
  */
 export function isRequired(value) {
   if (value === null || value === undefined) return false;
@@ -16,9 +16,9 @@ export function isRequired(value) {
 }
 
 /**
- * 验证日期格式
+ * 驗證日期格式
  * @param {string} dateStr - 日期字符串
- * @returns {boolean} 是否为有效日期
+ * @returns {boolean} 是否為有效日期
  */
 export function isValidDate(dateStr) {
   if (!dateStr) return false;
@@ -27,9 +27,9 @@ export function isValidDate(dateStr) {
 }
 
 /**
- * 验证时间格式 (HH:mm)
- * @param {string} timeStr - 时间字符串
- * @returns {boolean} 是否为有效时间
+ * 驗證時間格式 (HH:mm)
+ * @param {string} timeStr - 時間字符串
+ * @returns {boolean} 是否為有效時間
  */
 export function isValidTime(timeStr) {
   if (!timeStr) return false;
@@ -38,9 +38,9 @@ export function isValidTime(timeStr) {
 }
 
 /**
- * 验证电子邮件格式
- * @param {string} email - 电子邮件地址
- * @returns {boolean} 是否为有效邮箱
+ * 驗證電子郵件格式
+ * @param {string} email - 電子郵件地址
+ * @returns {boolean} 是否為有效郵箱
  */
 export function isValidEmail(email) {
   if (!email) return false;
@@ -49,21 +49,21 @@ export function isValidEmail(email) {
 }
 
 /**
- * 验证手机号码格式（支持大陆和香港）
- * @param {string} phone - 手机号码
- * @returns {boolean} 是否为有效手机号
+ * 驗證手機號碼格式（支持大陸和香港）
+ * @param {string} phone - 手機號碼
+ * @returns {boolean} 是否為有效手機號
  */
 export function isValidPhone(phone) {
   if (!phone) return false;
-  // 支持中国大陆 (11位) 和香港 (8位) 手机号
+  // 支持中國大陸 (11位) 和香港 (8位) 手機號
   const phoneRegex = /^(\d{11}|\d{8})$/;
   return phoneRegex.test(phone.replace(/[^\d]/g, ''));
 }
 
 /**
- * 验证 URL 格式
+ * 驗證 URL 格式
  * @param {string} url - URL 地址
- * @returns {boolean} 是否为有效 URL
+ * @returns {boolean} 是否為有效 URL
  */
 export function isValidUrl(url) {
   if (!url) return false;

@@ -1,25 +1,25 @@
 /**
- * DOM 操作工具函数
+ * DOM 操作工具函數
  * @module utils/dom-utils
  */
 
 /**
- * 根据 ID 获取 DOM 元素
+ * 根據 ID 獲取 DOM 元素
  * @param {string} id - 元素 ID
  * @returns {HTMLElement|null} DOM 元素
  */
 export const $ = (id) => document.getElementById(id);
 
 /**
- * 查询单个 DOM 元素
- * @param {string} selector - CSS 选择器
+ * 查詢單個 DOM 元素
+ * @param {string} selector - CSS 選擇器
  * @returns {Element|null} DOM 元素
  */
 export const $q = (selector) => document.querySelector(selector);
 
 /**
- * 查询所有匹配的 DOM 元素
- * @param {string} selector - CSS 选择器
+ * 查詢所有匹配的 DOM 元素
+ * @param {string} selector - CSS 選擇器
  * @returns {NodeList} DOM 元素列表
  */
 export const $qa = (selector) => document.querySelectorAll(selector);

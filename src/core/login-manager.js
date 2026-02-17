@@ -1,13 +1,13 @@
 /**
- * 登录管理器 - 处理用户认证与会话管理
+ * 登入管理器 - 處理用戶認證與會話管理
  * @module core/login-manager
  */
 
 import { loadUsersFromStorage, hashPasswordCompat } from './auth-config.js';
 
 /**
- * 登录管理器对象
- * 处理用户登录、登出、会话管理和权限检查
+ * 登入管理器對象
+ * 處理用戶登入、登出、會話管理和權限檢查
  */
 export const LOGIN_MANAGER = {
   /**
@@ -21,7 +21,7 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 内部状态
+   * 內部狀態
    */
   state: {
     loginAttempts: {},
@@ -30,7 +30,7 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 初始化登录管理器
+   * 初始化登入管理器
    * @returns {boolean} 初始化是否成功
    */
   init() {
@@ -46,10 +46,10 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 用户登录
-   * @param {string} username - 用户名
-   * @param {string} password - 密码
-   * @returns {Promise<Object>} 登录结果对象
+   * 用戶登入
+   * @param {string} username - 用戶名
+   * @param {string} password - 密碼
+   * @returns {Promise<Object>} 登入結果對象
    */
   async login(username, password) {
     try {
@@ -112,7 +112,7 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 用户登出
+   * 用戶登出
    * @returns {boolean} 登出是否成功
    */
   logout() {
@@ -141,8 +141,8 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 检查会话有效性
-   * @returns {boolean} 会话是否有效
+   * 檢查會話有效性
+   * @returns {boolean} 會話是否有效
    */
   checkSession() {
     try {
@@ -181,7 +181,7 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 设置会话超时检查
+   * 設置會話超時檢查
    */
   setupSessionTimeout() {
     setInterval(() => {
@@ -194,8 +194,8 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 记录登录失败尝试
-   * @param {string} username - 用户名
+   * 記錄登入失敗嘗試
+   * @param {string} username - 用戶名
    */
   recordFailedAttempt(username) {
     if (!this.state.loginAttempts[username]) {
@@ -210,9 +210,9 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 检查账号是否被锁定
-   * @param {string} username - 用户名
-   * @returns {boolean} 账号是否被锁定
+   * 檢查帳號是否被鎖定
+   * @param {string} username - 用戶名
+   * @returns {boolean} 帳號是否被鎖定
    */
   isAccountLocked(username) {
     if (!this.state.lockedAccounts[username]) return false;
@@ -226,10 +226,10 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 验证密码
-   * @param {string} password - 明文密码
-   * @param {string} hash - 密码哈希
-   * @returns {Promise<boolean>} 密码是否正确
+   * 驗證密碼
+   * @param {string} password - 明文密碼
+   * @param {string} hash - 密碼雜湊
+   * @returns {Promise<boolean>} 密碼是否正確
    */
   async verifyPassword(password, hash) {
     return new Promise((resolve) => {
@@ -248,25 +248,25 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 密码哈希函数
-   * @param {string} password - 明文密码
-   * @returns {string} 密码哈希
+   * 密碼雜湊函數
+   * @param {string} password - 明文密碼
+   * @returns {string} 密碼雜湊
    */
   hashPassword(password) {
     return hashPasswordCompat(password);
   },
 
   /**
-   * 生成会话 ID
-   * @returns {string} 会话 ID
+   * 生成會話 ID
+   * @returns {string} 會話 ID
    */
   generateSessionId() {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   },
 
   /**
-   * 获取 IP 哈希（基于浏览器指纹）
-   * @returns {string} IP 哈希
+   * 獲取 IP 雜湊（基於瀏覽器指紋）
+   * @returns {string} IP 雜湊
    */
   getIpHash() {
     const ua = navigator.userAgent;
@@ -283,8 +283,8 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 获取当前用户信息
-   * @returns {Object|null} 用户对象或 null
+   * 獲取當前用戶信息
+   * @returns {Object|null} 用戶對象或 null
    */
   getCurrentUser() {
     try {
@@ -297,15 +297,15 @@ export const LOGIN_MANAGER = {
   },
 
   /**
-   * 检查是否已登录
-   * @returns {boolean} 是否已登录
+   * 檢查是否已登入
+   * @returns {boolean} 是否已登入
    */
   isLoggedIn() {
     return this.checkSession() && this.getCurrentUser() !== null;
   },
 
   /**
-   * 强制登出其他设备的会话
+   * 強制登出其他設備的會話
    * @returns {boolean} 操作是否成功
    */
   forceLogoutOthers() {

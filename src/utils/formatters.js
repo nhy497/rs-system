@@ -1,13 +1,13 @@
 /**
- * 数据格式化工具函数
+ * 數據格式化工具函數
  * @module utils/formatters
  */
 
 /**
  * 格式化日期
- * @param {Date|string|number} date - 日期对象、字符串或时间戳
+ * @param {Date|string|number} date - 日期對象、字符串或時間戳
  * @param {string} [format='YYYY-MM-DD'] - 格式模板
- * @returns {string} 格式化后的日期字符串
+ * @returns {string} 格式化後的日期字符串
  */
 export function formatDate(date, format = 'YYYY-MM-DD') {
   const d = new Date(date);
@@ -31,8 +31,8 @@ export function formatDate(date, format = 'YYYY-MM-DD') {
 
 /**
  * 格式化文件大小
- * @param {number} bytes - 字节数
- * @returns {string} 格式化后的文件大小
+ * @param {number} bytes - 字節數
+ * @returns {string} 格式化後的文件大小
  */
 export function formatFileSize(bytes) {
   if (bytes === 0) return '0 B';
@@ -43,18 +43,18 @@ export function formatFileSize(bytes) {
 }
 
 /**
- * 格式化数字（添加千分位分隔符）
- * @param {number} num - 数字
- * @returns {string} 格式化后的数字字符串
+ * 格式化數字（添加千分位分隔符）
+ * @param {number} num - 數字
+ * @returns {string} 格式化後的數字字符串
  */
 export function formatNumber(num) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 /**
- * 格式化时间（相对时间）
- * @param {Date|string|number} date - 日期对象、字符串或时间戳
- * @returns {string} 相对时间描述
+ * 格式化時間（相對時間）
+ * @param {Date|string|number} date - 日期對象、字符串或時間戳
+ * @returns {string} 相對時間描述
  */
 export function formatRelativeTime(date) {
   const d = new Date(date);
@@ -66,7 +66,7 @@ export function formatRelativeTime(date) {
   const days = Math.floor(hours / 24);
   
   if (days > 0) return `${days} 天前`;
-  if (hours > 0) return `${hours} 小时前`;
-  if (minutes > 0) return `${minutes} 分钟前`;
-  return '刚刚';
+  if (hours > 0) return `${hours} 小時前`;
+  if (minutes > 0) return `${minutes} 分鐘前`;
+  return '剛剛';
 }

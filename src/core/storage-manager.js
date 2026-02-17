@@ -1,17 +1,17 @@
 /**
- * 存储管理器 - 统一管理 LocalStorage 操作
+ * 儲存管理器 - 統一管理 LocalStorage 操作
  * @module core/storage-manager
  */
 
 import { STORAGE_KEY } from '../constants/app-constants.js';
 
 /**
- * 存储管理器对象
- * 提供基础存储操作、缓存管理、备份恢复和跨标签页同步功能
+ * 儲存管理器對象
+ * 提供基礎儲存操作、緩存管理、備份恢復和跨標籤頁同步功能
  */
 export const STORAGE_MANAGER = {
   /**
-   * 存储键名常量
+   * 儲存鍵名常量
    */
   KEYS: {
     CHECKPOINTS: 'rope-skip-checkpoints',
@@ -23,7 +23,7 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 配置选项
+   * 配置選項
    */
   CONFIG: {
     MAX_RETRIES: 3,
@@ -33,7 +33,7 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 内部缓存
+   * 內部緩存
    */
   cache: {
     checkpoints: null,
@@ -42,13 +42,13 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 跨标签页同步通道
+   * 跨標籤頁同步通道
    */
   channel: null,
   _syncTimeout: null,
 
   /**
-   * 初始化存储管理器
+   * 初始化儲存管理器
    * @returns {Promise<boolean>} 初始化是否成功
    */
   async init() {
@@ -69,7 +69,7 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 设置跨标签页同步
+   * 設置跨標籤頁同步
    */
   setupSync() {
     if (!('BroadcastChannel' in window)) {
@@ -125,7 +125,7 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 测试 localStorage 可用性
+   * 測試 localStorage 可用性
    * @returns {boolean} 是否可用
    * @throws {Error} 如果 localStorage 不可用
    */
@@ -141,9 +141,9 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 获取课堂记录
-   * @param {string|null} userId - 用户 ID（可选）
-   * @returns {Promise<Array>} 课堂记录数组
+   * 獲取課堂記錄
+   * @param {string|null} userId - 用戶 ID（可選）
+   * @returns {Promise<Array>} 課堂記錄數組
    */
   async getCheckpoints(userId = null) {
     try {
@@ -208,8 +208,8 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 保存课堂记录
-   * @param {Array} records - 记录数组
+   * 保存課堂記錄
+   * @param {Array} records - 記錄數組
    * @returns {Promise<boolean>} 保存是否成功
    */
   async saveCheckpoints(records) {
@@ -275,8 +275,8 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 获取班级预设
-   * @returns {Promise<Array>} 预设数组
+   * 獲取班級預設
+   * @returns {Promise<Array>} 預設數組
    */
   async getPresets() {
     try {
@@ -294,8 +294,8 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 保存班级预设
-   * @param {Array} presets - 预设数组
+   * 保存班級預設
+   * @param {Array} presets - 預設數組
    * @returns {Promise<boolean>} 保存是否成功
    */
   async savePresets(presets) {
@@ -311,9 +311,9 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 清理旧数据
-   * @param {Array} records - 记录数组
-   * @returns {Array} 清理后的记录数组
+   * 清理舊數據
+   * @param {Array} records - 記錄數組
+   * @returns {Array} 清理後的記錄數組
    */
   cleanupOldData(records) {
     try {
@@ -331,7 +331,7 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 启动自动备份
+   * 啟動自動備份
    */
   startAutoBackup() {
     setInterval(() => {
@@ -347,8 +347,8 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 保存备份
-   * @param {*} data - 要备份的数据
+   * 保存備份
+   * @param {*} data - 要備份的數據
    */
   saveBackup(data) {
     try {
@@ -370,8 +370,8 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 获取最新备份
-   * @returns {*|null} 备份数据或 null
+   * 獲取最新備份
+   * @returns {*|null} 備份數據或 null
    */
   getBackup() {
     try {
@@ -392,7 +392,7 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 加载缓存
+   * 加載緩存
    * @returns {Promise<void>}
    */
   async loadCache() {
@@ -429,7 +429,7 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 清除所有数据
+   * 清除所有數據
    * @returns {boolean} 清除是否成功
    */
   clearAll() {
@@ -448,8 +448,8 @@ export const STORAGE_MANAGER = {
   },
 
   /**
-   * 获取存储统计信息
-   * @returns {Object} 统计信息对象
+   * 獲取儲存統計信息
+   * @returns {Object} 統計信息對象
    */
   getStats() {
     let totalSize = 0;

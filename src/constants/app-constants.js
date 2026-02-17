@@ -1,28 +1,28 @@
 /**
- * 应用常量配置
+ * 應用常量配置
  * @module constants/app-constants
  */
 
 /**
- * 存储键名
+ * 儲存鍵名
  * @constant {string}
  */
 export const STORAGE_KEY = 'rope-skip-checkpoints';
 
 /**
- * 班级预设键名
+ * 班級預設鍵名
  * @constant {string}
  */
 export const CLASS_PRESETS_KEY = 'rope-skip-class-presets';
 
 /**
- * 1-5 分评分项目 ID 列表
+ * 1-5 分評分項目 ID 列表
  * @constant {string[]}
  */
 export const SCORE_1_5_IDS = ['engagement', 'positivity', 'enthusiasm', 'satisfaction'];
 
 /**
- * 范围评分项目 ID 列表
+ * 範圍評分項目 ID 列表
  * @constant {string[]}
  */
 export const RANGE_IDS = [
@@ -32,7 +32,7 @@ export const RANGE_IDS = [
 ];
 
 /**
- * 选项分组配置
+ * 選項分組配置
  * @constant {Array<{name: string, selector: string}>}
  */
 export const OPTION_GROUPS = [
@@ -41,7 +41,7 @@ export const OPTION_GROUPS = [
 ];
 
 /**
- * 页面标题映射
+ * 頁面標題映射
  * @constant {Object<string, string>}
  */
 export const PAGE_TITLES = { 
@@ -52,7 +52,7 @@ export const PAGE_TITLES = {
 };
 
 /**
- * 技巧等级
+ * 技巧等級
  * @constant {string[]}
  */
 export const TRICK_LEVELS = ['初級', '中級', '進階'];
