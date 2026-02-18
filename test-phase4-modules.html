@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>階段 4 模組測試 - 初始化</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+    h1 { color: #333; border-bottom: 3px solid #673ab7; padding-bottom: 10px; }
+    .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .test-section h2 { color: #673ab7; margin-top: 0; }
+    .result { background: #f9f9f9; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 14px; border-left: 4px solid #4caf50; }
+    .result.fail { border-left-color: #f44336; }
+    button { background: #673ab7; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+    button:hover { background: #512da8; }
+  </style>
+</head>
+<body>
+  <h1>⚙️ 階段 4：初始化模組測試</h1>
+
+  <div class="test-section">
+    <h2>測試 1：初始化模組匯入</h2>
+    <div id="test-init-import" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 2：main.js 統一入口點</h2>
+    <div id="test-main" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 3：所有階段模組可用</h2>
+    <div id="test-phases" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 4：APP_CONFIG 存在</h2>
+    <div id="test-config" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 5：快速啟動 API</h2>
+    <div id="test-api" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 6：完整性驗證</h2>
+    <button onclick="runAllTests()">執行所有測試</button>
+    <div id="test-summary" class="result"></div>
+  </div>
+
+  <script type="module">
+    async function runAllTests() {
+      const results = [];
+      
+      // 測試 1: 初始化模組匯入
+      try {
+        const { AppInit, LoginPageInit, APP_CONFIG } = await import('./src/main.js');
+        const hasAll = AppInit && LoginPageInit && APP_CONFIG;
+        document.getElementById('test-init-import').textContent = 
+          hasAll ? '✅ 初始化模組匯入成功 (AppInit, LoginPageInit, APP_CONFIG)' : '❌ 缺少模組';
+        document.getElementById('test-init-import').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-init-import').textContent = '❌ 匯入失敗：' + e.message;
+        document.getElementById('test-init-import').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 2: main.js 統一入口點
+      try {
+        const module = await import('./src/main.js');
+        const hasInitApp = typeof module.initApp === 'function';
+        const hasGetAppInfo = typeof module.getAppInfo === 'function';
+        document.getElementById('test-main').textContent = 
+          hasInitApp && hasGetAppInfo ? 
+          '✅ main.js API 完整 (initApp, getAppInfo)' : 
+          '❌ main.js API 不完整';
+        document.getElementById('test-main').className = hasInitApp && hasGetAppInfo ? 'result' : 'result fail';
+        results.push(hasInitApp && hasGetAppInfo);
+      } catch (e) {
+        document.getElementById('test-main').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-main').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 3: 所有階段模組可用
+      try {
+        const { getAppInfo } = await import('./src/main.js');
+        const info = getAppInfo();
+        const allAvailable = info.modules.init && info.modules.core && info.modules.services && 
+                            info.modules.ui && info.modules.utils && info.modules.constants;
+        document.getElementById('test-phases').textContent = 
+          allAvailable ? 
+          '✅ 所有階段模組標記為可用 (Phase 1-4)' : 
+          '❌ 部分模組未啟用：' + JSON.stringify(info.modules);
+        document.getElementById('test-phases').className = allAvailable ? 'result' : 'result fail';
+        results.push(allAvailable);
+      } catch (e) {
+        document.getElementById('test-phases').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-phases').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 4: APP_CONFIG
+      try {
+        const { APP_CONFIG } = await import('./src/main.js');
+        const hasEnv = APP_CONFIG.ENV !== undefined;
+        const hasAppName = APP_CONFIG.APP_NAME !== undefined;
+        document.getElementById('test-config').textContent = 
+          hasEnv && hasAppName ? 
+          `✅ APP_CONFIG 完整 (ENV: ${APP_CONFIG.ENV}, APP_NAME: ${APP_CONFIG.APP_NAME})` : 
+          '❌ APP_CONFIG 不完整';
+        document.getElementById('test-config').className = hasEnv && hasAppName ? 'result' : 'result fail';
+        results.push(hasEnv && hasAppName);
+      } catch (e) {
+        document.getElementById('test-config').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-config').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 5: 快速啟動 API
+      try {
+        const { initApp, initLoginPage, isModuleAvailable } = await import('./src/main.js');
+        const hasAll = typeof initApp === 'function' && 
+                      typeof initLoginPage === 'function' && 
+                      typeof isModuleAvailable === 'function';
+        document.getElementById('test-api').textContent = 
+          hasAll ? 
+          '✅ 快速啟動 API 完整 (initApp, initLoginPage, isModuleAvailable)' : 
+          '❌ 快速啟動 API 不完整';
+        document.getElementById('test-api').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-api').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-api').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試摘要
+      const passed = results.filter(r => r).length;
+      const total = results.length;
+      document.getElementById('test-summary').textContent = 
+        `測試完成：${passed}/${total} 通過`;
+      document.getElementById('test-summary').className = 
+        passed === total ? 'result' : 'result fail';
+    }
+
+    window.runAllTests = runAllTests;
+    runAllTests();
+  </script>
+</body>
+</html>
