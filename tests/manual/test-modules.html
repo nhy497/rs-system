@@ -90,11 +90,11 @@
 
   <script type="module">
     // 導入所有模組
-    import { STORAGE_KEY, RANGE_IDS, STORAGE_VERSION, DEFAULT_CACHE_TTL } from './src/constants/app-constants.js';
-    import { $, $q, $qa } from './src/utils/dom-utils.js';
-    import { escapeHtml, toast, todayStr } from './src/utils/helpers.js';
-    import { formatFileSize, timeToMinutes, minutesToTime } from './src/utils/formatters.js';
-    import { isRequired, isValidDate, isValidTime, isInRange } from './src/utils/validators.js';
+    import { STORAGE_KEY, RANGE_IDS, STORAGE_VERSION, DEFAULT_CACHE_TTL } from '../../src/constants/app-constants.js';
+    import { $, $q, $qa } from '../../src/utils/dom-utils.js';
+    import { escapeHtml, toast, todayStr } from '../../src/utils/helpers.js';
+    import { formatFileSize, timeToMinutes, minutesToTime } from '../../src/utils/formatters.js';
+    import { isRequired, isValidDate, isValidTime, isInRange } from '../../src/utils/validators.js';
 
     // 測試 1: 常數模組
     const constantsDiv = $('constants-test');
