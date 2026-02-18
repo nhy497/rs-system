@@ -4,6 +4,7 @@
  */
 
 import { STORAGE_KEY } from '../constants/app-constants.js';
+import { StorageCodec } from '../utils/storage-codec.js';
 
 /**
  * 儲存管理器對象
@@ -157,33 +158,7 @@ export const STORAGE_MANAGER = {
       }
 
       // 從 localStorage 讀取（使用統一編碼）
-      const encoded = localStorage.getItem(this.KEYS.CHECKPOINTS);
-      if (!encoded) {
-        this.cache.checkpoints = [];
-        this.cache.lastSync = Date.now();
-        console.log('📦 getCheckpoints() 讀取筆數: 0 (無數據)');
-        return [];
-      }
-
-      let decoded = [];
-      try {
-        // 統一使用 encodeURIComponent + btoa 編碼方式
-        decoded = JSON.parse(decodeURIComponent(atob(encoded)));
-      } catch (e1) {
-        try {
-          // 兼容舊的 btoa 方式
-          decoded = JSON.parse(atob(encoded));
-        } catch (e2) {
-          // 最後嘗試直接解析
-          try {
-            decoded = JSON.parse(encoded);
-          } catch (e3) {
-            console.warn('⚠️ 解析課堂記錄失敗:', e3);
-            decoded = [];
-          }
-        }
-      }
-      
+      const decoded = StorageCodec.loadFromStorage(this.KEYS.CHECKPOINTS, []);
       const safe = Array.isArray(decoded) ? decoded : [];
       this.cache.checkpoints = safe;
       this.cache.lastSync = Date.now();
@@ -228,9 +203,11 @@ export const STORAGE_MANAGER = {
           return record;
         });
 
-        // 統一使用 encodeURIComponent + btoa 編碼方式
-        const jsonStr = JSON.stringify(recordsWithUserId);
-        const encoded = btoa(encodeURIComponent(jsonStr));
+        // 使用統一的編碼方式
+        const encoded = StorageCodec.encode(recordsWithUserId);
+        if (!encoded) {
+          throw new Error('編碼失敗');
+        }
         
         if (encoded.length > this.CONFIG.STORAGE_QUOTA) {
           console.warn('⚠️ 存儲空間不足');
@@ -397,28 +374,13 @@ export const STORAGE_MANAGER = {
    */
   async loadCache() {
     try {
-      // 直接從 localStorage 讀取，避免循環調用
-      const encoded = localStorage.getItem(this.KEYS.CHECKPOINTS);
-      if (encoded) {
-        try {
-          this.cache.checkpoints = JSON.parse(decodeURIComponent(atob(encoded)));
-        } catch (e1) {
-          try {
-            this.cache.checkpoints = JSON.parse(atob(encoded));
-          } catch (e2) {
-            try {
-              this.cache.checkpoints = JSON.parse(encoded);
-            } catch (e3) {
-              this.cache.checkpoints = [];
-            }
-          }
-        }
-      } else {
-        this.cache.checkpoints = [];
-      }
+      // 使用 StorageCodec 讀取 checkpoints 數據
+      this.cache.checkpoints = StorageCodec.loadFromStorage(this.KEYS.CHECKPOINTS, []);
       
+      // Presets 使用純 JSON（向後兼容）
       const presetsRaw = localStorage.getItem(this.KEYS.PRESETS);
       this.cache.presets = presetsRaw ? JSON.parse(presetsRaw) : [];
+      
       this.cache.lastSync = Date.now();
       console.log('✅ 快取已加載');
     } catch (error) {
