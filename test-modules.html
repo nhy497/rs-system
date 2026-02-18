@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模組測試 - Module Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #2196f3;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-section h2 {
+      color: #2196f3;
+      margin-top: 0;
+    }
+    .result {
+      background: #f9f9f9;
+      padding: 10px;
+      border-left: 4px solid #4caf50;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+    }
+    button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #1976d2;
+    }
+    #test-element {
+      padding: 10px;
+      background: #e3f2fd;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 RS-System 模組化工具測試</h1>
+
+  <div class="test-section">
+    <h2>1. 常數模組測試</h2>
+    <div id="constants-test" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. DOM 工具測試</h2>
+    <div id="test-element">這是測試元素</div>
+    <button id="dom-test-btn">測試 DOM 選擇器</button>
+    <div id="dom-test" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. 輔助函數測試</h2>
+    <button id="toast-info">顯示 Info Toast</button>
+    <button id="toast-success">顯示 Success Toast</button>
+    <button id="toast-error">顯示 Error Toast</button>
+    <div id="helpers-test" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. 格式化工具測試</h2>
+    <div id="formatters-test" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>5. 驗證工具測試</h2>
+    <div id="validators-test" class="result"></div>
+  </div>
+
+  <script type="module">
+    // 導入所有模組
+    import { STORAGE_KEY, RANGE_IDS, STORAGE_VERSION, DEFAULT_CACHE_TTL } from './src/constants/app-constants.js';
+    import { $, $q, $qa } from './src/utils/dom-utils.js';
+    import { escapeHtml, toast, todayStr } from './src/utils/helpers.js';
+    import { formatFileSize, timeToMinutes, minutesToTime } from './src/utils/formatters.js';
+    import { isRequired, isValidDate, isValidTime, isInRange } from './src/utils/validators.js';
+
+    // 測試 1: 常數模組
+    const constantsDiv = $('constants-test');
+    constantsDiv.innerHTML = `
+      <strong>STORAGE_KEY:</strong> ${STORAGE_KEY}<br>
+      <strong>STORAGE_VERSION:</strong> ${STORAGE_VERSION}<br>
+      <strong>DEFAULT_CACHE_TTL:</strong> ${DEFAULT_CACHE_TTL} ms<br>
+      <strong>RANGE_IDS:</strong> ${RANGE_IDS.join(', ')}<br>
+    `;
+
+    // 測試 2: DOM 工具
+    $('dom-test-btn').addEventListener('click', () => {
+      const element = $('test-element');
+      const button = $q('#dom-test-btn');
+      const allDivs = $qa('div').length;
+      
+      const domDiv = $('dom-test');
+      domDiv.innerHTML = `
+        <strong>$('test-element'):</strong> ${element ? '✅ 找到元素' : '❌ 未找到'}<br>
+        <strong>$q('#dom-test-btn'):</strong> ${button ? '✅ 找到按鈕' : '❌ 未找到'}<br>
+        <strong>$qa('div').length:</strong> ${allDivs} 個 div 元素
+      `;
+    });
+
+    // 測試 3: 輔助函數
+    $('toast-info').addEventListener('click', () => toast('這是一個資訊提示', 'info'));
+    $('toast-success').addEventListener('click', () => toast('操作成功！', 'success'));
+    $('toast-error').addEventListener('click', () => toast('發生錯誤！', 'error'));
+
+    const helpersDiv = $('helpers-test');
+    const dangerousText = '<scr' + 'ipt>alert("XSS")</scr' + 'ipt>';
+    const escapedText = escapeHtml(dangerousText);
+    const today = todayStr();
+    
+    helpersDiv.innerHTML = `
+      <strong>escapeHtml():</strong><br>
+      原始: ${dangerousText}<br>
+      轉義後: ${escapedText}<br><br>
+      <strong>todayStr():</strong> ${today}
+    `;
+
+    // 測試 4: 格式化工具
+    const formattersDiv = $('formatters-test');
+    const testSizes = [0, 500, 1024, 1024 * 1024, 1024 * 1024 * 5.5];
+    const sizeResults = testSizes.map(bytes => 
+      `${bytes} bytes = ${formatFileSize(bytes)}`
+    ).join('<br>');
+
+    const time1 = '02:30';
+    const minutes1 = timeToMinutes(time1);
+    const time2 = minutesToTime(150);
+
+    formattersDiv.innerHTML = `
+      <strong>formatFileSize():</strong><br>
+      ${sizeResults}<br><br>
+      <strong>timeToMinutes('${time1}'):</strong> ${minutes1} 分鐘<br>
+      <strong>minutesToTime(150):</strong> ${time2}
+    `;
+
+    // 測試 5: 驗證工具
+    const validatorsDiv = $('validators-test');
+    const tests = [
+      { fn: 'isRequired', tests: [
+        { value: 'hello', result: isRequired('hello') },
+        { value: '   ', result: isRequired('   ') },
+        { value: null, result: isRequired(null) }
+      ]},
+      { fn: 'isValidDate', tests: [
+        { value: '2026-02-17', result: isValidDate('2026-02-17') },
+        { value: '2026-13-01', result: isValidDate('2026-13-01') },
+        { value: 'not-a-date', result: isValidDate('not-a-date') }
+      ]},
+      { fn: 'isValidTime', tests: [
+        { value: '14:30', result: isValidTime('14:30') },
+        { value: '25:00', result: isValidTime('25:00') },
+        { value: '12:99', result: isValidTime('12:99') }
+      ]},
+      { fn: 'isInRange', tests: [
+        { value: '5 in [1,10]', result: isInRange(5, 1, 10) },
+        { value: '15 in [1,10]', result: isInRange(15, 1, 10) },
+        { value: '1 in [1,10]', result: isInRange(1, 1, 10) }
+      ]}
+    ];
+
+    let validatorsHTML = '';
+    tests.forEach(({ fn, tests }) => {
+      validatorsHTML += `<strong>${fn}():</strong><br>`;
+      tests.forEach(({ value, result }) => {
+        validatorsHTML += `  ${value}: ${result ? '✅' : '❌'}<br>`;
+      });
+      validatorsHTML += '<br>';
+    });
+
+    validatorsDiv.innerHTML = validatorsHTML;
+
+    console.log('✅ 所有模組測試完成');
+    console.log('Storage Key:', STORAGE_KEY);
+    console.log('Today:', today);
+  </script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>整合測試 - 所有模組</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+    h1 { color: #333; border-bottom: 3px solid #ff9800; padding-bottom: 10px; }
+    .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .test-section h2 { color: #ff9800; margin-top: 0; font-size: 18px; }
+    .result { background: #f9f9f9; padding: 8px; margin: 8px 0; font-family: monospace; font-size: 13px; border-left: 4px solid #4caf50; }
+    .result.fail { border-left-color: #f44336; }
+    button { background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+    button:hover { background: #f57c00; }
+    .summary { font-size: 16px; font-weight: bold; padding: 15px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <h1>🔄 整合測試：全系統模組驗證</h1>
+
+  <div class="test-section">
+    <h2>測試 1：總匯出數量</h2>
+    <div id="test-exports" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 2：階段 1 模組（工具與常數）</h2>
+    <div id="test-phase1" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 3：階段 2 模組（核心服務）</h2>
+    <div id="test-phase2" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 4：階段 3 模組（UI 管理）</h2>
+    <div id="test-phase3" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 5：階段 4 模組（初始化）</h2>
+    <div id="test-phase4" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 6：版本資訊</h2>
+    <div id="test-version" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 7：快速啟動 API</h2>
+    <div id="test-quick-api" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 8：模組可用性 API</h2>
+    <div id="test-module-api" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 9：跨模組依賴</h2>
+    <div id="test-cross-deps" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>測試 10：最終驗證</h2>
+    <button onclick="runAllTests()">執行完整測試</button>
+    <div id="test-final" class="result summary"></div>
+  </div>
+
+  <script type="module">
+    async function runAllTests() {
+      const results = [];
+      let mainModule;
+
+      try {
+        mainModule = await import('./src/main.js');
+      } catch (e) {
+        alert('無法載入 main.js：' + e.message);
+        return;
+      }
+
+      // 測試 1: 總匯出數量
+      try {
+        const exportCount = Object.keys(mainModule).length;
+        const passed = exportCount >= 25;
+        document.getElementById('test-exports').textContent = 
+          `${passed ? '✅' : '❌'} 總匯出數量：${exportCount} 個 (預期 >= 25)`;
+        document.getElementById('test-exports').className = passed ? 'result' : 'result fail';
+        results.push(passed);
+      } catch (e) {
+        document.getElementById('test-exports').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-exports').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 2: Phase 1
+      try {
+        const { $, escapeHtml, formatFileSize, isValidDate, STORAGE_KEY } = mainModule;
+        const hasAll = $ && escapeHtml && formatFileSize && isValidDate && STORAGE_KEY;
+        document.getElementById('test-phase1').textContent = 
+          hasAll ? '✅ Phase 1 模組完整 ($, escapeHtml, formatFileSize, isValidDate, STORAGE_KEY)' : 
+          '❌ Phase 1 模組不完整';
+        document.getElementById('test-phase1').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-phase1').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-phase1').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 3: Phase 2
+      try {
+        const { STORAGE_MANAGER, LOGIN_MANAGER, RecordsService, PresetsService } = mainModule;
+        const hasAll = STORAGE_MANAGER && LOGIN_MANAGER && RecordsService && PresetsService;
+        document.getElementById('test-phase2').textContent = 
+          hasAll ? '✅ Phase 2 模組完整 (STORAGE_MANAGER, LOGIN_MANAGER, RecordsService, PresetsService)' : 
+          '❌ Phase 2 模組不完整';
+        document.getElementById('test-phase2').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-phase2').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-phase2').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 4: Phase 3
+      try {
+        const { UI_MANAGER, FormManager, ListRenderer, ModalManager } = mainModule;
+        const hasAll = UI_MANAGER && FormManager && ListRenderer && ModalManager;
+        document.getElementById('test-phase3').textContent = 
+          hasAll ? '✅ Phase 3 模組完整 (UI_MANAGER, FormManager, ListRenderer, ModalManager)' : 
+          '❌ Phase 3 模組不完整';
+        document.getElementById('test-phase3').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-phase3').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-phase3').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 5: Phase 4
+      try {
+        const { AppInit, LoginPageInit, APP_CONFIG } = mainModule;
+        const hasAll = AppInit && LoginPageInit && APP_CONFIG;
+        document.getElementById('test-phase4').textContent = 
+          hasAll ? '✅ Phase 4 模組完整 (AppInit, LoginPageInit, APP_CONFIG)' : 
+          '❌ Phase 4 模組不完整';
+        document.getElementById('test-phase4').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-phase4').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-phase4').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 6: 版本資訊
+      try {
+        const { VERSION, VERSION_INFO } = mainModule;
+        const hasAll = VERSION && VERSION_INFO && VERSION_INFO.version === VERSION;
+        document.getElementById('test-version').textContent = 
+          hasAll ? `✅ 版本資訊：${VERSION} (${VERSION_INFO.name})` : 
+          '❌ 版本資訊不完整';
+        document.getElementById('test-version').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-version').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-version').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 7: 快速啟動 API
+      try {
+        const { initApp, initLoginPage } = mainModule;
+        const hasAll = typeof initApp === 'function' && typeof initLoginPage === 'function';
+        document.getElementById('test-quick-api').textContent = 
+          hasAll ? '✅ 快速啟動 API 可用 (initApp, initLoginPage)' : 
+          '❌ 快速啟動 API 不可用';
+        document.getElementById('test-quick-api').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-quick-api').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-quick-api').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 8: 模組可用性 API
+      try {
+        const { isModuleAvailable, getAppInfo } = mainModule;
+        const coreAvailable = isModuleAvailable('core');
+        const info = getAppInfo();
+        const hasAll = coreAvailable && info.modules.core;
+        document.getElementById('test-module-api').textContent = 
+          hasAll ? '✅ 模組可用性 API 正常 (isModuleAvailable, getAppInfo)' : 
+          '❌ 模組可用性 API 異常';
+        document.getElementById('test-module-api').className = hasAll ? 'result' : 'result fail';
+        results.push(hasAll);
+      } catch (e) {
+        document.getElementById('test-module-api').textContent = '❌ 錯誤：' + e.message;
+        document.getElementById('test-module-api').className = 'result fail';
+        results.push(false);
+      }
+
+      // 測試 9: 跨模組依賴
+      try {
+        await import('./src/main.js');
+        document.getElementById('test-cross-deps').textContent = '✅ 無循環依賴，所有模組可正常載入';
+        document.getElementById('test-cross-deps').className = 'result';
+        results.push(true);
+      } catch (e) {
+        document.getElementById('test-cross-deps').textContent = '❌ 循環依賴或載入錯誤：' + e.message;
+        document.getElementById('test-cross-deps').className = 'result fail';
+        results.push(false);
+      }
+
+      // 最終驗證
+      const passed = results.filter(r => r).length;
+      const total = results.length;
+      const allPassed = passed === total;
+      document.getElementById('test-final').textContent = 
+        allPassed ? 
+        `✅ 整合測試完成：${passed}/${total} 通過\n🎉 所有模組運作正常！系統已準備就緒。` : 
+        `⚠️ 整合測試完成：${passed}/${total} 通過\n請檢查失敗的測試項目。`;
+      document.getElementById('test-final').className = 
+        allPassed ? 'result summary' : 'result summary fail';
+
+      console.log('✅ 整合測試完成', { passed, total, allPassed });
+    }
+
+    window.runAllTests = runAllTests;
+    runAllTests();
+  </script>
+</body>
+</html>

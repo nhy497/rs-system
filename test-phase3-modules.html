@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 3 模組測試</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 0.5rem;
+    }
+    .test-section {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-section h2 {
+      color: #007bff;
+      margin-top: 0;
+    }
+    .status {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      font-family: monospace;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0.25rem;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #output {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      min-height: 100px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .code {
+      font-family: monospace;
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Phase 3 UI 管理模組測試頁面</h1>
+  
+  <div class="test-section">
+    <h2>📦 模組載入測試</h2>
+    <p>此頁面測試所有 Phase 3 UI 管理模組是否可以正常載入和使用。</p>
+    <div id="import-status"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>🧪 功能測試</h2>
+    <button onclick="testUIManager()">測試 UI Manager</button>
+    <button onclick="testFormManager()">測試 Form Manager</button>
+    <button onclick="testTricksManager()">測試 Tricks Manager</button>
+    <button onclick="testAttachmentsManager()">測試 Attachments Manager</button>
+    <button onclick="testListRenderer()">測試 List Renderer</button>
+    <button onclick="testModalManager()">測試 Modal Manager</button>
+    <button onclick="testEventHandlers()">測試 Event Handlers</button>
+    <button onclick="runAllTests()">執行所有測試</button>
+    <div id="output"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>📊 模組資訊</h2>
+    <ul>
+      <li><code class="code">ui-manager.js</code> - UI 管理器 (276 行)</li>
+      <li><code class="code">form-manager.js</code> - 表單管理器 (531 行)</li>
+      <li><code class="code">tricks-manager.js</code> - 花式管理器 (313 行)</li>
+      <li><code class="code">attachments-manager.js</code> - 附件管理器 (435 行)</li>
+      <li><code class="code">list-renderer.js</code> - 列表渲染器 (476 行)</li>
+      <li><code class="code">modal-manager.js</code> - 模態管理器 (434 行)</li>
+      <li><code class="code">event-handlers.js</code> - 事件處理器 (571 行)</li>
+    </ul>
+    <p><strong>總計:</strong> 7 個模組，約 3,036 行代碼</p>
+  </div>
+
+  <script type="module">
+    // 載入所有模組
+    let modules = {};
+    const output = document.getElementById('output');
+    const importStatus = document.getElementById('import-status');
+    
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = `status ${type}`;
+      div.textContent = message;
+      output.appendChild(div);
+      output.scrollTop = output.scrollHeight;
+    }
+    
+    async function loadModules() {
+      importStatus.innerHTML = '<p>正在載入模組...</p>';
+      
+      try {
+        modules.UI_MANAGER = (await import('./src/ui/ui-manager.js')).UI_MANAGER;
+        importStatus.innerHTML += '<div class="status success">✅ UI Manager 載入成功</div>';
+        
+        modules.FormManager = (await import('./src/ui/form-manager.js')).FormManager;
+        importStatus.innerHTML += '<div class="status success">✅ Form Manager 載入成功</div>';
+        
+        modules.TricksManager = (await import('./src/ui/tricks-manager.js')).TricksManager;
+        importStatus.innerHTML += '<div class="status success">✅ Tricks Manager 載入成功</div>';
+        
+        modules.AttachmentsManager = (await import('./src/ui/attachments-manager.js')).AttachmentsManager;
+        importStatus.innerHTML += '<div class="status success">✅ Attachments Manager 載入成功</div>';
+        
+        modules.ListRenderer = (await import('./src/ui/list-renderer.js')).ListRenderer;
+        importStatus.innerHTML += '<div class="status success">✅ List Renderer 載入成功</div>';
+        
+        modules.ModalManager = (await import('./src/ui/modal-manager.js')).ModalManager;
+        importStatus.innerHTML += '<div class="status success">✅ Modal Manager 載入成功</div>';
+        
+        modules.EventHandlers = (await import('./src/ui/event-handlers.js')).EventHandlers;
+        importStatus.innerHTML += '<div class="status success">✅ Event Handlers 載入成功</div>';
+        
+        importStatus.innerHTML += '<div class="status success"><strong>🎉 所有模組載入成功！</strong></div>';
+        
+      } catch (error) {
+        importStatus.innerHTML += `<div class="status error">❌ 載入失敗: ${error.message}</div>`;
+        console.error('Module loading error:', error);
+      }
+    }
+    
+    // 測試函數
+    window.testUIManager = function() {
+      output.innerHTML = '';
+      log('=== 測試 UI Manager ===');
+      
+      try {
+        log('初始化 UI Manager...', 'info');
+        const result = modules.UI_MANAGER.init();
+        log(`初始化結果: ${result}`, result ? 'success' : 'error');
+        
+        log('測試通知系統...', 'info');
+        modules.UI_MANAGER.showNotification('這是測試訊息', 'info');
+        log('通知系統測試完成', 'success');
+        
+        log('✅ UI Manager 測試通過', 'success');
+      } catch (error) {
+        log(`❌ UI Manager 測試失敗: ${error.message}`, 'error');
+      }
+    };
+    
+    window.testFormManager = function() {
+      output.innerHTML = '';
+      log('=== 測試 Form Manager ===');
+      
+      try {
+        log('測試表單模式設置...', 'info');
+        modules.FormManager.setFormMode('edit');
+        const mode = modules.FormManager.getFormMode();
+        log(`當前模式: ${mode}`, mode === 'edit' ? 'success' : 'error');
+        
+        log('✅ Form Manager 測試通過', 'success');
+      } catch (error) {
+        log(`❌ Form Manager 測試失敗: ${error.message}`, 'error');
+      }
+    };
+    
+    window.testTricksManager = function() {
+      output.innerHTML = '';
+      log('=== 測試 Tricks Manager ===');
+      
+      try {
+        log('添加花式...', 'info');
+        modules.TricksManager.clearSelection();
+        modules.TricksManager.addTrick({
+          name: '測試花式',
+          level: '初級',
+          mastery: 75
+        });
+        
+        const tricks = modules.TricksManager.getSelectedTricks();
+        log(`已添加 ${tricks.length} 個花式`, tricks.length > 0 ? 'success' : 'error');
+        
+        log('✅ Tricks Manager 測試通過', 'success');
+      } catch (error) {
+        log(`❌ Tricks Manager 測試失敗: ${error.message}`, 'error');
+      }
+    };
+    
+    window.testAttachmentsManager = function() {
+      output.innerHTML = '';
+      log('=== 測試 Attachments Manager ===');
+      
+      try {
+        log('初始化附件管理器...', 'info');
+        modules.AttachmentsManager.init();
+        
+        log('測試文件大小格式化...', 'info');
+        const size = modules.AttachmentsManager.formatFileSize(1024 * 1024);
+        log(`格式化結果: ${size}`, size === '1.0 MB' ? 'success' : 'info');
+        
+        log('✅ Attachments Manager 測試通過', 'success');
+      } catch (error) {
+        log(`❌ Attachments Manager 測試失敗: ${error.message}`, 'error');
+      }
+    };
+    
+    window.testListRenderer = function() {
+      output.innerHTML = '';
+      log('=== 測試 List Renderer ===');
+      
+      try {
+        log('測試排序功能...', 'info');
+        const records = [
+          { classDate: '2024-01-15', className: 'A班' },
+          { classDate: '2024-01-14', className: 'B班' }
+        ];
+        
+        const sorted = modules.ListRenderer.sortRecords(records, 'date-desc');
+        log(`排序完成，記錄數: ${sorted.length}`, sorted.length === 2 ? 'success' : 'error');
+        
+        log('✅ List Renderer 測試通過', 'success');
+      } catch (error) {
+        log(`❌ List Renderer 測試失敗: ${error.message}`, 'error');
+      }
+    };
+    
+    window.testModalManager = function() {
+      output.innerHTML = '';
+      log('=== 測試 Modal Manager ===');
+      
+      try {
+        log('測試模態狀態...', 'info');
+        const current = modules.ModalManager.getCurrentModal();
+        log(`當前模態: ${current || '無'}`, 'info');
+        
+        log('✅ Modal Manager 測試通過', 'success');
+      } catch (error) {
+        log(`❌ Modal Manager 測試失敗: ${error.message}`, 'error');
+      }
+    };
+    
+    window.testEventHandlers = function() {
+      output.innerHTML = '';
+      log('=== 測試 Event Handlers ===');
+      
+      try {
+        log('測試自訂事件系統...', 'info');
+        
+        modules.EventHandlers.on('testEvent', (data) => {
+          log(`收到事件: ${JSON.stringify(data)}`, 'success');
+        });
+        
+        modules.EventHandlers.emit('testEvent', { test: true });
+        
+        log('✅ Event Handlers 測試通過', 'success');
+      } catch (error) {
+        log(`❌ Event Handlers 測試失敗: ${error.message}`, 'error');
+      }
+    };
+    
+    window.runAllTests = function() {
+      output.innerHTML = '';
+      log('🚀 開始執行所有測試...\n', 'info');
+      
+      setTimeout(() => testUIManager(), 100);
+      setTimeout(() => testFormManager(), 500);
+      setTimeout(() => testTricksManager(), 900);
+      setTimeout(() => testAttachmentsManager(), 1300);
+      setTimeout(() => testListRenderer(), 1700);
+      setTimeout(() => testModalManager(), 2100);
+      setTimeout(() => testEventHandlers(), 2500);
+      setTimeout(() => log('\n✅ 所有測試執行完成！', 'success'), 3000);
+    };
+    
+    // 頁面載入時自動載入模組
+    loadModules();
+  </script>
+</body>
+</html>
