@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>教練記錄系統 · 跳繩課堂 Checkpoint</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>◇</text></svg>">
-  <link rel="stylesheet" href="styles.css?v=20260215_1">
+  <link rel="stylesheet" href="src/styles/main.css?v=20260215_1">
   
   <!-- ⭐ [PLAN-A1] 跨標籤頁同步樣式 -->
-  <link rel="stylesheet" href="sync-styles.css">
+  <link rel="stylesheet" href="src/styles/sync.css">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,13 +23,13 @@
   <script src="dev/console-enhancer.js" type="module"></script>
   
   <!-- 雲端同步配置 -->
-  <script src="sync-config.js" type="module"></script>
+  <script src="src/config/sync.js" type="module"></script>
   
   <!-- 日誌記錄系統 -->
-  <script src="logger-service.js" type="module"></script>
+  <script src="src/services/logger.js" type="module"></script>
   
   <!-- ⭐ [PLAN-A1] 跨標籤頁同步工具（在 system.js 之前） -->
-  <script src="sync-utils.js" type="module"></script>
+  <script src="src/services/sync-utils.js" type="module"></script>
   
   <!-- 系統核心模組（整合版 v3.1.1） -->
   <script src="system.js" type="module"></script>
