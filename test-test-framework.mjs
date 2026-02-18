@@ -21,7 +21,7 @@ console.group('測試 1: 基本測試執行');
 await TestFramework.runTest('成功的測試', () => {
   // This should pass
 });
-await TestFramework.runTest('失敗的測試', () => {
+await TestFramework.runTest('預期拋出錯誤的測試', () => {
   throw new Error('預期的失敗');
 });
 console.groupEnd();

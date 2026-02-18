@@ -374,9 +374,13 @@ export const STORAGE_MANAGER = {
    */
   async loadCache() {
     try {
-      // 使用 StorageCodec 讀取數據
+      // 使用 StorageCodec 讀取 checkpoints 數據
       this.cache.checkpoints = StorageCodec.loadFromStorage(this.KEYS.CHECKPOINTS, []);
-      this.cache.presets = StorageCodec.loadFromStorage(this.KEYS.PRESETS, []);
+      
+      // Presets 使用純 JSON（向後兼容）
+      const presetsRaw = localStorage.getItem(this.KEYS.PRESETS);
+      this.cache.presets = presetsRaw ? JSON.parse(presetsRaw) : [];
+      
       this.cache.lastSync = Date.now();
       console.log('✅ 快取已加載');
     } catch (error) {
