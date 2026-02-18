@@ -29,31 +29,23 @@ npm run preview
 
 ## 📚 文檔導航
 
-### 🎯 新用戶
-- [🚀 快速開始](./docs/getting-started/QUICK_START.md) - 5分鐘上手
-- [📌 快速參考](./docs/getting-started/QUICK_REFERENCE.md) - 常用功能
-- [❓ 常見問題](./docs/user-guide/FAQ.md) - FAQ
+### 🚀 快速開始
+- [🚀 快速開始](./docs/getting-started.md) - 5分鐘上手指南
 
-### 💻 開發者
-- [💻 開發指南](./docs/development/DEVELOPER_GUIDE.md) - 環境設置
-- [🧪 測試指南](./docs/development/TESTING_GUIDE.md) - 測試流程
-- [🎨 編碼規範](./docs/development/CODING_STANDARDS.md) - 代碼規範
-- [🤝 貢獻指南](./docs/development/CONTRIBUTION.md) - 如何貢獻
+### 📚 主要文檔
+- [🏛️ 架構說明](./docs/architecture.md) - 系統架構與設計
+- [💻 開發指南](./docs/development.md) - 開發環境設定與工作流程
+- [🧪 測試指南](./docs/testing.md) - 測試框架與執行指南
+- [🚀 部署指南](./docs/deployment.md) - 部署與 CI/CD 設定
 
-### ⚙️ 管理員
-- [⚙️ 部署指南](./docs/deployment/DEPLOYMENT_GUIDE.md) - 部署流程
-- [🔄 CI/CD](./docs/deployment/CI_CD_GUIDE.md) - 自動化部署
-- [🔐 權限管理](./docs/admin/PERMISSION_GUIDE.md) - 用戶權限
+### 👥 使用者文檔
+- [📚 使用者指南](./docs/user-guide.md) - 功能使用說明
 
-### 📊 架構與 API
-- [🏗️ 系統架構](./docs/architecture/SYSTEM_ARCHITECTURE.md) - 架構設計
-- [📊 數據模型](./docs/architecture/DATA_MODEL.md) - 數據結構
-- [🔧 API 文檔](./docs/api/INTEGRATION_GUIDE.md) - 集成指南
+### 🔧 API 文檔
+- [🔧 API 文檔](./docs/api/) - 模組 API 詳細說明
 
 ### 📝 變更記錄
-- [📝 CHANGELOG](./docs/changelog/CHANGELOG.md) - 變更日誌
-- [📊 ROADMAP](./docs/changelog/ROADMAP.md) - 路線圖
-- [🔄 升級指南](./docs/changelog/UPGRADE_GUIDE.md) - 版本升級
+- [📝 CHANGELOG](./docs/CHANGELOG.md) - 版本變更日誌
 
 ### 📚 完整文檔中心
 👉 [文檔中心首頁](./docs/README.md) - 所有文檔的統一入口
@@ -97,31 +89,33 @@ rs-system/
 │       └── deploy.yml           # CI/CD 配置
 │
 ├── src/                         # 原始碼
-│   ├── components/              # UI 組件
-│   │   ├── Toast.js
-│   │   └── Modal.js
+│   ├── init/                    # 初始化模組
 │   ├── services/                # 服務層
 │   ├── config/                  # 配置檔案
-│   └── utils/                   # 工具函數
+│   ├── utils/                   # 工具函數
+│   ├── constants/               # 常數定義
+│   └── compat/                  # 相容層
 │
-├── public/                      # 静態資源 (主要檔案)
+├── public/                      # 静態資源（主要檔案）
 │   ├── index.html
 │   ├── login.html
 │   ├── system.js
 │   └── styles.css
 │
 ├── tests/                       # 測試檔案
+│   ├── manual/                  # 手動測試頁面
+│   └── unit/                    # 單元測試
 │
 └── docs/                        # 文檔中心 ⭐
     ├── README.md                # 文檔首頁
-    ├── getting-started/         # 入門指南
-    ├── user-guide/              # 用戶手冊
-    ├── development/             # 開發文檔
-    ├── architecture/            # 架構文檔
+    ├── getting-started.md       # 快速開始
+    ├── architecture.md          # 系統架構
+    ├── development.md           # 開發指南
+    ├── testing.md               # 測試指南
+    ├── deployment.md            # 部署指南
+    ├── user-guide.md            # 使用者指南
+    ├── CHANGELOG.md             # 變更日誌
     ├── api/                     # API 文檔
-    ├── deployment/              # 部署文檔
-    ├── admin/                   # 管理文檔
-    ├── changelog/               # 變更記錄
     └── archive/                 # 歷史文檔
 ```
 
@@ -129,7 +123,7 @@ rs-system/
 
 ## 👥 貢獻
 
-歡迎貢獻！請阅讀 [貢獻指南](./docs/development/CONTRIBUTION.md)。
+歡迎貢獻！請阅讀 [開發指南](./docs/development.md)。
 
 ### 如何貢獻
 1. Fork 這個倉庫
