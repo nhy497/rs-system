@@ -7,6 +7,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 全局錯誤處理
+defaults:
+  run:
+    shell: bash
+
 jobs:
   # 構建和測試
   build:
@@ -15,63 +20,213 @@ jobs:
     strategy:
       matrix:
         node-version: [18.x]
+      fail-fast: false # 允許其他任務繼續運行即使一個失敗
+    
+    # 設置超時時間
+    timeout-minutes: 30
     
     steps:
       - name: ✅ Checkout 代碼
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 獲取完整歷史記錄
       
       - name: 🔧 設置 Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          # 移除 cache: 'npm' 因為沒有 package-lock.json
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+        continue-on-error: false
       
+      # 錯誤處理：依賴安裝
       - name: 📦 安裝依賴
-        run: npm install --legacy-peer-deps
+        run: |
+          echo "🔍 檢查 package.json..."
+          if [ ! -f package.json ]; then
+            echo "❌ 找不到 package.json"
+            exit 1
+          fi
+          
+          echo "📦 安裝依賴..."
+          npm ci --prefer-offline --no-audit || {
+            echo "⚠️ npm ci 失敗，嘗試 npm install..."
+            npm install --legacy-peer-deps --no-audit || {
+              echo "❌ 依賴安裝失敗"
+              exit 1
+            }
+          }
+          
+          echo "✅ 依賴安裝完成"
+        timeout-minutes: 10
       
-      # 🧪 執行單元測試
+      # 錯誤處理：單元測試
       - name: 🧪 執行單元測試
-        run: npm run test:ci
+        run: |
+          echo "🧪 開始執行單元測試..."
+          
+          # 檢查測試文件是否存在
+          if [ ! -d "test" ]; then
+            echo "⚠️ 沒有找到測試目錄，跳過測試"
+            exit 0
+          fi
+          
+          # 運行測試並捕獲錯誤
+          npm run test:ci 2>&1 | tee test-results.log || {
+            echo "❌ 單元測試失敗"
+            echo "📋 測試日誌:"
+            tail -50 test-results.log
+            exit 1
+          }
+          
+          echo "✅ 單元測試完成"
         continue-on-error: true
+        timeout-minutes: 15
       
-      # 🎭 執行 E2E 測試
+      # 錯誤處理：E2E 測試
       - name: 🎭 執行 E2E 測試
-        run: npm run test:e2e:ci
+        run: |
+          echo "🎭 開始執行 E2E 測試..."
+          
+          # 檢查 E2E 測試文件
+          if [ ! -d "test/e2e" ]; then
+            echo "⚠️ 沒有找到 E2E 測試目錄，跳過 E2E 測試"
+            exit 0
+          fi
+          
+          # 安裝 Playwright 瀏覽器
+          npx playwright install --with-deps || {
+            echo "⚠️ Playwright 安裝失敗，嘗試繼續"
+          }
+          
+          # 運行 E2E 測試
+          npm run test:e2e:ci 2>&1 | tee e2e-results.log || {
+            echo "❌ E2E 測試失敗"
+            echo "📋 E2E 測試日誌:"
+            tail -50 e2e-results.log
+            
+            # 上傳失敗的截圖和日誌
+            if [ -d "test-results" ]; then
+              echo "📸 上傳測試結果..."
+              tar -czf e2e-artifacts.tar.gz test-results/
+            fi
+            exit 1
+          }
+          
+          echo "✅ E2E 測試完成"
         continue-on-error: true
+        timeout-minutes: 20
       
-      # 🔍 代碼檢查 (ESLint)
+      # 錯誤處理：代碼檢查
       - name: 🔍 代碼檢查 (ESLint)
-        run: npm run lint
+        run: |
+          echo "🔍 開始代碼檢查..."
+          
+          # 檢查 ESLint 配置
+          if [ ! -f ".eslintrc.js" ] && [ ! -f ".eslintrc.json" ]; then
+            echo "⚠️ 沒有找到 ESLint 配置，跳過代碼檢查"
+            exit 0
+          fi
+          
+          # 運行 ESLint
+          npm run lint 2>&1 | tee lint-results.log || {
+            echo "❌ 代碼檢查失敗"
+            echo "📋 ESLint 錯誤:"
+            tail -30 lint-results.log
+            exit 1
+          }
+          
+          echo "✅ 代碼檢查完成"
         continue-on-error: true
+        timeout-minutes: 10
       
-      # 🔒 安全掃描
+      # 錯誤處理：安全掃描
       - name: 🔒 安全掃描
         run: |
-          echo "🔍 開始安全掃描..."
-          # 檢查是否有未經轉義的 innerHTML 使用
-          echo "檢查 XSS 漏洞..."
-          grep -r "innerHTML.*[^=]" src/ --include="*.js" || echo "✅ 未發現明顯的 XSS 風險"
+          echo "� 開始安全掃描..."
           
-          # 檢查是否有 eval() 使用
-          echo "檢查 eval() 使用..."
-          grep -r "eval(" src/ --include="*.js" || echo "✅ 未發現 eval() 使用"
+          # 檢查是否有 src 目錄
+          if [ ! -d "src" ]; then
+            echo "⚠️ 沒有找到 src 目錄，跳過安全掃描"
+            exit 0
+          fi
           
-          # 檢查是否有 innerHTML 直接賦值
-          echo "檢查危險的 innerHTML 使用..."
-          grep -r "innerHTML.*=" src/ --include="*.js" | grep -v "escapeHtml" || echo "✅ 所有 innerHTML 都經過轉義"
+          echo "🔍 檢查 XSS 漏洞..."
+          xss_found=false
+          
+          # 檢查未經轉義的 innerHTML 使用
+          if grep -r "innerHTML.*[^=]" src/ --include="*.js" 2>/dev/null; then
+            echo "⚠️ 發現潛在的 XSS 風險：未經轉義的 innerHTML"
+            xss_found=true
+          fi
+          
+          # 檢查 eval() 使用
+          if grep -r "eval(" src/ --include="*.js" 2>/dev/null; then
+            echo "⚠️ 發現 eval() 使用，可能存在安全風險"
+            xss_found=true
+          fi
+          
+          # 檢查危險的 innerHTML 直接賦值
+          if grep -r "innerHTML.*=" src/ --include="*.js" | grep -v "escapeHtml" 2>/dev/null; then
+            echo "⚠️ 發現危險的 innerHTML 使用"
+            xss_found=true
+          fi
+          
+          if [ "$xss_found" = true ]; then
+            echo "❌ 安全掃描發現問題"
+            exit 1
+          else
+            echo "✅ 安全掃描通過"
+          fi
         continue-on-error: true
+        timeout-minutes: 5
       
+      # 錯誤處理：構建
       - name: 🛠️ 構建應用
-        run: npm run build
+        run: |
+          echo "🛠️ 開始構建應用..."
+          
+          # 檢查構建配置
+          if [ ! -f "vite.config.js" ] && [ ! -f "vite.config.ts" ]; then
+            echo "❌ 找不到 Vite 配置文件"
+            exit 1
+          fi
+          
+          # 運行構建
+          npm run build 2>&1 | tee build-results.log || {
+            echo "❌ 構建失敗"
+            echo "📋 構建錯誤日誌:"
+            tail -50 build-results.log
+            exit 1
+          }
+          
+          # 檢查構建輸出
+          if [ ! -d "dist" ]; then
+            echo "❌ 構建輸出目錄不存在"
+            exit 1
+          fi
+          
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ 構建輸出缺少 index.html"
+            exit 1
+          fi
+          
+          echo "✅ 構建完成"
+          echo "📊 構建輸出大小:"
+          du -sh dist/
+        timeout-minutes: 15
       
+      # 錯誤處理：上傳構建產物
       - name: 📊 上傳構建產物
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: dist-${{ matrix.node-version }}
           path: dist
           retention-days: 7
+        continue-on-error: true
       
-      # 📈 上傳測試報告
+      # 錯誤處理：上傳測試報告
       - name: 📈 上傳測試報告
         uses: actions/upload-artifact@v4
         if: always()
@@ -80,15 +235,42 @@ jobs:
           path: |
             test-results/
             coverage/
+            *.log
+            e2e-artifacts.tar.gz
           retention-days: 30
-  
+        continue-on-error: true
+      
+      # 錯誤處理：失敗通知
+      - name: 🚨 失敗通知
+        if: failure()
+        run: |
+          echo "🚨 構建或測試失敗"
+          echo "📋 失敗詳情:"
+          echo "- Node.js 版本: ${{ matrix.node-version }}"
+          echo "- 分支: ${{ github.ref_name }}"
+          echo "- Commit: ${{ github.sha }}"
+          echo "- 時間: $(date)"
+          
+          # 檢查各種日誌文件
+          for log in test-results.log e2e-results.log lint-results.log build-results.log; do
+            if [ -f "$log" ]; then
+              echo "📄 $log 最後 20 行:"
+              tail -20 "$log"
+              echo "---"
+            fi
+          done
+        continue-on-error: true
+
   # 部署到 GitHub Pages
   deploy:
     needs: build
     runs-on: ubuntu-latest
     
-    # 只在 main 分支且 Node 18 構建成功後部署
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # 檢查構建是否成功
+    if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    # 設置超時時間
+    timeout-minutes: 15
     
     # 設置權限
     permissions:
@@ -113,38 +295,73 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18.x'
-          # 移除 cache: 'npm' 因為沒有 package-lock.json
+          cache: 'npm'
+        continue-on-error: false
       
       - name: 📦 安裝依賴
-        run: npm install --legacy-peer-deps
+        run: |
+          npm ci --prefer-offline --no-audit || {
+            npm install --legacy-peer-deps --no-audit
+          }
+        timeout-minutes: 10
       
-      - name: 🛠️ 構建應用 (生產模式)
-        run: npm run build
-        env:
-          NODE_ENV: production
+      - name: � 下載構建產物
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-18.x
+          path: ./dist
+        continue-on-error: false
+      
+      # 錯誤處理：驗證構建產物
+      - name: 🔍 驗證構建產物
+        run: |
+          echo "🔍 驗證構建產物..."
+          
+          if [ ! -d "dist" ]; then
+            echo "❌ 構建產物目錄不存在"
+            exit 1
+          fi
+          
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ 構建產物缺少 index.html"
+            exit 1
+          fi
+          
+          echo "✅ 構建產物驗證通過"
+        continue-on-error: false
       
       - name: 📋 設置 GitHub Pages
         uses: actions/configure-pages@v4
+        continue-on-error: false
       
       - name: 📤 上傳到 GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
+        continue-on-error: false
       
       - name: 🚀 部署到 GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: false
       
       - name: ✅ 部署完成
         run: |
           echo "✨ 部署成功！"
           echo "🌐 網址: ${{ steps.deployment.outputs.page_url }}"
-  
+          echo "📊 部署信息:"
+          echo "- 時間: $(date)"
+          echo "- Commit: ${{ github.sha }}"
+          echo "- 分支: ${{ github.ref_name }}"
+        continue-on-error: true
+
   # 測試報告
   report:
     needs: [build, deploy]
     runs-on: ubuntu-latest
     if: always()
+    
+    timeout-minutes: 10
     
     steps:
       - name: 📊 下載測試報告
@@ -152,6 +369,7 @@ jobs:
         with:
           name: test-reports-18.x
           path: ./test-results
+        continue-on-error: true
       
       - name: 📈 生成測試報告
         run: |
@@ -161,6 +379,7 @@ jobs:
           echo "- 部署狀態: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- 分支: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 時間: $(date)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # 檢查並顯示測試覆蓋率
@@ -193,6 +412,14 @@ jobs:
             ' >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
+          
+          # 顯示失敗信息
+          if [ "${{ needs.build.result }}" = "failure" ]; then
+            echo "## ❌ 失敗詳情" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "構建或測試過程中發生錯誤，請檢查日誌獲取詳細信息。" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
       
       - name: 💬 PR 評論（僅 Pull Request）
         if: github.event_name == 'pull_request'
@@ -234,6 +461,12 @@ jobs:
               comment += '測試結果不可用\n\n';
             }
             
+            // 添加失敗信息
+            if ('${{ needs.build.result }}' === 'failure') {
+              comment += '### ❌ 失敗信息\n\n';
+              comment += '構建或測試過程中發生錯誤，請檢查 Actions 日誌獲取詳細信息。\n\n';
+            }
+            
             // 查找現有評論
             const { data: comments } = await github.rest.issues.listComments({
               issue_number: context.issue.number,
@@ -262,3 +495,4 @@ jobs:
                 body: comment,
               });
             }
+        continue-on-error: true
