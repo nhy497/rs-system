@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="styles.css?v=20260215_1">
   
   <!-- ⭐ [PLAN-A1] 跨標籤頁同步樣式 -->
-  <link rel="stylesheet" href="sync-styles.css">
+  <link rel="stylesheet" href="./src/styles/sync.css">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,13 +23,13 @@
   <script src="dev/console-enhancer.js" type="module"></script>
   
   <!-- 雲端同步配置 -->
-  <script src="sync-config.js" type="module"></script>
+  <script src="./src/config/sync.js" type="module"></script>
   
   <!-- 日誌記錄系統 -->
-  <script src="logger-service.js" type="module"></script>
+  <script src="./src/services/logger.js" type="module"></script>
   
   <!-- ⭐ [PLAN-A1] 跨標籤頁同步工具（在 system.js 之前） -->
-  <script src="sync-utils.js" type="module"></script>
+  <script src="./src/utils/sync.js" type="module"></script>
   
   <!-- 🚀 模組化系統入口點 v3.1.0 -->
   <script type="module" src="./src/index.js"></script>

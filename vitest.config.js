@@ -1,7 +1,10 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
-import { COVERAGE_CONFIG } from './test/config/coverage-config.js';
 
+/**
+ * 簡化的 Vitest 配置檔案
+ * 移除過度複雜的外部依賴，提供清晰的基本配置
+ */
 export default defineConfig({
   test: {
     // 測試環境配置
@@ -20,28 +23,39 @@ export default defineConfig({
       'test/e2e',
     ],
     
-    // 覆蓋率配置
+    // 簡化的覆蓋率配置
     coverage: {
       provider: 'v8',
-      reporter: COVERAGE_CONFIG.reporters,
-      outputDir: COVERAGE_CONFIG.outputDir,
-      exclude: COVERAGE_CONFIG.exclude,
-      include: COVERAGE_CONFIG.include,
-      collectCoverage: COVERAGE_CONFIG.collectCoverage,
-      collectCoverageFrom: COVERAGE_CONFIG.collectCoverageFrom,
-      thresholds: COVERAGE_CONFIG.thresholds.global,
-      watermarks: COVERAGE_CONFIG.watermarks,
-      
-      // 覆蓋率報告文件
-      reporterOptions: {
-        html: {
-          subdir: 'html-report'
-        },
-        lcov: {
-          file: COVERAGE_CONFIG.reportFiles.lcov
-        },
-        clover: {
-          file: COVERAGE_CONFIG.reportFiles.clover
+      reporter: ['text', 'json', 'html'],
+      outputDir: './test-results/coverage',
+      exclude: [
+        'node_modules/',
+        'dist/',
+        'test/',
+        'coverage/',
+        'docs/',
+        'dev/',
+        'tools/',
+        '**/*.config.js',
+        '**/*.d.ts'
+      ],
+      include: [
+        'src/**/*.{js,ts}'
+      ],
+      collectCoverage: true,
+      collectCoverageFrom: [
+        'src/**/*.{js,ts}',
+        '!src/**/*.d.ts',
+        '!src/**/*.config.{js,ts}',
+        '!src/**/*.spec.{js,ts}',
+        '!src/**/*.test.{js,ts}'
+      ],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
         }
       }
     },
