@@ -67,7 +67,7 @@ export { EventHandlers } from './ui/event-handlers.js';
  * RS-System 版本號
  * @constant {string}
  */
-export const VERSION = '3.0.0';
+export const VERSION = '3.1.0';
 
 /**
  * 建置日期

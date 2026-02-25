@@ -23,6 +23,9 @@ npm run build
 
 # 預覽構建結果
 npm run preview
+
+# 運行測試
+npm test
 ```
 
 ---
@@ -62,23 +65,28 @@ npm run preview
 
 ## ✨ 主要功能
 
+- ✅ **模組化架構** - 26個獨立模組，按需載入
 - ✅ **快速輸入** - 直覺的表單設計
-- ✅ **本地儲存** - 使用 localStorage 保存數據
+- ✅ **本地儲存** - 使用 localStorage + PouchDB 離線同步
 - ✅ **CSV 匯出** - 一鍵匯出所有記錄
 - ✅ **班別管理** - 按班別分組查看
 - ✅ **歷史記錄** - 快速重溫歷史課程
 - ✅ **響應式設計** - 支持電腦和移動裝置
 - ✅ **離線使用** - 無需網路連線
+- ✅ **向後相容** - 支援舊版 API
+- ✅ **開發工具** - 完整的開發與測試環境
 
 ---
 
 ## 🛠️ 技術棧
 
 - **前端**: HTML5, CSS3, JavaScript (ES6+)
-- **構建工具**: Vite
-- **存儲**: localStorage
+- **模組系統**: ES6 Modules, Vite
+- **存儲**: localStorage, PouchDB (離線同步)
+- **構建工具**: Vite, Vitest
 - **部署**: GitHub Pages + GitHub Actions
-- **UI 組件**: Toast, Modal (原生)
+- **UI 組件**: 原生 Toast, Modal
+- **開發工具**: ESLint, Prettier, TypeScript
 
 詳細請參考：[🛠️ 技術棧文檔](./docs/architecture/TECH_STACK.md)
 
@@ -96,23 +104,62 @@ rs-system/
 │   └── workflows/
 │       └── deploy.yml           # CI/CD 配置
 │
-├── src/                         # 原始碼
+├── src/                         # 🔥 模組化源碼
+│   ├── index.js                 # 瀏覽器入口點
+│   ├── main.js                  # 主 API 匯出
+│   ├── init/                    # 初始化模組 (Phase 4)
+│   │   ├── app-init.js
+│   │   ├── login-page-init.js
+│   │   └── config.js
+│   ├── core/                    # 核心模組 (Phase 2)
+│   │   ├── storage-manager.js
+│   │   ├── login-manager.js
+│   │   └── auth-config.js
+│   ├── services/                # 服務層 (Phase 2)
+│   │   ├── storage-service.js
+│   │   ├── records-service.js
+│   │   ├── presets-service.js
+│   │   ├── users-service.js
+│   │   └── validation-service.js
+│   ├── ui/                      # UI 管理 (Phase 3)
+│   │   ├── ui-manager.js
+│   │   ├── form-manager.js
+│   │   ├── tricks-manager.js
+│   │   ├── attachments-manager.js
+│   │   ├── list-renderer.js
+│   │   ├── modal-manager.js
+│   │   └── event-handlers.js
+│   ├── utils/                   # 工具函數 (Phase 1)
+│   │   ├── dom-utils.js
+│   │   ├── helpers.js
+│   │   ├── formatters.js
+│   │   └── validators.js
+│   ├── constants/               # 常數定義 (Phase 1)
+│   │   └── app-constants.js
+│   ├── compat/                  # 向後相容
+│   │   └── legacy-bridge.js
 │   ├── components/              # UI 組件
 │   │   ├── Toast.js
 │   │   └── Modal.js
-│   ├── services/                # 服務層
-│   ├── config/                  # 配置檔案
-│   └── utils/                   # 工具函數
+│   └── examples/                # 使用範例
+│       └── phase3-usage.js
 │
-├── public/                      # 静態資源 (主要檔案)
-│   ├── index.html
+├── public/                      # 靜態資源
+│   ├── index.html              # 🚀 使用模組化系統
 │   ├── login.html
-│   ├── system.js
+│   ├── system.js               # 向後相容層
 │   └── styles.css
 │
 ├── tests/                       # 測試檔案
+│   ├── test-modules.html
+│   ├── test-phase2-modules.html
+│   ├── test-phase3-modules.html
+│   └── test-phase4-modules.html
 │
-└── docs/                        # 文檔中心 ⭐
+├── dev/                         # 開發工具
+├── tools/                       # 工具腳本
+│
+└── docs/                        # 📚 文檔中心 ⭐
     ├── README.md                # 文檔首頁
     ├── getting-started/         # 入門指南
     ├── user-guide/              # 用戶手冊
@@ -140,17 +187,17 @@ rs-system/
 
 ---
 
-## 🔗 重要連結
+## 重要連結
 
-- 🌐 **線上系統**: https://nhy497.github.io/rs-system/
-- 🐙 **GitHub Repo**: https://github.com/nhy497/rs-system
-- 📊 **CI/CD**: https://github.com/nhy497/rs-system/actions
-- 📋 **Issues**: https://github.com/nhy497/rs-system/issues
-- 🔄 **Pull Requests**: https://github.com/nhy497/rs-system/pulls
+- 線上系統：https://nhy497.github.io/rs-system/
+- GitHub Repo：https://github.com/nhy497/rs-system
+- CI/CD：https://github.com/nhy497/rs-system/actions
+- Issues：https://github.com/nhy497/rs-system/issues
+- Pull Requests：https://github.com/nhy497/rs-system/pulls
 
 ---
 
-## 📝 授權
+## 授權
 
 MIT License - 詳見 [LICENSE](./LICENSE) 檔案
 
@@ -162,9 +209,10 @@ MIT License - 詳見 [LICENSE](./LICENSE) 檔案
 
 ---
 
-**版本**: v3.1  
-**最後更新**: 2026-02-12  
-**維護者**: Development Team
+**版本**: v3.1.0  
+**最後更新**: 2026-02-25  
+**維護者**: Development Team  
+**架構**: 模組化 ES6 + Vite
 
 ---
 
