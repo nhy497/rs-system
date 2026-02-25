@@ -14,6 +14,8 @@
  * 注意: 此模組提供事件綁定架構，實際的業務邏輯需要從外部注入
  */
 
+import { LOGIN_MANAGER } from '../core/login-manager.js';
+
 /**
  * DOM 選擇器
  */
@@ -180,12 +182,29 @@ export const EventHandlers = {
    */
   bindLogoutButton() {
     const btn = $('btnLogout');
-    if (btn && this.handlers.onLogout) {
-      this._addEventListener(btn, 'click', () => {
+    if (btn) {
+      console.log('🔗 綁定登出按鈕');
+      this._addEventListener(btn, 'click', (e) => {
+        e.preventDefault();
+        console.log('🔓 點擊登出按鈕');
+        
         if (confirm('確定要登出嗎？')) {
-          this.handlers.onLogout();
+          // 直接調用登出功能
+          if (typeof LOGIN_MANAGER !== 'undefined' && LOGIN_MANAGER.logout) {
+            LOGIN_MANAGER.logout();
+          } else if (this.handlers.onLogout) {
+            this.handlers.onLogout();
+          } else {
+            console.error('❌ 找不到登出處理函數');
+            // 後備方案：直接跳轉
+            localStorage.removeItem('rs-system-session');
+            localStorage.removeItem('current-user');
+            window.location.href = 'login.html';
+          }
         }
       });
+    } else {
+      console.warn('⚠️ 找不到登出按鈕 #btnLogout');
     }
   },
 

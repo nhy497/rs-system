@@ -96,14 +96,19 @@ export const LOGIN_MANAGER = {
       this.state.activeSessions[sessionId] = sessionData;
       console.log(`✅ 用戶 ${username} 登入成功 | 會話ID: ${sessionId}`);
       
+      // 觸發登入狀態變化事件
+      const userData = {
+        id: user.userId || user.id,
+        userId: user.userId || user.id,
+        username: user.username,
+        email: user.email || '',
+        role: user.role || 'user'
+      };
+      this.dispatchLoginStateChange(userData, true);
+      
       return {
         success: true,
-        user: {
-          id: user.userId || user.id,
-          username: user.username,
-          email: user.email || '',
-          role: user.role || 'user'
-        }
+        user: userData
       };
     } catch (error) {
       console.error('❌ 登入失敗:', error);
@@ -125,12 +130,17 @@ export const LOGIN_MANAGER = {
         loggerService.logSystemEvent('logout', `用戶 ${currentUser?.username || '未知'} 已登出`, 'info');
       }
       
+      // 清除會話數據
       localStorage.removeItem('rs-system-session');
       localStorage.removeItem('current-user');
       
       if (session.sessionId) {
         delete this.state.activeSessions[session.sessionId];
       }
+      
+      // 觸發登出狀態變化事件
+      this.dispatchLoginStateChange(null, false);
+      
       console.log('✅ 已登出');
       setTimeout(() => { window.location.href = 'login.html'; }, 500);
       return true;
@@ -293,6 +303,21 @@ export const LOGIN_MANAGER = {
       return JSON.parse(localStorage.getItem('current-user') || 'null');
     } catch (error) {
       return null;
+    }
+  },
+
+  /**
+   * 觸發登入狀態變化事件
+   * @param {Object|null} user - 用戶對象
+   * @param {boolean} isLoggedIn - 是否已登入
+   */
+  dispatchLoginStateChange(user, isLoggedIn) {
+    if (typeof document !== 'undefined') {
+      const event = new CustomEvent('userLoginStateChanged', {
+        detail: { user, isLoggedIn }
+      });
+      document.dispatchEvent(event);
+      console.log(`📢 觸發登入狀態變化事件: ${isLoggedIn ? '已登入' : '已登出'}`);
     }
   },
 

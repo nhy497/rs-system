@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>登出修復測試</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    .success { color: green; }
+    .error { color: red; }
+    .warning { color: orange; }
+    button { margin: 5px; padding: 10px 15px; }
+    #test-results { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>🧪 登出功能修復測試</h1>
+  
+  <div class="test-section">
+    <h2>📋 測試項目</h2>
+    <button onclick="testLoginManager()">測試登入管理器</button>
+    <button onclick="testUserDisplayManager()">測試用戶顯示管理器</button>
+    <button onclick="testEventHandlers()">測試事件處理器</button>
+    <button onclick="testLogoutFlow()">測試完整登出流程</button>
+    <button onclick="simulateLogin()">模擬登入</button>
+    <button onclick="simulateLogout()">模擬登出</button>
+  </div>
+
+  <div class="test-section">
+    <h2>👤 當前用戶狀態</h2>
+    <div id="user-status">檢查中...</div>
+  </div>
+
+  <div class="test-section">
+    <h2>🔘 登出按鈕測試</h2>
+    <button type="button" class="btn-logout" id="btnLogout" aria-label="登出">
+      <span class="logout-icon">🚪</span>
+      <span>登出</span>
+    </button>
+    <div id="logout-status">等待測試...</div>
+  </div>
+
+  <div id="test-results"></div>
+
+  <!-- 載入必要的模組 -->
+  <script type="module">
+    // 載入登入管理器
+    import { LOGIN_MANAGER } from './src/core/login-manager.js';
+    
+    // 載入用戶顯示管理器
+    import userDisplayManager from './src/ui/user-display-manager.js';
+    
+    // 載入事件處理器
+    import { EventHandlers } from './src/ui/event-handlers.js';
+    
+    // 全局變數
+    window.LOGIN_MANAGER = LOGIN_MANAGER;
+    window.userDisplayManager = userDisplayManager;
+    window.EventHandlers = EventHandlers;
+    
+    // 測試函數
+    window.testLoginManager = function() {
+      addTestResult('登入管理器', 'info', '開始測試登入管理器...');
+      
+      try {
+        // 檢查登入管理器是否存在
+        if (typeof LOGIN_MANAGER !== 'undefined') {
+          addTestResult('登入管理器載入', 'success', '✅ 登入管理器已載入');
+          
+          // 檢查方法是否存在
+          const methods = ['login', 'logout', 'getCurrentUser', 'isLoggedIn', 'dispatchLoginStateChange'];
+          methods.forEach(method => {
+            if (typeof LOGIN_MANAGER[method] === 'function') {
+              addTestResult(`方法 ${method}`, 'success', `✅ ${method} 方法存在`);
+            } else {
+              addTestResult(`方法 ${method}`, 'error', `❌ ${method} 方法不存在`);
+            }
+          });
+        } else {
+          addTestResult('登入管理器載入', 'error', '❌ 登入管理器未載入');
+        }
+      } catch (error) {
+        addTestResult('登入管理器測試', 'error', `❌ 錯誤: ${error.message}`);
+      }
+    };
+    
+    window.testUserDisplayManager = function() {
+      addTestResult('用戶顯示管理器', 'info', '開始測試用戶顯示管理器...');
+      
+      try {
+        if (typeof userDisplayManager !== 'undefined') {
+          addTestResult('用戶顯示管理器載入', 'success', '✅ 用戶顯示管理器已載入');
+          
+          // 檢查初始化狀態
+          const status = userDisplayManager.getUserDisplayStatus();
+          addTestResult('初始化狀態', 'success', `✅ 初始化: ${status.isInitialized}`);
+          
+          // 檢查當前用戶
+          const currentUser = userDisplayManager.getCurrentUser();
+          addTestResult('當前用戶', currentUser ? 'success' : 'warning', 
+            currentUser ? `✅ 當前用戶: ${currentUser.username}` : '⚠️ 無當前用戶');
+        } else {
+          addTestResult('用戶顯示管理器載入', 'error', '❌ 用戶顯示管理器未載入');
+        }
+      } catch (error) {
+        addTestResult('用戶顯示管理器測試', 'error', `❌ 錯誤: ${error.message}`);
+      }
+    };
+    
+    window.testEventHandlers = function() {
+      addTestResult('事件處理器', 'info', '開始測試事件處理器...');
+      
+      try {
+        // 檢查登出按鈕
+        const logoutBtn = document.getElementById('btnLogout');
+        if (logoutBtn) {
+          addTestResult('登出按鈕', 'success', '✅ 登出按鈕存在');
+          
+          // 檢查事件監聽器
+          const hasListener = logoutBtn.onclick || logoutBtn.addEventListener;
+          addTestResult('事件監聽器', hasListener ? 'success' : 'warning', 
+            hasListener ? '✅ 按鈕有事件監聽器' : '⚠️ 按鈕可能沒有事件監聽器');
+        } else {
+          addTestResult('登出按鈕', 'error', '❌ 登出按鈕不存在');
+        }
+      } catch (error) {
+        addTestResult('事件處理器測試', 'error', `❌ 錯誤: ${error.message}`);
+      }
+    };
+    
+    window.testLogoutFlow = function() {
+      addTestResult('登出流程', 'info', '開始測試完整登出流程...');
+      
+      try {
+        // 檢查登出方法
+        if (typeof LOGIN_MANAGER.logout === 'function') {
+          addTestResult('登出方法', 'success', '✅ 登出方法存在');
+          
+          // 檢查事件觸發
+          let eventTriggered = false;
+          const testListener = () => { eventTriggered = true; };
+          document.addEventListener('userLoginStateChanged', testListener);
+          
+          // 模擬登出（不實際跳轉）
+          const originalLocation = window.location;
+          window.location = { href: '' };
+          
+          // 檢查是否有用戶
+          const currentUser = LOGIN_MANAGER.getCurrentUser();
+          if (currentUser) {
+            addTestResult('登出前狀態', 'success', `✅ 有用戶: ${currentUser.username}`);
+            
+            // 執行登出
+            const logoutResult = LOGIN_MANAGER.logout();
+            addTestResult('登出執行', logoutResult ? 'success' : 'error', 
+              logoutResult ? '✅ 登出執行成功' : '❌ 登出執行失敗');
+          } else {
+            addTestResult('登出前狀態', 'warning', '⚠️ 無用戶，無法測試登出');
+          }
+          
+          // 恢復 window.location
+          window.location = originalLocation;
+          
+          // 移除測試監聽器
+          document.removeEventListener('userLoginStateChanged', testListener);
+          
+          addTestResult('事件觸發', eventTriggered ? 'success' : 'warning', 
+            eventTriggered ? '✅ 登出事件已觸發' : '⚠️ 登出事件未觸發');
+        } else {
+          addTestResult('登出方法', 'error', '❌ 登出方法不存在');
+        }
+      } catch (error) {
+        addTestResult('登出流程測試', 'error', `❌ 錯誤: ${error.message}`);
+      }
+    };
+    
+    window.simulateLogin = function() {
+      addTestResult('模擬登入', 'info', '開始模擬登入...');
+      
+      try {
+        // 創建測試用戶
+        const testUser = {
+          id: 'test-user-1',
+          userId: 'test-user-1',
+          username: 'testuser',
+          email: 'test@example.com',
+          role: 'coach'
+        };
+        
+        // 創建測試會話
+        const sessionData = {
+          userId: testUser.userId,
+          username: testUser.username,
+          sessionId: 'test-session-' + Date.now(),
+          createdAt: Date.now(),
+          expiresAt: Date.now() + (24 * 60 * 60 * 1000),
+          role: testUser.role
+        };
+        
+        // 保存到 localStorage
+        localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
+        localStorage.setItem('current-user', JSON.stringify(testUser));
+        
+        // 觸發登入事件
+        LOGIN_MANAGER.dispatchLoginStateChange(testUser, true);
+        
+        addTestResult('模擬登入', 'success', `✅ 模擬登入成功: ${testUser.username}`);
+        updateUserStatus();
+      } catch (error) {
+        addTestResult('模擬登入', 'error', `❌ 錯誤: ${error.message}`);
+      }
+    };
+    
+    window.simulateLogout = function() {
+      addTestResult('模擬登出', 'info', '開始模擬登出...');
+      
+      try {
+        // 執行登出
+        const result = LOGIN_MANAGER.logout();
+        addTestResult('模擬登出', result ? 'success' : 'error', 
+          result ? '✅ 模擬登出成功' : '❌ 模擬登出失敗');
+        
+        updateUserStatus();
+      } catch (error) {
+        addTestResult('模擬登出', 'error', `❌ 錯誤: ${error.message}`);
+      }
+    };
+    
+    // 輔助函數
+    function addTestResult(testName, type, message) {
+      const resultsDiv = document.getElementById('test-results');
+      const testDiv = document.createElement('div');
+      testDiv.className = `test-${type}`;
+      testDiv.innerHTML = `<strong>${testName}:</strong> ${message}`;
+      resultsDiv.appendChild(testDiv);
+    }
+    
+    function updateUserStatus() {
+      const statusDiv = document.getElementById('user-status');
+      const currentUser = LOGIN_MANAGER.getCurrentUser();
+      const isLoggedIn = LOGIN_MANAGER.isLoggedIn();
+      
+      if (isLoggedIn && currentUser) {
+        statusDiv.innerHTML = `
+          <div class="success">✅ 已登入</div>
+          <div>用戶名: ${currentUser.username}</div>
+          <div>角色: ${currentUser.role}</div>
+        `;
+      } else {
+        statusDiv.innerHTML = `
+          <div class="warning">⚠️ 未登入</div>
+        `;
+      }
+    }
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      addTestResult('頁面載入', 'success', '✅ 測試頁面載入完成');
+      updateUserStatus();
+      
+      // 監聽登入狀態變化
+      document.addEventListener('userLoginStateChanged', (event) => {
+        const { user, isLoggedIn } = event.detail;
+        addTestResult('狀態變化事件', 'info', 
+          `📢 用戶狀態變化: ${isLoggedIn ? '已登入' : '已登出'} - ${user?.username || '無用戶'}`);
+        updateUserStatus();
+      });
+    });
+  </script>
+</body>
+</html>

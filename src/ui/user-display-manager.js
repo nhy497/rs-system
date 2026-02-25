@@ -51,7 +51,7 @@ class UserDisplayManager {
 
     // 監聽存儲變化
     window.addEventListener('storage', (event) => {
-      if (event.key === 'rs_system_session') {
+      if (event.key === 'rs-system-session' || event.key === 'current-user') {
         this.updateUserDisplay();
       }
     });
