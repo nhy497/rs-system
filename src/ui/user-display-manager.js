@@ -157,7 +157,8 @@ class UserDisplayManager {
     
     if (topBarTitle) {
       const userName = user.username || user.displayName || '未知用戶';
-      topBarTitle.textContent = `${userName} · 教練記錄系統`;
+      // 保持原有的頁面標題，在側邊欄顯示用戶信息
+      // topBarTitle.textContent = `${userName} · 教練記錄系統`;
     }
   }
 

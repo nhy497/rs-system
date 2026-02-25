@@ -29,14 +29,37 @@ jobs:
       - name: 📦 安裝依賴
         run: npm install --legacy-peer-deps
       
-      # 暫時禁用 ESLint 和測試，因為還沒有配置
-      # - name: 🔍 代碼檢查 (ESLint)
-      #   run: npm run lint
-      #   continue-on-error: true
+      # 🧪 執行單元測試
+      - name: 🧪 執行單元測試
+        run: npm run test:ci
+        continue-on-error: true
       
-      # - name: 🧪 執行測試
-      #   run: npm test
-      #   continue-on-error: true
+      # 🎭 執行 E2E 測試
+      - name: 🎭 執行 E2E 測試
+        run: npm run test:e2e:ci
+        continue-on-error: true
+      
+      # 🔍 代碼檢查 (ESLint)
+      - name: 🔍 代碼檢查 (ESLint)
+        run: npm run lint
+        continue-on-error: true
+      
+      # 🔒 安全掃描
+      - name: 🔒 安全掃描
+        run: |
+          echo "🔍 開始安全掃描..."
+          # 檢查是否有未經轉義的 innerHTML 使用
+          echo "檢查 XSS 漏洞..."
+          grep -r "innerHTML.*[^=]" src/ --include="*.js" || echo "✅ 未發現明顯的 XSS 風險"
+          
+          # 檢查是否有 eval() 使用
+          echo "檢查 eval() 使用..."
+          grep -r "eval(" src/ --include="*.js" || echo "✅ 未發現 eval() 使用"
+          
+          # 檢查是否有 innerHTML 直接賦值
+          echo "檢查危險的 innerHTML 使用..."
+          grep -r "innerHTML.*=" src/ --include="*.js" | grep -v "escapeHtml" || echo "✅ 所有 innerHTML 都經過轉義"
+        continue-on-error: true
       
       - name: 🛠️ 構建應用
         run: npm run build
@@ -47,6 +70,17 @@ jobs:
           name: dist-${{ matrix.node-version }}
           path: dist
           retention-days: 7
+      
+      # 📈 上傳測試報告
+      - name: 📈 上傳測試報告
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports-${{ matrix.node-version }}
+          path: |
+            test-results/
+            coverage/
+          retention-days: 30
   
   # 部署到 GitHub Pages
   deploy:
@@ -113,7 +147,13 @@ jobs:
     if: always()
     
     steps:
-      - name: 📊 生成測試報告
+      - name: 📊 下載測試報告
+        uses: actions/download-artifact@v4
+        with:
+          name: test-reports-18.x
+          path: ./test-results
+      
+      - name: 📈 生成測試報告
         run: |
           echo "## 📦 構建結果" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -121,3 +161,104 @@ jobs:
           echo "- 部署狀態: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- 分支: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 檢查並顯示測試覆蓋率
+          if [ -f "./test-results/coverage/coverage-summary.json" ]; then
+            echo "## 📊 測試覆蓋率" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat ./test-results/coverage/coverage-summary.json | jq -r '
+              "| 指標 | 覆蓋率 |",
+              "|------|--------|",
+              "| 行覆蓋率 | \(.lines.pct)% |",
+              "| 函數覆蓋率 | \(.functions.pct)% |",
+              "| 分支覆蓋率 | \(.branches.pct)% |",
+              "| 語句覆蓋率 | \(.statements.pct)% |"
+            ' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # 檢查並顯示測試結果
+          if [ -f "./test-results/vitest-results.json" ]; then
+            echo "## 🧪 測試結果" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat ./test-results/vitest-results.json | jq -r '
+              if .numTotalTests then
+                "| 總測試數 | \(.numTotalTests) |",
+                "| 通過測試 | \(.numPassedTests) |",
+                "| 失敗測試 | \(.numFailedTests) |",
+                "| 跳過測試 | \(.numPendingTests) |"
+              else empty
+            end
+            ' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: 💬 PR 評論（僅 Pull Request）
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🧪 測試報告\n\n';
+            
+            // 添加構建狀態
+            comment += `**構建狀態**: ${{ needs.build.result }}\n`;
+            comment += `**部署狀態**: ${{ needs.deploy.result }}\n\n`;
+            
+            // 添加測試覆蓋率
+            try {
+              const coverage = JSON.parse(fs.readFileSync('./test-results/coverage/coverage-summary.json', 'utf8'));
+              comment += '### 📊 測試覆蓋率\n\n';
+              comment += `| 指標 | 覆蓋率 |\n`;
+              comment += `|------|--------|\n`;
+              comment += `| 行覆蓋率 | ${coverage.lines.pct}% |\n`;
+              comment += `| 函數覆蓋率 | ${coverage.functions.pct}% |\n`;
+              comment += `| 分支覆蓋率 | ${coverage.branches.pct}% |\n`;
+              comment += `| 語句覆蓋率 | ${coverage.statements.pct}% |\n\n`;
+            } catch (e) {
+              comment += '### 📊 測試覆蓋率\n\n';
+              comment += '覆蓋率報告不可用\n\n';
+            }
+            
+            // 添加測試結果
+            try {
+              const testResults = JSON.parse(fs.readFileSync('./test-results/vitest-results.json', 'utf8'));
+              comment += '### 🧪 測試結果\n\n';
+              comment += `| 總測試數 | 通過 | 失敗 | 跳過 |\n`;
+              comment += `|---------|------|------|------|\n`;
+              comment += `| ${testResults.numTotalTests} | ${testResults.numPassedTests} | ${testResults.numFailedTests} | ${testResults.numPendingTests} |\n\n`;
+            } catch (e) {
+              comment += '### 🧪 測試結果\n\n';
+              comment += '測試結果不可用\n\n';
+            }
+            
+            // 查找現有評論
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('🧪 測試報告')
+            );
+            
+            if (botComment) {
+              // 更新現有評論
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment,
+              });
+            } else {
+              // 創建新評論
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment,
+              });
+            }

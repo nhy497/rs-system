@@ -163,7 +163,7 @@ export const ModalManager = {
           <button type="button" class="modal-close" aria-label="關閉">×</button>
         </div>
         <div class="modal-body">
-          ${options.content || ''}
+          ${typeof options.content === 'string' ? escapeHtml(options.content) : ''}
         </div>
         <div class="modal-footer">
           ${buttonsHtml}

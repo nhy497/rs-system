@@ -133,7 +133,7 @@ export const ListRenderer = {
   renderEmptyState(container, message = '尚無記錄') {
     const el = typeof container === 'string' ? $(container) : container;
     if (!el) return;
-    el.innerHTML = `<li class="empty">${message}</li>`;
+    el.innerHTML = `<li class="empty">${escapeHtml(message)}</li>`;
   },
 
   /**
