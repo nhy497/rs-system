@@ -58,6 +58,7 @@ export { ModalManager } from './ui/modal-manager.js';
 export { TricksManager } from './ui/tricks-manager.js';
 export { AttachmentsManager } from './ui/attachments-manager.js';
 export { EventHandlers } from './ui/event-handlers.js';
+export { default as UserDisplayManager } from './ui/user-display-manager.js';
 
 // ============================================================================
 // 版本資訊

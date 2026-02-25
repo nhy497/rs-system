@@ -55,6 +55,7 @@
       TricksManager,
       AttachmentsManager,
       EventHandlers,
+      UserDisplayManager,
     } = await import('./src/main.js');
 
     // ---------------------------------------------------------------------------
@@ -104,6 +105,7 @@
     window.TricksManager     = TricksManager;
     window.AttachmentsManager = AttachmentsManager;
     window.EventHandlers     = EventHandlers;
+    window.UserDisplayManager = UserDisplayManager;
 
     // ---------------------------------------------------------------------------
     // Legacy API wrappers (temporary - to be migrated)
