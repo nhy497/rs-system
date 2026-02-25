@@ -200,12 +200,12 @@
     <div id="loginSection" class="form-section active">
       <form class="login-form" id="loginForm">
         <div class="form-group">
-          <label for="loginUsername">使用者名稱</label>
-          <input type="text" id="loginUsername" placeholder="輸入您的使用者名稱" required>
+          <label for="username">使用者名稱</label>
+          <input type="text" id="username" placeholder="輸入您的使用者名稱" required>
         </div>
         <div class="form-group">
-          <label for="loginPassword">密碼</label>
-          <input type="password" id="loginPassword" placeholder="輸入您的密碼" required>
+          <label for="password">密碼</label>
+          <input type="password" id="password" placeholder="輸入您的密碼" required>
         </div>
         <button type="submit" class="btn-login" id="btnLogin">登入</button>
       </form>
@@ -214,6 +214,8 @@
     <!-- 註冊表單 -->
     <div id="signupSection" class="form-section">
       <form class="login-form" id="signupForm">
+        <div class="error-msg message" id="signupErrorMsg"></div>
+        <div class="success-msg message" id="signupSuccessMsg"></div>
         <div class="form-group">
           <label for="signupUsername">使用者名稱</label>
           <input type="text" id="signupUsername" placeholder="建立新的使用者名稱" required>
@@ -223,8 +225,12 @@
           <input type="password" id="signupPassword" placeholder="建立新密碼 (最少4個字)" required>
         </div>
         <div class="form-group">
-          <label for="signupEmail">電郵 <span style="color: #999;">(可選)</span></label>
-          <input type="email" id="signupEmail" placeholder="您的電郵地址 (可選)">
+          <label for="confirmPassword">確認密碼</label>
+          <input type="password" id="confirmPassword" placeholder="再次輸入密碼" required>
+        </div>
+        <div class="form-group">
+          <label for="email">電郵 <span style="color: #999;">(可選)</span></label>
+          <input type="email" id="email" placeholder="您的電郵地址 (可選)">
         </div>
         <button type="submit" class="btn-login" id="btnSignup">建立帳戶</button>
       </form>
@@ -268,8 +274,16 @@
         e.preventDefault(); // 防止表單默認重載
         console.log('%c🔑 登入處理開始', 'color: #0ea5e9; font-weight: bold;');
         
-        const username = document.getElementById('loginUsername').value.trim();
-        const password = document.getElementById('loginPassword').value;
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        
+        // 🔒 安全驗證
+        if (!this.validateInput(username, password)) {
+          return;
+        }
+        
+        // 設置防重複提交標記
+        window.loginSubmitting = true;
         
         console.log(`👤 使用者名稱: ${username}`);
         
@@ -286,7 +300,7 @@
             console.log(`🎉 歡迎回來，${result.user.username}！`);
             console.log(`👑 權限: ${result.user.role === 'creator' ? '創建者' : '一般使用者'}`);
             
-            showMessage('success', `歡迎回來，${result.user.username}！`);
+            showMessage('success', `歡迎回來，${escapeHtml(result.user.username)}！`);
             
             // ⭐ 登入成功後跳轉到 index.html
             console.log('🔀 正在跳轉至主頁...');
@@ -306,6 +320,9 @@
           showMessage('error', '登入過程發生錯誤，請稍後再試');
           btn.disabled = false;
           btn.textContent = '登入';
+        } finally {
+          // 重置防重複提交標記
+          window.loginSubmitting = false;
         }
       });
 
@@ -316,16 +333,19 @@
         
         const username = document.getElementById('signupUsername').value.trim();
         const password = document.getElementById('signupPassword').value;
-        const email = document.getElementById('signupEmail').value.trim();
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const email = document.getElementById('email').value.trim();
         
-        console.log(`👤 新使用者: ${username}`);
-        if (email) console.log(`📧 電郵: ${email}`);
-        
-        if (password.length < 4) {
-          console.log('%c⚠️  密碼太短', 'color: #f59e0b;');
-          showMessage('error', '密碼至少需要4個字元');
+        // 🔒 安全驗證
+        if (!this.validateSignupInput(username, password, confirmPassword, email)) {
           return;
         }
+        
+        // 設置防重複提交標記
+        window.signupSubmitting = true;
+        
+        console.log(`👤 新使用者: ${username}`);
+        if (email) console.log(`📧 郵件: ${email}`);
         
         const btn = document.getElementById('btnSignup');
         btn.disabled = true;
@@ -338,6 +358,12 @@
           if (result.success) {
             console.log('%c✅ 註冊成功！', 'color: #10b981; font-size: 14px; font-weight: bold;');
             console.log(`🎉 歡迎加入，${username}！`);
+            
+            // 清空註冊表單
+            document.getElementById('signupUsername').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('email').value = '';
             
             showMessage('success', '帳戶建立成功！正在登入...');
             
@@ -370,6 +396,9 @@
           showMessage('error', '註冊過程發生錯誤，請稍後再試');
           btn.disabled = false;
           btn.textContent = '建立帳戶';
+        } finally {
+          // 重置防重複提交標記
+          window.signupSubmitting = false;
         }
       });
 
@@ -397,14 +426,106 @@
       successMsg.classList.remove('show');
       
       if (type === 'error') {
-        errorMsg.textContent = text;
+        errorMsg.textContent = escapeHtml(text); // XSS 防護
         errorMsg.classList.add('show');
         console.log(`🚨 錯誤訊息: ${text}`);
       } else {
-        successMsg.textContent = text;
+        successMsg.textContent = escapeHtml(text); // XSS 防護
         successMsg.classList.add('show');
         console.log(`✅ 成功訊息: ${text}`);
       }
+    }
+
+    // 🔒 輸入驗證和安全防護
+    function validateInput(username, password) {
+      // 基本驗證
+      if (!username || !password) {
+        showMessage('error', '請輸入用戶名和密碼');
+        return false;
+      }
+      
+      // 長度檢查
+      if (username.length < 3 || username.length > 50) {
+        showMessage('error', '用戶名長度必須在 3-50 個字元之間');
+        return false;
+      }
+      
+      if (password.length < 4 || password.length > 100) {
+        showMessage('error', '密碼長度必須在 4-100 個字元之間');
+        return false;
+      }
+      
+      // 字符檢查（防止注入）
+      const dangerousChars = /['<>'"&]/;
+      if (dangerousChars.test(username)) {
+        showMessage('error', '用戶名包含無效字符');
+        return false;
+      }
+      
+      // 防止重複提交
+      if (window.loginSubmitting) {
+        showMessage('error', '請勿重複提交');
+        return false;
+      }
+      
+      return true;
+    }
+
+    // 🔒 註冊輸入驗證
+    function validateSignupInput(username, password, confirmPassword, email) {
+      // 基本驗證
+      if (!username || !password || !confirmPassword) {
+        showMessage('error', '請填寫所有必填欄位');
+        return false;
+      }
+      
+      // 長度檢查
+      if (username.length < 3 || username.length > 50) {
+        showMessage('error', '用戶名長度必須在 3-50 個字元之間');
+        return false;
+      }
+      
+      if (password.length < 4 || password.length > 100) {
+        showMessage('error', '密碼長度必須在 4-100 個字元之間');
+        return false;
+      }
+      
+      // 密碼確認
+      if (password !== confirmPassword) {
+        showMessage('error', '兩次輸入的密碼不一致');
+        return false;
+      }
+      
+      // 字符檢查（防止注入）
+      const dangerousChars = /['<>'"&]/;
+      if (dangerousChars.test(username)) {
+        showMessage('error', '用戶名包含無效字符');
+        return false;
+      }
+      
+      // 郵件格式驗證（如果填寫）
+      if (email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          showMessage('error', '請輸入有效的電子郵件地址');
+          return false;
+        }
+      }
+      
+      // 防止重複提交
+      if (window.signupSubmitting) {
+        showMessage('error', '請勿重複提交');
+        return false;
+      }
+      
+      return true;
+    }
+
+    // 🔒 HTML 轉義函數
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     // 切換表單
@@ -413,8 +534,11 @@
       document.getElementById('signupSection').classList.add('active');
       document.getElementById('toSignupSection').style.display = 'none';
       document.getElementById('toLoginSection').style.display = 'block';
+      // 清理所有訊息
       document.getElementById('errorMsg').classList.remove('show');
       document.getElementById('successMsg').classList.remove('show');
+      document.getElementById('signupErrorMsg').classList.remove('show');
+      document.getElementById('signupSuccessMsg').classList.remove('show');
     }
 
     function switchToLogin() {
@@ -422,8 +546,11 @@
       document.getElementById('loginSection').classList.add('active');
       document.getElementById('toLoginSection').style.display = 'none';
       document.getElementById('toSignupSection').style.display = 'block';
+      // 清理所有訊息
       document.getElementById('errorMsg').classList.remove('show');
       document.getElementById('successMsg').classList.remove('show');
+      document.getElementById('signupErrorMsg').classList.remove('show');
+      document.getElementById('signupSuccessMsg').classList.remove('show');
     }
 
     // 頁面加載完成後初始化
