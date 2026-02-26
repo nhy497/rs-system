@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>模組載入測試</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    .success { color: green; }
+    .error { color: red; }
+    .warning { color: orange; }
+    .info { color: blue; }
+    pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>🧪 模組載入測試</h1>
+  
+  <div class="test-section">
+    <h2>📋 測試項目</h2>
+    <button onclick="testMainEntry()">測試主入口點</button>
+    <button onclick="testLoginPage()">測試登入頁面</button>
+    <button onclick="testMainApp()">測試主應用</button>
+    <button onclick="testCompatibilityLayer()">測試相容層</button>
+    <button onclick="clearResults()">清除結果</button>
+  </div>
+
+  <div class="test-section">
+    <h2>📊 載入狀態</h2>
+    <div id="loading-status">檢查中...</div>
+  </div>
+
+  <div id="test-results"></div>
+
+  <!-- 測試不同的載入方式 -->
+  <div id="test-container"></div>
+
+  <script>
+    let testResults = [];
+    
+    function addTestResult(testName, type, message, details = null) {
+      const result = {
+        testName,
+        type,
+        message,
+        details,
+        timestamp: new Date().toISOString()
+      };
+      testResults.push(result);
+      updateResultsDisplay();
+    }
+    
+    function updateResultsDisplay() {
+      const resultsDiv = document.getElementById('test-results');
+      resultsDiv.innerHTML = testResults.map(result => `
+        <div class="test-${result.type}">
+          <strong>${result.testName}:</strong> ${result.message}
+          ${result.details ? `<pre>${result.details}</pre>` : ''}
+          <small>${result.timestamp}</small>
+        </div>
+      `).join('');
+    }
+    
+    function clearResults() {
+      testResults = [];
+      updateResultsDisplay();
+    }
+    
+    async function testMainEntry() {
+      addTestResult('主入口點測試', 'info', '開始測試 src/index.js...');
+      
+      try {
+        // 測試直接載入主入口點
+        const module = await import('./src/index.js');
+        addTestResult('主入口點載入', 'success', '✅ src/index.js 載入成功');
+        
+        // 檢查導出的模組
+        const exports = Object.keys(module);
+        addTestResult('導出檢查', 'success', `✅ 導出 ${exports.length} 個模組: ${exports.join(', ')}`);
+        
+        // 檢查全域物件
+        if (typeof window.RSSystem !== 'undefined') {
+          addTestResult('全域物件', 'success', '✅ window.RSSystem 已掛載');
+        } else {
+          addTestResult('全域物件', 'error', '❌ window.RSSystem 未掛載');
+        }
+        
+        // 檢查頁面偵測
+        if (typeof module.detectPageType === 'function') {
+          const pageType = module.detectPageType();
+          addTestResult('頁面偵測', 'success', `✅ 偵測到頁面類型: ${pageType}`);
+        } else {
+          addTestResult('頁面偵測', 'error', '❌ detectPageType 函數不存在');
+        }
+        
+      } catch (error) {
+        addTestResult('主入口點測試', 'error', `❌ 錯誤: ${error.message}`, error.stack);
+      }
+    }
+    
+    async function testLoginPage() {
+      addTestResult('登入頁面測試', 'info', '開始測試登入頁面載入...');
+      
+      try {
+        // 創建登入頁面環境
+        const container = document.getElementById('test-container');
+        container.innerHTML = `
+          <div id="loginForm">
+            <input type="text" id="username" placeholder="用戶名">
+            <input type="password" id="password" placeholder="密碼">
+            <button type="submit">登入</button>
+          </div>
+        `;
+        
+        // 載入登入頁面腳本
+        const module = await import('./src/index.js');
+        
+        // 檢查登入頁面初始化
+        if (typeof window.LoginPageInit !== 'undefined') {
+          addTestResult('登入頁面初始化', 'success', '✅ LoginPageInit 已載入');
+          
+          // 嘗試初始化
+          const initResult = window.LoginPageInit.init();
+          if (initResult) {
+            addTestResult('登入頁面初始化執行', 'success', '✅ 登入頁面初始化成功');
+          } else {
+            addTestResult('登入頁面初始化執行', 'error', '❌ 登入頁面初始化失敗');
+          }
+        } else {
+          addTestResult('登入頁面初始化', 'error', '❌ LoginPageInit 未載入');
+        }
+        
+        // 檢查登入管理器
+        if (typeof window.LOGIN_MANAGER !== 'undefined') {
+          addTestResult('登入管理器', 'success', '✅ LOGIN_MANAGER 已載入');
+        } else {
+          addTestResult('登入管理器', 'error', '❌ LOGIN_MANAGER 未載入');
+        }
+        
+      } catch (error) {
+        addTestResult('登入頁面測試', 'error', `❌ 錯誤: ${error.message}`, error.stack);
+      }
+    }
+    
+    async function testMainApp() {
+      addTestResult('主應用測試', 'info', '開始測試主應用載入...');
+      
+      try {
+        // 創建主應用環境
+        const container = document.getElementById('test-container');
+        container.innerHTML = `
+          <div id="page-overview">
+            <div id="app-container">
+              <h1>教練記錄系統</h1>
+            </div>
+          </div>
+        `;
+        
+        // 載入主應用腳本
+        const module = await import('./src/index.js');
+        
+        // 檢查主應用初始化
+        if (typeof window.AppInit !== 'undefined') {
+          addTestResult('主應用初始化', 'success', '✅ AppInit 已載入');
+        } else {
+          addTestResult('主應用初始化', 'error', '❌ AppInit 未載入');
+        }
+        
+        // 檢查其他核心模組
+        const coreModules = ['STORAGE_MANAGER', 'UI_MANAGER', 'EventHandlers'];
+        coreModules.forEach(moduleName => {
+          if (typeof window[moduleName] !== 'undefined') {
+            addTestResult(`核心模組 ${moduleName}`, 'success', `✅ ${moduleName} 已載入`);
+          } else {
+            addTestResult(`核心模組 ${moduleName}`, 'warning', `⚠️ ${moduleName} 未載入`);
+          }
+        });
+        
+      } catch (error) {
+        addTestResult('主應用測試', 'error', `❌ 錯誤: ${error.message}`, error.stack);
+      }
+    }
+    
+    async function testCompatibilityLayer() {
+      addTestResult('相容層測試', 'info', '開始測試相容層載入...');
+      
+      try {
+        // 測試舊版 system.js 相容層
+        const compatModule = await import('./src/compat/system.js');
+        addTestResult('相容層載入', 'success', '✅ src/compat/system.js 載入成功');
+        
+        // 檢查是否觸發了全域物件掛載
+        setTimeout(() => {
+          const globalVars = ['initApp', 'LOGIN_MANAGER', 'STORAGE_MANAGER', '$', 'toast'];
+          globalVars.forEach(varName => {
+            if (typeof window[varName] !== 'undefined') {
+              addTestResult(`全域變數 ${varName}`, 'success', `✅ window.${varName} 已掛載`);
+            } else {
+              addTestResult(`全域變數 ${varName}`, 'warning', `⚠️ window.${varName} 未掛載`);
+            }
+          });
+        }, 1000);
+        
+      } catch (error) {
+        addTestResult('相容層測試', 'error', `❌ 錯誤: ${error.message}`, error.stack);
+      }
+    }
+    
+    // 初始化載入狀態檢查
+    function updateLoadingStatus() {
+      const statusDiv = document.getElementById('loading-status');
+      const checks = [
+        { name: 'ES Module 支援', check: () => typeof import !== 'undefined' },
+        { name: 'CustomEvent 支援', check: () => typeof CustomEvent !== 'undefined' },
+        { name: 'localStorage 支援', check: () => typeof localStorage !== 'undefined' },
+        { name: 'console 支援', check: () => typeof console !== 'undefined' }
+      ];
+      
+      const results = checks.map(({ name, check }) => {
+        try {
+          const supported = check();
+          return `<span class="${supported ? 'success' : 'error'}">${name}: ${supported ? '✅' : '❌'}</span>`;
+        } catch (error) {
+          return `<span class="error">${name}: ❌ (${error.message})</span>`;
+        }
+      });
+      
+      statusDiv.innerHTML = results.join('<br>');
+    }
+    
+    // 頁面載入完成後初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      updateLoadingStatus();
+      addTestResult('頁面載入', 'success', '✅ 測試頁面載入完成');
+    });
+  </script>
+</body>
+</html>

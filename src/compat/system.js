@@ -56,7 +56,7 @@
       AttachmentsManager,
       EventHandlers,
       UserDisplayManager,
-    } = await import('./src/main.js');
+    } = await import('../main.js');
 
     // ---------------------------------------------------------------------------
     // 舊版全域 API 相容層
