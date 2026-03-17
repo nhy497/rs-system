@@ -5,6 +5,7 @@
 
 import { STORAGE_KEY } from '../constants/app-constants.js';
 import { formatFileSize } from '../utils/formatters.js';
+import { StorageCodec } from '../utils/storage-codec.js';
 
 /**
  * 記錄服務對象
@@ -33,34 +34,10 @@ export const RecordsService = {
         return this._cache.records;
       }
       
-      const encoded = localStorage.getItem(STORAGE_KEY);
-      if (!encoded) {
-        console.log('📦 parseRecords() 讀取筆數: 0 (無數據)');
-        this._cache.records = [];
-        this._cache.lastSync = Date.now();
-        return [];
-      }
-      
-      let records = [];
-      try {
-        // 統一編碼方式：encodeURIComponent + btoa（支援中文）
-        records = JSON.parse(decodeURIComponent(atob(encoded)));
-      } catch (e1) {
-        try {
-          // 兼容舊的 btoa 方式
-          records = JSON.parse(atob(encoded));
-        } catch (e2) {
-          try {
-            // 最後嘗試直接 JSON 解析
-            records = JSON.parse(encoded);
-          } catch (e3) {
-            console.warn('⚠️ parseRecords() 解析失敗:', e3);
-            records = [];
-          }
-        }
-      }
-      
+      // 使用 StorageCodec 統一解碼
+      const records = StorageCodec.loadFromStorage(STORAGE_KEY, []);
       const safe = Array.isArray(records) ? records : [];
+      
       console.log(`📦 parseRecords() 讀取筆數: ${safe.length}`);
       if (safe.length > 0) {
         console.log(`📊 第一筆記錄範例:`, safe[0]);
@@ -99,9 +76,11 @@ export const RecordsService = {
         return record;
       });
       
-      // 統一編碼方式：encodeURIComponent + btoa（支援中文）
-      const jsonStr = JSON.stringify(recordsWithUserId);
-      const encoded = btoa(encodeURIComponent(jsonStr));
+      // 使用 StorageCodec 統一編碼
+      const encoded = StorageCodec.encode(recordsWithUserId);
+      if (!encoded) {
+        throw new Error('編碼失敗');
+      }
       
       // 檢查儲存空間
       if (encoded.length > 4 * 1024 * 1024) { // 4MB 限制

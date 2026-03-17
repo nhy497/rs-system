@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StorageCodec 測試</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 0.5rem;
+    }
+    .test-section {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-section h2 {
+      color: #007bff;
+      margin-top: 0;
+    }
+    .status {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      font-family: monospace;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0.25rem;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #output {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      min-height: 200px;
+      max-height: 600px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 StorageCodec 與測試框架驗證</h1>
+  
+  <div class="test-section">
+    <h2>📦 測試說明</h2>
+    <p>此頁面用於驗證：</p>
+    <ul>
+      <li><code>src/utils/storage-codec.js</code> - 統一的編碼/解碼工具</li>
+      <li><code>tests/manual/test-framework.js</code> - 測試框架工具</li>
+      <li><code>src/core/storage-manager.js</code> - 更新後的儲存管理器</li>
+      <li><code>src/services/records-service.js</code> - 更新後的記錄服務</li>
+    </ul>
+  </div>
+
+  <div class="test-section">
+    <h2>🧪 執行測試</h2>
+    <button onclick="runAllTests()">執行所有測試</button>
+    <button onclick="clearOutput()">清除輸出</button>
+    <button onclick="localStorage.clear()">清除 LocalStorage</button>
+  </div>
+
+  <div class="test-section">
+    <h2>📊 測試輸出</h2>
+    <div id="output"></div>
+  </div>
+
+  <script type="module">
+    import { StorageCodec } from './src/utils/storage-codec.js';
+    import { TestFramework } from './tests/manual/test-framework.js';
+    import { STORAGE_MANAGER } from './src/core/storage-manager.js';
+    import { RecordsService } from './src/services/records-service.js';
+
+    // 將模組暴露到全域以便按鈕使用
+    window.StorageCodec = StorageCodec;
+    window.TestFramework = TestFramework;
+    window.STORAGE_MANAGER = STORAGE_MANAGER;
+    window.RecordsService = RecordsService;
+
+    const output = document.getElementById('output');
+    
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = type;
+      div.textContent = message;
+      output.appendChild(div);
+      console.log(message);
+    }
+
+    window.clearOutput = function() {
+      output.innerHTML = '';
+    };
+
+    window.runAllTests = async function() {
+      clearOutput();
+      
+      const tests = [
+        {
+          name: 'StorageCodec.encode() 基本編碼',
+          fn: () => {
+            const data = { name: '測試', value: 123 };
+            const encoded = StorageCodec.encode(data);
+            if (!encoded) throw new Error('編碼失敗');
+            if (typeof encoded !== 'string') throw new Error('編碼結果應為字串');
+            log(`✓ 編碼成功: ${encoded.substring(0, 50)}...`);
+          }
+        },
+        {
+          name: 'StorageCodec.decode() 基本解碼',
+          fn: () => {
+            const data = { name: '測試', value: 123 };
+            const encoded = StorageCodec.encode(data);
+            const decoded = StorageCodec.decode(encoded);
+            if (!decoded) throw new Error('解碼失敗');
+            if (decoded.name !== data.name) throw new Error('解碼資料不匹配');
+            log(`✓ 解碼成功: ${JSON.stringify(decoded)}`);
+          }
+        },
+        {
+          name: 'StorageCodec 支援中文',
+          fn: () => {
+            const data = { 
+              課程名稱: '跳繩課程',
+              內容: '這是一個測試：包含中文、數字123、符號！@#'
+            };
+            const encoded = StorageCodec.encode(data);
+            const decoded = StorageCodec.decode(encoded);
+            if (decoded.課程名稱 !== data.課程名稱) throw new Error('中文解碼失敗');
+            log(`✓ 中文支援正常: ${decoded.課程名稱}`);
+          }
+        },
+        {
+          name: 'StorageCodec.saveToStorage() 與 loadFromStorage()',
+          fn: () => {
+            const testKey = 'test-storage-codec';
+            const testData = { id: 1, name: '測試記錄' };
+            
+            // 儲存
+            const saved = StorageCodec.saveToStorage(testKey, testData);
+            if (!saved) throw new Error('儲存失敗');
+            
+            // 載入
+            const loaded = StorageCodec.loadFromStorage(testKey);
+            if (!loaded || loaded.name !== testData.name) throw new Error('載入失敗');
+            
+            // 清理
+            localStorage.removeItem(testKey);
+            log(`✓ 儲存和載入功能正常`);
+          }
+        },
+        {
+          name: 'StorageCodec 處理空值',
+          fn: () => {
+            const result1 = StorageCodec.decode(null);
+            const result2 = StorageCodec.decode('');
+            const result3 = StorageCodec.loadFromStorage('non-existent-key', 'default');
+            
+            if (result1 !== null) throw new Error('null 處理失敗');
+            if (result2 !== null) throw new Error('空字串處理失敗');
+            if (result3 !== 'default') throw new Error('預設值處理失敗');
+            
+            log(`✓ 空值處理正常`);
+          }
+        },
+        {
+          name: 'StorageCodec 向後兼容（舊版 btoa）',
+          fn: () => {
+            // 模擬舊版編碼（僅 btoa）
+            const data = { test: 'legacy' };
+            const oldEncoded = btoa(JSON.stringify(data));
+            const decoded = StorageCodec.decode(oldEncoded);
+            
+            if (!decoded || decoded.test !== 'legacy') throw new Error('向後兼容失敗');
+            log(`✓ 向後兼容正常（btoa 格式）`);
+          }
+        },
+        {
+          name: 'StorageCodec 向後兼容（純 JSON）',
+          fn: () => {
+            // 模擬最舊版編碼（純 JSON）
+            const data = { test: 'plain' };
+            const plainJson = JSON.stringify(data);
+            const decoded = StorageCodec.decode(plainJson);
+            
+            if (!decoded || decoded.test !== 'plain') throw new Error('向後兼容失敗');
+            log(`✓ 向後兼容正常（純 JSON 格式）`);
+          }
+        },
+        {
+          name: 'STORAGE_MANAGER 使用 StorageCodec',
+          fn: async () => {
+            // 測試 STORAGE_MANAGER 是否正確使用 StorageCodec
+            const testRecords = [
+              { id: 1, className: '測試班級', classDate: '2024-01-01' }
+            ];
+            
+            const saved = await STORAGE_MANAGER.saveCheckpoints(testRecords);
+            if (!saved) throw new Error('儲存失敗');
+            
+            const loaded = await STORAGE_MANAGER.getCheckpoints();
+            if (!loaded || loaded.length === 0) throw new Error('載入失敗');
+            if (loaded[0].className !== testRecords[0].className) throw new Error('資料不匹配');
+            
+            log(`✓ STORAGE_MANAGER 整合正常`);
+          }
+        },
+        {
+          name: 'RecordsService 使用 StorageCodec',
+          fn: () => {
+            // 測試 RecordsService 是否正確使用 StorageCodec
+            const testRecords = [
+              { id: 'rec1', className: '測試班級', classDate: '2024-01-01' }
+            ];
+            
+            RecordsService.saveRecords(testRecords);
+            const loaded = RecordsService.getAllRecords();
+            
+            if (!loaded || loaded.length === 0) throw new Error('載入失敗');
+            if (loaded[0].className !== testRecords[0].className) throw new Error('資料不匹配');
+            
+            log(`✓ RecordsService 整合正常`);
+          }
+        },
+        {
+          name: 'TestFramework 基本功能',
+          fn: async () => {
+            const tf = Object.create(TestFramework);
+            tf.results = [];
+            
+            await tf.runTest('測試1', () => {});
+            await tf.runTest('測試2', () => { throw new Error('預期失敗'); });
+            
+            if (tf.results.length !== 2) throw new Error('結果記錄錯誤');
+            if (tf.results[0].status !== 'pass') throw new Error('成功測試記錄錯誤');
+            if (tf.results[1].status !== 'fail') throw new Error('失敗測試記錄錯誤');
+            
+            log(`✓ TestFramework 功能正常`);
+          }
+        }
+      ];
+
+      const summary = await TestFramework.runTests(tests);
+      
+      log('\n' + '='.repeat(60), 'info');
+      log(`📊 總結: ${summary.passed} 通過 / ${summary.failed} 失敗 / 共 ${summary.total} 項`, 
+          summary.failed === 0 ? 'success' : 'error');
+      log('='.repeat(60), 'info');
+    };
+
+    // 自動執行測試
+    console.log('✅ 模組載入成功，準備執行測試...');
+    log('✅ 所有模組已載入，點擊「執行所有測試」開始測試', 'success');
+  </script>
+</body>
+</html>
