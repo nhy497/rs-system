@@ -39,27 +39,27 @@ module.exports = {
     'max-len': ['warn', { code: 120 }],
     'no-trailing-spaces': 'error',
     'eol-last': 'error',
-    
+
     // ES6+ 規則
     'prefer-template': 'warn',
     'template-curly-spacing': 'error',
     'object-shorthand': 'warn',
     'prefer-destructuring': 'warn',
-    
+
     // 函數規則
     'func-style': ['error', 'expression', { allowArrowFunctions: true }],
     'arrow-body-style': ['error', 'as-needed'],
     'arrow-parens': ['error', 'as-needed'],
-    
+
     // 錯誤處理
     'no-throw-literal': 'error',
     'prefer-promise-reject-errors': 'error',
-    
+
     // 代碼複雜度
     'complexity': ['warn', 10],
     'max-depth': ['warn', 4],
     'max-params': ['warn', 4],
-    
+
     // 測試相關規則
     'playwright/valid-expect': 'error',
     'playwright/missing-playwright-await': 'error',
@@ -69,7 +69,7 @@ module.exports = {
     'playwright/prefer-web-first-assertions': 'warn',
     'playwright/prefer-to-have-count': 'warn',
     'playwright/prefer-to-be-visible': 'warn',
-    
+
     // TypeScript 規則（如果使用 TS）
     '@typescript-eslint/no-unused-vars': 'warn',
     '@typescript-eslint/no-explicit-any': 'warn',
@@ -133,14 +133,14 @@ module.exports = {
     beforeAll: 'readonly',
     afterAll: 'readonly',
     vi: 'readonly',
-    
+
     // Playwright 全局變量
     page: 'readonly',
     context: 'readonly',
     browser: 'readonly',
     browserName: 'readonly',
     deviceName: 'readonly',
-    
+
     // 自定義全局變量
     PouchDB: 'readonly',
     CONFIG: 'readonly'

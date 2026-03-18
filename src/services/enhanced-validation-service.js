@@ -18,7 +18,7 @@ const VALIDATION_RULES = {
     pattern: /^[a-zA-Z0-9_\u4e00-\u9fa5]+$/,
     message: '用戶名必須為3-20個字符，只能包含字母、數字、下劃線和中文字符'
   },
-  
+
   // 密碼驗證
   password: {
     required: true,
@@ -27,14 +27,14 @@ const VALIDATION_RULES = {
     pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/,
     message: '密碼必須至少8個字符，包含大小寫字母和數字'
   },
-  
+
   // 郵箱驗證
   email: {
     required: false,
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     message: '請輸入有效的郵箱地址'
   },
-  
+
   // 班級名稱驗證
   className: {
     required: true,
@@ -44,14 +44,14 @@ const VALIDATION_RULES = {
     sanitize: true,
     message: '班級名稱不能為空且不超過50個字符'
   },
-  
+
   // 課堂日期驗證
   classDate: {
     required: true,
     pattern: /^\d{4}-\d{2}-\d{2}$/,
     message: '請輸入有效的日期格式 (YYYY-MM-DD)'
   },
-  
+
   // 人數驗證
   classSize: {
     required: false,
@@ -60,7 +60,7 @@ const VALIDATION_RULES = {
     type: 'number',
     message: '人數必須為1-100之間的數字'
   },
-  
+
   // 備註驗證
   notes: {
     required: false,

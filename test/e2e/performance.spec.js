@@ -15,7 +15,7 @@ test.describe('性能測試', () => {
       };
 
       // 監控 LCP
-      new PerformanceObserver((list) => {
+      new PerformanceObserver(list => {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1];
         window.performanceMetrics.largestContentfulPaint = lastEntry.startTime;
@@ -23,7 +23,7 @@ test.describe('性能測試', () => {
 
       // 監控 CLS
       let clsValue = 0;
-      new PerformanceObserver((list) => {
+      new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           if (!entry.hadRecentInput) {
             clsValue += entry.value;
@@ -33,14 +33,14 @@ test.describe('性能測試', () => {
       }).observe({ entryTypes: ['layout-shift'] });
 
       // 監控 FID
-      new PerformanceObserver((list) => {
+      new PerformanceObserver(list => {
         for (const entry of list.getEntries()) {
           window.performanceMetrics.firstInputDelay = entry.processingStart - entry.startTime;
         }
       }).observe({ entryTypes: ['first-input'] });
 
       // 監控 FCP
-      new PerformanceObserver((list) => {
+      new PerformanceObserver(list => {
         const entries = list.getEntries();
         const fcpEntry = entries.find(entry => entry.name === 'first-contentful-paint');
         if (fcpEntry) {
@@ -52,9 +52,9 @@ test.describe('性能測試', () => {
 
   test('頁面加載性能應該符合標準', async ({ page }) => {
     const startTime = Date.now();
-    
+
     await page.goto('/index.html', { waitUntil: 'networkidle' });
-    
+
     // 等待頁面完全加載
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000); // 等待額外渲染
@@ -86,7 +86,7 @@ test.describe('性能測試', () => {
 
   test('資源加載應該高效', async ({ page }) => {
     const responsePromises = [];
-    
+
     page.on('response', response => {
       if (response.url().includes('.js') || response.url().includes('.css')) {
         responsePromises.push(response);
@@ -132,13 +132,13 @@ test.describe('性能測試', () => {
     // 測試 JavaScript 執行時間
     const jsPerformance = await page.evaluate(() => {
       const startTime = performance.now();
-      
+
       // 模擬一些 JavaScript 操作
       const testArray = Array.from({ length: 10000 }, (_, i) => i);
       const filtered = testArray.filter(x => x % 2 === 0);
       const mapped = filtered.map(x => x * 2);
       const reduced = mapped.reduce((sum, x) => sum + x, 0);
-      
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
@@ -151,10 +151,10 @@ test.describe('性能測試', () => {
         document.body.appendChild(div);
         testElements.push(div);
       }
-      
+
       // 清理
       testElements.forEach(el => el.remove());
-      
+
       const domEndTime = performance.now();
       const domExecutionTime = domEndTime - domStartTime;
 
@@ -195,44 +195,42 @@ test.describe('性能測試', () => {
     });
 
     // 測試滾動性能
-    const scrollPerformance = await page.evaluate(() => {
-      return new Promise((resolve) => {
-        let frameCount = 0;
-        let lastTimestamp = performance.now();
-        let droppedFrames = 0;
-        
-        const scrollContainer = document.querySelector('main') || document.documentElement;
-        
-        function scrollStep() {
-          const startTime = performance.now();
-          
-          scrollContainer.scrollBy(0, 50);
-          
-          const endTime = performance.now();
-          const frameTime = endTime - lastTimestamp;
-          
-          if (frameTime > 16.67) { // 60fps = 16.67ms per frame
-            droppedFrames++;
-          }
-          
-          frameCount++;
-          lastTimestamp = endTime;
-          
-          if (frameCount < 60) { // 測試 60 幀
-            requestAnimationFrame(scrollStep);
-          } else {
-            resolve({
-              totalFrames: frameCount,
-              droppedFrames: droppedFrames,
-              frameDropRate: (droppedFrames / frameCount) * 100,
-              averageFrameTime: (endTime - startTime) / frameCount
-            });
-          }
+    const scrollPerformance = await page.evaluate(() => new Promise(resolve => {
+      let frameCount = 0;
+      let lastTimestamp = performance.now();
+      let droppedFrames = 0;
+
+      const scrollContainer = document.querySelector('main') || document.documentElement;
+
+      function scrollStep() {
+        const startTime = performance.now();
+
+        scrollContainer.scrollBy(0, 50);
+
+        const endTime = performance.now();
+        const frameTime = endTime - lastTimestamp;
+
+        if (frameTime > 16.67) { // 60fps = 16.67ms per frame
+          droppedFrames++;
         }
-        
-        requestAnimationFrame(scrollStep);
-      });
-    });
+
+        frameCount++;
+        lastTimestamp = endTime;
+
+        if (frameCount < 60) { // 測試 60 幀
+          requestAnimationFrame(scrollStep);
+        } else {
+          resolve({
+            totalFrames: frameCount,
+            droppedFrames,
+            frameDropRate: (droppedFrames / frameCount) * 100,
+            averageFrameTime: (endTime - startTime) / frameCount
+          });
+        }
+      }
+
+      requestAnimationFrame(scrollStep);
+    }));
 
     console.log('滾動性能:', scrollPerformance);
 
@@ -326,10 +324,10 @@ test.describe('性能測試', () => {
           document.body.appendChild(div);
           elements.push(div);
         }
-        
+
         // 立即清理
         elements.forEach(el => el.remove());
-        
+
         // 強制垃圾回收（如果可用）
         if (window.gc) {
           window.gc();
@@ -368,7 +366,7 @@ test.describe('性能測試', () => {
       requestMetrics.push({
         url: request.url(),
         method: request.method(),
-        startTime: startTime
+        startTime
       });
     });
 

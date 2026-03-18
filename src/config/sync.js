@@ -1,12 +1,12 @@
 /**
  * 雲端同步配置
- * 
+ *
  * 免費方案選擇：
- * 
+ *
  * 【方案 1】IBM Cloudant（推薦）
  *   - 免費額度：1GB 存儲 + 每秒 20 次讀寫
  *   - 設置步驟：見下方「IBM Cloudant 設置指南」
- * 
+ *
  * 【方案 2】自架 CouchDB
  *   - 完全免費但需要自己的伺服器
  *   - 適合有技術能力的用戶
@@ -15,11 +15,11 @@
 const SYNC_CONFIG = {
   // 是否啟用雲端同步
   ENABLE_SYNC: false,
-  
+
   // 遠程數據庫 URL
   // 填入格式：https://username:password@your-instance.cloudantnosqldb.appdomain.cloud/rs-system-shared
   REMOTE_DB_URL: '',
-  
+
   // 同步選項
   OPTIONS: {
     live: true,        // 即時同步
@@ -65,7 +65,7 @@ const SYNC_CONFIG = {
   2. 複製 "url" 的值（類似下方格式）：
      https://abc123-xxx:longpassword@abc123-xxx.cloudantnosqldb.appdomain.cloud
   3. 在 URL 後面加上 /rs-system-shared
-  
+
   完整範例：
   https://abc123:pass@abc123.cloudantnosqldb.appdomain.cloud/rs-system-shared
 

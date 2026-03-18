@@ -1,9 +1,9 @@
 /**
  * 教學花式管理器 - 處理花式標籤與選擇
  * @module ui/tricks-manager
- * 
+ *
  * 源代碼位置: system.js L1843-1885
- * 
+ *
  * 主要功能:
  * - 花式標籤渲染
  * - 花式選擇與取消
@@ -48,7 +48,7 @@ export const TricksManager = {
     if (!el) return;
 
     this.tricks = tricks || [];
-    
+
     el.innerHTML = this.tricks.map((t, i) => {
       const masteryText = (t.mastery ?? t.mastery === 0) ? `掌握 ${t.mastery}%` : '';
       const timeText = (t.plannedTime != null || t.actualTime != null)
@@ -72,10 +72,10 @@ export const TricksManager = {
         <button type="button" class="remove-trick" data-i="${i}" aria-label="移除">×</button>
       </div>`;
     }).join('');
-    
+
     // 綁定等級選擇事件
     el.querySelectorAll('.trick-level').forEach(sel => {
-      sel.addEventListener('change', (e) => {
+      sel.addEventListener('change', e => {
         const idx = +e.target.dataset.i;
         if (this.tricks[idx]) {
           this.tricks[idx].level = e.target.value;
@@ -85,7 +85,7 @@ export const TricksManager = {
         }
       });
     });
-    
+
     // 綁定移除按鈕事件
     el.querySelectorAll('.remove-trick').forEach(btn => {
       btn.onclick = () => {
@@ -219,7 +219,7 @@ export const TricksManager = {
    */
   searchTricks(tricks, searchTerm) {
     if (!searchTerm || !searchTerm.trim()) return tricks;
-    
+
     const term = searchTerm.toLowerCase().trim();
     return tricks.filter(t => {
       const name = (t.name || '').toLowerCase();
@@ -247,7 +247,7 @@ export const TricksManager = {
    */
   getTrickUsageCount(trickId, records) {
     if (!records || !Array.isArray(records)) return 0;
-    
+
     let count = 0;
     records.forEach(record => {
       if (Array.isArray(record.tricks)) {
@@ -266,9 +266,9 @@ export const TricksManager = {
    */
   getMostUsedTricks(records, limit = 10) {
     if (!records || !Array.isArray(records)) return [];
-    
+
     const trickCounts = {};
-    
+
     records.forEach(record => {
       if (Array.isArray(record.tricks)) {
         record.tricks.forEach(trick => {
@@ -283,7 +283,7 @@ export const TricksManager = {
         });
       }
     });
-    
+
     return Object.values(trickCounts)
       .sort((a, b) => b.count - a.count)
       .slice(0, limit);

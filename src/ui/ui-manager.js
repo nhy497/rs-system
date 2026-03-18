@@ -1,9 +1,9 @@
 /**
  * UI 管理器 - 統一管理介面顯示與狀態
  * @module ui/ui-manager
- * 
+ *
  * 源代碼位置: system.js L1135-1204
- * 
+ *
  * 主要功能:
  * - UI 顯示/隱藏控制
  * - 載入狀態管理
@@ -90,7 +90,7 @@ export const UI_MANAGER = {
    */
   setupResponsive() {
     const mediaQuery = window.matchMedia('(max-width: 768px)');
-    mediaQuery.addListener((e) => {
+    mediaQuery.addListener(e => {
       if (e.matches) {
         const sidebar = document.getElementById('sidebar');
         if (sidebar) sidebar.classList.add('collapsed');
@@ -103,7 +103,7 @@ export const UI_MANAGER = {
    * Ctrl+S / Cmd+S: 儲存
    */
   setupKeyboardShortcuts() {
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         const btnSave = document.getElementById('btnSave');
@@ -187,7 +187,7 @@ export const UI_MANAGER = {
       toast.textContent = message;
       toast.className = `toast toast-${type}`;
       toast.hidden = false;
-      
+
       clearTimeout(this._toastTimer);
       this._toastTimer = setTimeout(() => {
         toast.hidden = true;

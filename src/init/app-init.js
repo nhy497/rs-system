@@ -1,14 +1,14 @@
 /**
  * 應用程式初始化 - 主應用啟動邏輯
  * @module init/app-init
- * 
+ *
  * 此模組負責協調整個應用程式的初始化流程，包括：
  * - 核心服務初始化
  * - UI 組件初始化
  * - 資料載入
  * - 事件處理器設置
  * - 錯誤處理
- * 
+ *
  * 依賴於 Phase 1-3 的模組（待實現時取消註解）
  */
 
@@ -55,15 +55,15 @@ export const AppInit = {
    * @param {boolean} [options.skipUI] - 是否跳過 UI 初始化
    * @param {Function} [options.onProgress] - 進度回調函式
    * @returns {Promise<boolean>} 初始化是否成功
-   * 
+   *
    * @example
    * // 基本初始化
    * await AppInit.init();
-   * 
+   *
    * @example
    * // 開發環境初始化
    * await AppInit.init({ env: 'development' });
-   * 
+   *
    * @example
    * // 帶進度回調的初始化
    * await AppInit.init({
@@ -124,10 +124,10 @@ export const AppInit = {
 
       AppState.initialized = true;
       AppState.initEndTime = Date.now();
-      
+
       const duration = AppState.initEndTime - AppState.initStartTime;
       console.log(`✅ 應用程式初始化完成 (耗時: ${duration}ms)`);
-      
+
       return true;
     } catch (error) {
       this.handleInitError(error);
@@ -196,12 +196,12 @@ export const AppInit = {
     try {
       // TODO: 待 Phase 2 完成後啟用
       // await STORAGE_MANAGER.init();
-      
+
       // 臨時實現：使用全域物件（如果存在）
       if (typeof window !== 'undefined' && window.STORAGE_MANAGER) {
         await window.STORAGE_MANAGER.init();
       }
-      
+
       AppState.modules.storage = true;
       console.log('✅ 儲存系統初始化完成');
     } catch (error) {
@@ -220,12 +220,12 @@ export const AppInit = {
     try {
       // TODO: 待 Phase 2 完成後啟用
       // await LOGIN_MANAGER.init();
-      
+
       // 臨時實現：使用全域物件（如果存在）
       if (typeof window !== 'undefined' && window.LOGIN_MANAGER) {
         window.LOGIN_MANAGER.init();
       }
-      
+
       AppState.modules.auth = true;
       console.log('✅ 認證系統初始化完成');
     } catch (error) {
@@ -244,12 +244,12 @@ export const AppInit = {
     try {
       // TODO: 待 Phase 3 完成後啟用
       // await UI_MANAGER.init();
-      
+
       // 臨時實現：使用全域物件（如果存在）
       if (typeof window !== 'undefined' && window.UI_MANAGER) {
         window.UI_MANAGER.init();
       }
-      
+
       AppState.modules.ui = true;
       console.log('✅ UI 系統初始化完成');
     } catch (error) {
@@ -271,13 +271,13 @@ export const AppInit = {
         const currentUser = window.LOGIN_MANAGER?.getCurrentUser?.();
         const dbName = AppState.config?.DB_NAME || 'rs-system-shared';
         const remoteURL = AppState.config?.REMOTE_DB_URL || null;
-        
+
         const db = new PouchDB(dbName);
         await window.storageService.init(db, remoteURL);
-        
+
         console.log(`✅ PouchDB 初始化成功: ${dbName}`);
       }
-      
+
       AppState.modules.services = true;
       console.log('✅ 服務層初始化完成');
     } catch (error) {
@@ -297,10 +297,10 @@ export const AppInit = {
     try {
       // TODO: 待 Phase 3 完成後啟用
       // EventHandlers.init();
-      
+
       // 設置基本事件處理器
       this._setupBasicEventHandlers();
-      
+
       AppState.modules.eventHandlers = true;
       console.log('✅ 事件處理器初始化完成');
     } catch (error) {
@@ -319,9 +319,9 @@ export const AppInit = {
     try {
       // 載入用戶偏好設定
       await this.loadUserPreferences();
-      
+
       // TODO: 載入其他初始資料
-      
+
       console.log('✅ 初始資料載入完成');
     } catch (error) {
       // 資料載入失敗不應阻止應用程式啟動
@@ -373,7 +373,7 @@ export const AppInit = {
     // 顯示錯誤訊息給用戶
     if (typeof window !== 'undefined') {
       const errorMsg = `應用程式初始化失敗：${error.message}\n\n請重新載入頁面或聯繫管理員。`;
-      
+
       // 嘗試使用 toast 顯示
       if (window.toast) {
         window.toast(errorMsg, 'error');
@@ -395,20 +395,20 @@ export const AppInit = {
     if (typeof window === 'undefined') return;
 
     // 捕獲未處理的錯誤
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', event => {
       console.error('❌ 全域錯誤:', event.error);
       AppState.errors.push({ type: 'global', error: event.error });
-      
+
       if (window.loggerService) {
         window.loggerService.logSystemEvent('global_error', event.error?.message || 'Unknown error', 'error');
       }
     });
 
     // 捕獲未處理的 Promise 拒絕
-    window.addEventListener('unhandledrejection', (event) => {
+    window.addEventListener('unhandledrejection', event => {
       console.error('❌ 未處理的 Promise 拒絕:', event.reason);
       AppState.errors.push({ type: 'promise', error: event.reason });
-      
+
       if (window.loggerService) {
         window.loggerService.logSystemEvent('unhandled_rejection', event.reason?.message || 'Unknown rejection', 'error');
       }
@@ -462,7 +462,7 @@ export const AppInit = {
    */
   _loadConfig(env) {
     AppState.config = getConfig(env);
-    
+
     if (AppState.config.DEBUG) {
       console.log('📋 應用程式配置:', AppState.config);
     }
@@ -488,7 +488,7 @@ export const AppInit = {
     }
 
     console.log(`🔔 執行 ${this._readyCallbacks.length} 個就緒回調...`);
-    
+
     this._readyCallbacks.forEach(callback => {
       try {
         callback();
@@ -521,7 +521,7 @@ export const AppInit = {
     // 匯出按鈕
     const btnExport = document.getElementById('btnExport');
     if (btnExport) {
-      btnExport.addEventListener('click', (e) => {
+      btnExport.addEventListener('click', e => {
         e.preventDefault();
         if (typeof window.doExportCsv === 'function') {
           window.doExportCsv();
@@ -532,7 +532,7 @@ export const AppInit = {
     // 設定按鈕
     const btnSettings = document.getElementById('btnSettings');
     if (btnSettings) {
-      btnSettings.addEventListener('click', (e) => {
+      btnSettings.addEventListener('click', e => {
         e.preventDefault();
         alert('系統設置功能即將推出');
       });

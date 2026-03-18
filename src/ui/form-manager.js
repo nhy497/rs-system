@@ -1,9 +1,9 @@
 /**
  * 表單管理器 - 處理表單數據與驗證
  * @module ui/form-manager
- * 
+ *
  * 源代碼位置: system.js L1909-2100 (主要數據收集與載入邏輯)
- * 
+ *
  * 主要功能:
  * - 表單數據讀取與寫入
  * - 表單驗證
@@ -32,14 +32,14 @@ const SCORE_1_5_IDS = ['engagement', 'positivity', 'enthusiasm', 'satisfaction']
  */
 function todayStr() {
   const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /**
  * DOM 選擇器快捷函數
  */
-const $ = (id) => document.getElementById(id);
-const $q = (sel) => document.querySelector(sel);
+const $ = id => document.getElementById(id);
+const $q = sel => document.querySelector(sel);
 
 /**
  * 表單管理器
@@ -64,7 +64,7 @@ export const FormManager = {
     const date = ($('classDate')?.value || '').trim();
     const startTime = ($('classStartTime')?.value || '').trim();
     const endTime = ($('classEndTime')?.value || '').trim();
-    
+
     let classDurationMins = null;
     if (startTime && endTime) {
       const [sh, sm] = startTime.split(':').map(Number);
@@ -98,7 +98,7 @@ export const FormManager = {
     const selectedSkillBtn = $q('[data-name="skillLevel"] .selected');
     const selectedSkillLevel = selectedSkillBtn?.textContent?.trim() || '';
     const aggregatedSkillLevel = this.tricks.find(t => t.skillLevel)?.skillLevel || selectedSkillLevel;
-    
+
     return {
       classDate: date,
       className: ($('className')?.value || '').trim(),
@@ -107,7 +107,7 @@ export const FormManager = {
       teachingRole: ($('teachingRole')?.value || '').trim(),
       classStartTime: startTime,
       classEndTime: endTime,
-      classDurationMins: classDurationMins,
+      classDurationMins,
       notes: ($('notes')?.value || '').trim(),
       attachments: window._currentAttachments || [],
       engagement: parseInt($('engagement')?.value || '3', 10),
@@ -164,18 +164,18 @@ export const FormManager = {
     if ($('classEndTime')) $('classEndTime').value = rec.classEndTime || '';
     this.updateClassDuration();
     if ($('notes')) $('notes').value = rec.notes || '';
-    
+
     // 載入附件
     window._currentAttachments = rec.attachments || [];
     if (typeof window.displayAttachments === 'function') {
       window.displayAttachments();
     }
-    
+
     if ($('engagement')) $('engagement').value = rec.engagement ?? 3;
     document.querySelectorAll('[data-name="atmosphere"] button').forEach(b => {
       b.classList.toggle('selected', b.textContent.trim() === (rec.atmosphere || ''));
     });
-    
+
     this.tricks = Array.isArray(rec.tricks) ? rec.tricks.map(t => ({
       name: t.name || '',
       detail: t.detail || '',
@@ -185,11 +185,11 @@ export const FormManager = {
       actualTime: Number.isFinite(t.actualTime) ? t.actualTime : null,
       skillLevel: t.skillLevel || t.level || ''
     })) : [];
-    
+
     if (typeof window.renderTricks === 'function') {
       window.renderTricks();
     }
-    
+
     const trickMasteries = this.tricks.map(t => Number.isFinite(t.mastery) ? t.mastery : null).filter(v => v != null);
     const masterVal = trickMasteries.length ? Math.round(trickMasteries.reduce((a, b) => a + b, 0) / trickMasteries.length) : (rec.mastery ?? 50);
     if ($('mastery')) $('mastery').value = masterVal;
@@ -206,7 +206,7 @@ export const FormManager = {
     document.querySelectorAll('[data-name="skillLevel"] button').forEach(b => {
       b.classList.toggle('selected', b.textContent.trim() === skillLevel);
     });
-    
+
     if ($('helpOthers')) $('helpOthers').value = rec.helpOthers ?? 50;
     if ($('interaction')) $('interaction').value = rec.interaction ?? 50;
     if ($('teamwork')) $('teamwork').value = rec.teamwork ?? 50;
@@ -219,9 +219,9 @@ export const FormManager = {
     if ($('disciplineCount')) $('disciplineCount').value = rec.disciplineCount != null ? rec.disciplineCount : '';
     if ($('flexibility')) $('flexibility').value = rec.flexibility ?? 7;
     if ($('individual')) $('individual').value = rec.individual ?? 50;
-    
+
     RANGE_IDS.forEach(id => {
-      const r = $(id), valSpan = $('val-' + id);
+      const r = $(id), valSpan = $(`val-${id}`);
       if (r && valSpan) {
         valSpan.textContent = r.value;
         const q = r.closest('.slider-row')?.querySelector('.quick-btns');
@@ -274,7 +274,7 @@ export const FormManager = {
     if ($('flexibility')) $('flexibility').value = '7';
     if ($('individual')) $('individual').value = '50';
     RANGE_IDS.forEach(id => {
-      const r = $(id), valSpan = $('val-' + id);
+      const r = $(id), valSpan = $(`val-${id}`);
       if (r && valSpan) {
         valSpan.textContent = r.value;
         const q = r.closest('.slider-row')?.querySelector('.quick-btns');
@@ -337,7 +337,7 @@ export const FormManager = {
 
     el.setAttribute('aria-invalid', 'true');
     el.style.borderColor = 'var(--danger, #dc3545)';
-    
+
     // 可以添加錯誤訊息顯示
   },
 
@@ -405,8 +405,8 @@ export const FormManager = {
     const el = typeof selectElement === 'string' ? $(selectElement) : selectElement;
     if (!el || !Array.isArray(presets)) return;
 
-    el.innerHTML = '<option value="">請選擇...</option>' +
-      presets.map(preset => `<option value="${preset}">${preset}</option>`).join('');
+    el.innerHTML = `<option value="">請選擇...</option>${
+      presets.map(preset => `<option value="${preset}">${preset}</option>`).join('')}`;
   },
 
   /**
@@ -416,7 +416,7 @@ export const FormManager = {
    */
   updateRangeValue(rangeId, value) {
     const r = $(rangeId);
-    const valSpan = $('val-' + rangeId);
+    const valSpan = $(`val-${rangeId}`);
     if (r && valSpan) {
       r.value = value;
       valSpan.textContent = value;
@@ -449,15 +449,15 @@ export const FormManager = {
     const startTime = ($('classStartTime')?.value || '').trim();
     const endTime = ($('classEndTime')?.value || '').trim();
     const durationEl = $('classDuration');
-    
+
     if (!durationEl) return;
-    
+
     if (startTime && endTime) {
       const [sh, sm] = startTime.split(':').map(Number);
       const [eh, em] = endTime.split(':').map(Number);
       const startMins = sh * 60 + sm;
       const endMins = eh * 60 + em;
-      
+
       if (endMins > startMins) {
         const mins = endMins - startMins;
         const hours = Math.floor(mins / 60);
@@ -479,7 +479,7 @@ export const FormManager = {
    * @param {string} id - 滑桿 ID
    */
   bindRange(id) {
-    const r = $(id), valSpan = $('val-' + id);
+    const r = $(id), valSpan = $(`val-${id}`);
     if (!r || !valSpan) return;
     const quick = r.closest('.slider-row')?.querySelector('.quick-btns');
     const update = () => {
@@ -487,13 +487,13 @@ export const FormManager = {
       quick?.querySelectorAll('button').forEach(b => b.classList.toggle('active', String(b.dataset.v) === r.value));
     };
     r.addEventListener('input', update);
-    quick?.addEventListener('click', (e) => { 
+    quick?.addEventListener('click', e => {
       const btn = e.target.closest('button');
-      const v = btn?.dataset?.v; 
-      if (v != null) { 
-        r.value = v; 
-        update(); 
-      } 
+      const v = btn?.dataset?.v;
+      if (v != null) {
+        r.value = v;
+        update();
+      }
     });
     update();
   },

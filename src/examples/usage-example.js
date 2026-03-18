@@ -4,11 +4,11 @@
  */
 
 // 導入常量
-import { 
-  STORAGE_KEY, 
-  CLASS_PRESETS_KEY, 
-  PAGE_TITLES, 
-  TRICK_LEVELS 
+import {
+  STORAGE_KEY,
+  CLASS_PRESETS_KEY,
+  PAGE_TITLES,
+  TRICK_LEVELS
 } from '../constants/app-constants.js';
 
 // 導入 DOM 工具

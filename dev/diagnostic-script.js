@@ -65,14 +65,14 @@ if (user) {
   console.log(`  ✅ 已登入：${user.username}`);
   console.log(`     - 角色：${user.role}`);
 } else {
-  console.log(`  ⚠️  未登入`);
+  console.log('  ⚠️  未登入');
 }
 
 // 5. 建議操作
 console.log('\n%c5️⃣  建議操作', 'font-size:14px;font-weight:bold');
-console.log(`  • 測試儲存和刷新：window.testImmediateRefresh()`);
-console.log(`  • 強制刷新所有視圖：window.refreshAllViews()`);
-console.log(`  • 手動更新側邊欄：window.updateSidebarStats()`);
-console.log(`  • 詳細儲存診斷：window.debugSaveFlow()`);
+console.log('  • 測試儲存和刷新：window.testImmediateRefresh()');
+console.log('  • 強制刷新所有視圖：window.refreshAllViews()');
+console.log('  • 手動更新側邊欄：window.updateSidebarStats()');
+console.log('  • 詳細儲存診斷：window.debugSaveFlow()');
 
 console.log('\n%c診斷完成 ✅', 'font-size:12px;color:#059669');

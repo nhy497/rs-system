@@ -1,9 +1,9 @@
 /**
  * 模態窗口管理器 - 處理彈窗與對話框
  * @module ui/modal-manager
- * 
+ *
  * 源代碼位置: system.js L2732-2817
- * 
+ *
  * 主要功能:
  * - 模態窗口開啟/關閉
  * - 確認對話框
@@ -29,15 +29,15 @@ function escapeHtml(s) {
  * @returns {string} 格式化後的大小
  */
 function formatFileSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /**
  * DOM 選擇器
  */
-const $ = (id) => document.getElementById(id);
+const $ = id => document.getElementById(id);
 
 /**
  * 模態窗口管理器
@@ -83,7 +83,7 @@ export const ModalManager = {
     if (!modal) return;
 
     modal.hidden = true;
-    
+
     if (this.currentModal === modalId) {
       this.currentModal = null;
     }
@@ -112,15 +112,15 @@ export const ModalManager = {
    * @returns {Promise<boolean>} 確認結果
    */
   confirm(options) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const confirmed = window.confirm(options.message);
-      
+
       if (confirmed && options.onConfirm) {
         options.onConfirm();
       } else if (!confirmed && options.onCancel) {
         options.onCancel();
       }
-      
+
       resolve(confirmed);
     });
   },
@@ -149,7 +149,7 @@ export const ModalManager = {
     modal.className = 'modal';
     modal.hidden = true;
 
-    const buttonsHtml = (options.buttons || []).map(btn => 
+    const buttonsHtml = (options.buttons || []).map(btn =>
       `<button type="button" class="${btn.className || 'btn'}" data-action="${btn.action || 'close'}">
         ${escapeHtml(btn.text)}
       </button>`
@@ -185,7 +185,7 @@ export const ModalManager = {
     // 綁定按鈕事件
     modal.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const action = btn.dataset.action;
+        const {action} = btn.dataset;
         if (action === 'close') {
           this.closeModal(options.id);
         } else if (options.onAction) {
@@ -278,18 +278,18 @@ export const ModalManager = {
     const recs = records
       .filter(r => ((r.className || '').trim() || '—') === classKey)
       .sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
-    
-    const title = (classKey === '—' ? '未填寫班別' : classKey) + ' － 班別細節';
-    
+
+    const title = `${classKey === '—' ? '未填寫班別' : classKey} － 班別細節`;
+
     const titleEl = $('classDetailTitle');
     if (titleEl) titleEl.textContent = title;
-    
+
     const bodyEl = $('classDetailBody');
     if (bodyEl) {
       if (recs.length === 0) {
         bodyEl.innerHTML = '<p class="empty">此班別尚無課堂記錄。</p>';
       } else {
-        bodyEl.innerHTML = '<ul class="class-session-list">' + 
+        bodyEl.innerHTML = `<ul class="class-session-list">${
           recs.map(r => `
             <li class="class-session-item" data-date="${escapeHtml(r.classDate || '')}" data-class="${escapeHtml(r.className || '')}">
               <span class="date">${r.classDate || '–'}</span>
@@ -297,14 +297,14 @@ export const ModalManager = {
               <span class="hint">點擊查看詳情</span>
               <button type="button" class="delete-session-btn" aria-label="刪除此堂課">×</button>
             </li>
-          `).join('') + 
-          '</ul>';
-        
+          `).join('')
+        }</ul>`;
+
         // 綁定點擊事件
         bodyEl.querySelectorAll('.class-session-item').forEach(li => {
-          li.onclick = (e) => {
+          li.onclick = e => {
             if (e.target.classList.contains('delete-session-btn')) return;
-            const rec = records.find(r => 
+            const rec = records.find(r =>
               r.classDate === li.dataset.date && r.className === li.dataset.class
             );
             if (rec) {
@@ -312,8 +312,8 @@ export const ModalManager = {
               if (onShowDetail) onShowDetail(rec);
             }
           };
-          
-          li.querySelector('.delete-session-btn')?.addEventListener('click', (e) => {
+
+          li.querySelector('.delete-session-btn')?.addEventListener('click', e => {
             e.stopPropagation();
             const dateStr = li.dataset.date;
             const classStr = li.dataset.class;
@@ -325,7 +325,7 @@ export const ModalManager = {
         });
       }
     }
-    
+
     this.openModal('classDetailModal');
   },
 
@@ -336,15 +336,15 @@ export const ModalManager = {
    * @param {Function} onDelete - 刪除回調
    */
   showRecordDetail(record, onLoadIntoForm, onDelete) {
-    const tricksStr = Array.isArray(record.tricks) && record.tricks.length 
+    const tricksStr = Array.isArray(record.tricks) && record.tricks.length
       ? record.tricks.map(t => {
-          let str = escapeHtml(t.name);
-          if (t.detail) str += `（${escapeHtml(t.detail)}）`;
-          if (t.level) str += ` [${escapeHtml(t.level)}]`;
-          return str;
-        }).join('、')
+        let str = escapeHtml(t.name);
+        if (t.detail) str += `（${escapeHtml(t.detail)}）`;
+        if (t.level) str += ` [${escapeHtml(t.level)}]`;
+        return str;
+      }).join('、')
       : '—';
-    
+
     let durationStr = '—';
     if (record.classStartTime && record.classEndTime) {
       durationStr = `${record.classStartTime} - ${record.classEndTime}`;
@@ -354,10 +354,10 @@ export const ModalManager = {
         durationStr += ` (${h ? `${h}小時` : ''}${m ? `${m}分鐘` : ''})`;
       }
     }
-    
+
     const titleEl = $('detailTitle');
     if (titleEl) titleEl.textContent = `課堂詳情 · ${record.classDate || '–'}`;
-    
+
     const bodyEl = $('detailBody');
     if (bodyEl) {
       // Creator 測試模式橫幅
@@ -365,7 +365,7 @@ export const ModalManager = {
       if (record.creatorTestMode) {
         testModeBanner = '<div style="background: #3498db; color: white; padding: 12px; margin-bottom: 16px; border-radius: 6px; text-align: center; font-weight: 600;">🧪 Creator 測試模式記錄</div>';
       }
-      
+
       // 附件區域
       let attachmentsHtml = '';
       if (record.attachments && record.attachments.length > 0) {
@@ -380,7 +380,7 @@ export const ModalManager = {
             `).join('')}
           </dd>`;
       }
-      
+
       bodyEl.innerHTML = `
         ${testModeBanner}
         <dl>
@@ -400,18 +400,18 @@ export const ModalManager = {
           <button type="button" id="loadIntoFormBtn" class="btn btn-ghost">載入到表單（重溫／編輯）</button> 
           <button type="button" id="deleteRecordBtn" class="btn btn-danger-ghost">刪除此記錄</button>
         </p>`;
-      
+
       // 綁定按鈕事件
       $('loadIntoFormBtn')?.addEventListener('click', () => {
         if (onLoadIntoForm) onLoadIntoForm(record);
         this.closeModal('detailModal');
       });
-      
+
       $('deleteRecordBtn')?.addEventListener('click', () => {
         if (onDelete) onDelete(record.classDate, record.className);
       });
     }
-    
+
     this.openModal('detailModal');
   }
 };

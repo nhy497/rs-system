@@ -1,14 +1,14 @@
 /**
  * 登入頁面初始化 - 處理登入流程
  * @module init/login-page-init
- * 
+ *
  * 此模組負責登入頁面的所有初始化與互動邏輯，包括：
  * - 登入表單處理
  * - 註冊表單處理
  * - 自動登入檢查
  * - 登入後重定向
  * - 表單驗證
- * 
+ *
  * 依賴於 Phase 1-2 的模組（待實現時取消註解）
  */
 
@@ -26,7 +26,7 @@ export const LoginPageInit = {
   /**
    * 初始化登入頁面
    * @returns {boolean} 初始化是否成功
-   * 
+   *
    * @example
    * // 在 login.html 頁面自動初始化
    * LoginPageInit.init();
@@ -37,7 +37,7 @@ export const LoginPageInit = {
     // 檢查必要元素
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
-    
+
     if (!loginForm || !signupForm) {
       console.warn('⚠️ 登入頁面元素不完整，跳過初始化');
       return false;
@@ -46,16 +46,16 @@ export const LoginPageInit = {
     try {
       // 設置登入表單
       this.setupLoginForm();
-      
+
       // 設置註冊表單
       this.setupSignupForm();
-      
+
       // 設置切換按鈕
       this.setupSwitchButtons();
-      
+
       // 檢查自動登入
       this.checkAutoLogin();
-      
+
       console.log('✅ 登入頁面初始化完成');
       return true;
     } catch (error) {
@@ -72,7 +72,7 @@ export const LoginPageInit = {
     const loginForm = document.getElementById('loginForm');
     if (!loginForm) return;
 
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', e => {
       e.preventDefault();
       this.handleLogin(e);
     });
@@ -80,7 +80,7 @@ export const LoginPageInit = {
     // 設置登入按鈕
     const btnLogin = document.getElementById('btnLogin');
     if (btnLogin) {
-      btnLogin.addEventListener('click', (e) => {
+      btnLogin.addEventListener('click', e => {
         e.preventDefault();
         loginForm.dispatchEvent(new Event('submit'));
       });
@@ -96,7 +96,7 @@ export const LoginPageInit = {
     const signupForm = document.getElementById('signupForm');
     if (!signupForm) return;
 
-    signupForm.addEventListener('submit', (e) => {
+    signupForm.addEventListener('submit', e => {
       e.preventDefault();
       this.handleSignup(e);
     });
@@ -104,7 +104,7 @@ export const LoginPageInit = {
     // 設置註冊按鈕
     const btnSignup = document.getElementById('btnSignup');
     if (btnSignup) {
-      btnSignup.addEventListener('click', (e) => {
+      btnSignup.addEventListener('click', e => {
         e.preventDefault();
         signupForm.dispatchEvent(new Event('submit'));
       });
@@ -119,14 +119,14 @@ export const LoginPageInit = {
   setupSwitchButtons() {
     const loginSection = document.getElementById('loginSection');
     const signupSection = document.getElementById('signupSection');
-    
+
     // 切換到註冊
     const switchToSignup = document.getElementById('switchToSignup');
     const toSignupSection = document.getElementById('toSignupSection');
-    
+
     [switchToSignup, toSignupSection].forEach(btn => {
       if (btn) {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', e => {
           e.preventDefault();
           if (loginSection) loginSection.hidden = true;
           if (signupSection) signupSection.hidden = false;
@@ -138,10 +138,10 @@ export const LoginPageInit = {
     // 切換到登入
     const switchToLogin = document.getElementById('switchToLogin');
     const toLoginSection = document.getElementById('toLoginSection');
-    
+
     [switchToLogin, toLoginSection].forEach(btn => {
       if (btn) {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', e => {
           e.preventDefault();
           if (signupSection) signupSection.hidden = true;
           if (loginSection) loginSection.hidden = false;
@@ -159,7 +159,7 @@ export const LoginPageInit = {
    */
   handleLogin(event) {
     event.preventDefault();
-    
+
     const username = document.getElementById('username')?.value.trim();
     const password = document.getElementById('password')?.value;
     const rememberMe = document.getElementById('rememberMe')?.checked || false;
@@ -174,7 +174,7 @@ export const LoginPageInit = {
     try {
       // TODO: 待 Phase 2 完成後啟用
       // const result = LOGIN_MANAGER.login(username, password, rememberMe);
-      
+
       // 臨時實現：使用全域物件（如果存在）
       let result = null;
       if (typeof window !== 'undefined' && window.LOGIN_MANAGER) {
@@ -184,10 +184,10 @@ export const LoginPageInit = {
       if (result && result.success) {
         console.log('✅ 登入成功');
         this.showLoginSuccess('登入成功，正在跳轉...');
-        
+
         // 保存登入會話
         this.saveLoginSession(result.user);
-        
+
         // 跳轉到主應用
         setTimeout(() => {
           this.redirectToApp();
@@ -208,7 +208,7 @@ export const LoginPageInit = {
    */
   handleSignup(event) {
     event.preventDefault();
-    
+
     const username = document.getElementById('signupUsername')?.value.trim();
     const password = document.getElementById('signupPassword')?.value;
     const confirmPassword = document.getElementById('confirmPassword')?.value;
@@ -224,7 +224,7 @@ export const LoginPageInit = {
     try {
       // TODO: 待 Phase 2 完成後啟用
       // const result = LOGIN_MANAGER.signup(username, password, email);
-      
+
       // 臨時實現：使用全域物件（如果存在）
       let result = null;
       if (typeof window !== 'undefined' && window.LOGIN_MANAGER) {
@@ -234,10 +234,10 @@ export const LoginPageInit = {
       if (result && result.success) {
         console.log('✅ 註冊成功');
         this.showSignupSuccess('註冊成功！請使用新帳號登入');
-        
+
         // 清空註冊表單
         this.clearSignupForm();
-        
+
         // 3 秒後切換到登入表單
         setTimeout(() => {
           const signupSection = document.getElementById('signupSection');
@@ -264,7 +264,7 @@ export const LoginPageInit = {
     try {
       // TODO: 待 Phase 2 完成後啟用
       // LOGIN_MANAGER.logout();
-      
+
       // 臨時實現：使用全域物件（如果存在）
       if (typeof window !== 'undefined' && window.LOGIN_MANAGER) {
         window.LOGIN_MANAGER.logout();
@@ -287,7 +287,7 @@ export const LoginPageInit = {
     try {
       // TODO: 待 Phase 2 完成後啟用
       // const session = LOGIN_MANAGER.checkSession();
-      
+
       // 臨時實現：使用全域物件（如果存在）
       let session = null;
       if (typeof window !== 'undefined' && window.LOGIN_MANAGER) {
@@ -297,11 +297,11 @@ export const LoginPageInit = {
       if (session && session.valid) {
         console.log('✅ 發現有效會話，自動登入');
         this.showLoginSuccess('自動登入成功，正在跳轉...');
-        
+
         setTimeout(() => {
           this.redirectToApp();
         }, 500);
-        
+
         return true;
       }
     } catch (error) {
@@ -321,7 +321,7 @@ export const LoginPageInit = {
     try {
       // 會話已由 LOGIN_MANAGER 保存，這裡可以做額外處理
       console.log('💾 保存登入會話:', user.username);
-      
+
       // 記錄登入事件
       if (typeof window !== 'undefined' && window.loggerService) {
         window.loggerService.logSystemEvent('user_login', `用戶登入: ${user.username}`, 'info');
@@ -355,7 +355,7 @@ export const LoginPageInit = {
   showLoginForm() {
     const loginSection = document.getElementById('loginSection');
     const signupSection = document.getElementById('signupSection');
-    
+
     if (loginSection) loginSection.hidden = false;
     if (signupSection) signupSection.hidden = true;
   },
@@ -369,7 +369,7 @@ export const LoginPageInit = {
     if (errorMsg) {
       errorMsg.textContent = message;
       errorMsg.classList.add('show');
-      
+
       // 5 秒後自動隱藏
       setTimeout(() => {
         errorMsg.classList.remove('show');
@@ -398,7 +398,7 @@ export const LoginPageInit = {
     if (signupErrorMsg) {
       signupErrorMsg.textContent = message;
       signupErrorMsg.classList.add('show');
-      
+
       // 5 秒後自動隱藏
       setTimeout(() => {
         signupErrorMsg.classList.remove('show');
@@ -431,7 +431,7 @@ export const LoginPageInit = {
     const username = document.getElementById('username');
     const password = document.getElementById('password');
     const rememberMe = document.getElementById('rememberMe');
-    
+
     if (username) username.value = '';
     if (password) password.value = '';
     if (rememberMe) rememberMe.checked = false;
@@ -445,7 +445,7 @@ export const LoginPageInit = {
     const password = document.getElementById('signupPassword');
     const confirmPassword = document.getElementById('confirmPassword');
     const email = document.getElementById('email');
-    
+
     if (username) username.value = '';
     if (password) password.value = '';
     if (confirmPassword) confirmPassword.value = '';
@@ -460,7 +460,7 @@ export const LoginPageInit = {
     const successMsg = document.getElementById('successMsg');
     const signupErrorMsg = document.getElementById('signupErrorMsg');
     const signupSuccessMsg = document.getElementById('signupSuccessMsg');
-    
+
     if (errorMsg) errorMsg.classList.remove('show');
     if (successMsg) successMsg.classList.remove('show');
     if (signupErrorMsg) signupErrorMsg.classList.remove('show');

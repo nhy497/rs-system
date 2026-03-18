@@ -1,9 +1,9 @@
 /**
  * 附件管理器 - 處理檔案上傳與附件顯示
  * @module ui/attachments-manager
- * 
+ *
  * 源代碼位置: system.js L2103-2240
- * 
+ *
  * 主要功能:
  * - 檔案上傳處理
  * - 附件列表顯示
@@ -44,7 +44,7 @@ function toast(msg) {
 /**
  * DOM 選擇器
  */
-const $ = (id) => document.getElementById(id);
+const $ = id => document.getElementById(id);
 
 /**
  * 附件管理器
@@ -74,22 +74,22 @@ export const AttachmentsManager = {
   async handleFileUpload(fileInputOrEvent, options = {}) {
     const event = fileInputOrEvent.target ? fileInputOrEvent : null;
     const file = event ? event.target.files?.[0] : fileInputOrEvent;
-    
+
     if (!file) return;
-    
+
     // 檢查文件類型
     const allowedTypes = options.allowedTypes || [
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
-    
+
     if (!allowedTypes.includes(file.type)) {
       toast('❌ 只支援 PDF 或 Word 文檔');
       if (event) event.target.value = '';
       return;
     }
-    
+
     // 檢查文件大小（限制 5MB）
     const maxSize = options.maxSize || 5 * 1024 * 1024;
     if (file.size > maxSize) {
@@ -97,11 +97,11 @@ export const AttachmentsManager = {
       if (event) event.target.value = '';
       return;
     }
-    
+
     try {
       // 讀取文件為 Base64
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = e => {
         window._currentAttachments = window._currentAttachments || [];
         window._currentAttachments.push({
           name: file.name,
@@ -110,18 +110,18 @@ export const AttachmentsManager = {
           data: e.target.result,
           uploadedAt: new Date().toISOString()
         });
-        
+
         this.currentAttachments = window._currentAttachments;
         this.displayAttachments();
         toast(`✓ 已添加附件: ${file.name}`);
         if (event) event.target.value = ''; // 清空 input 以便再次上傳
       };
-      
+
       reader.onerror = () => {
         toast('❌ 文件讀取失敗');
         if (event) event.target.value = '';
       };
-      
+
       reader.readAsDataURL(file);
     } catch (e) {
       console.error('文件上傳失敗:', e);
@@ -142,23 +142,23 @@ export const AttachmentsManager = {
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ];
-    
+
     const maxSize = options.maxSize || 5 * 1024 * 1024;
-    
+
     if (!allowedTypes.includes(file.type)) {
       return {
         valid: false,
         error: '只支援 PDF 或 Word 文檔'
       };
     }
-    
+
     if (file.size > maxSize) {
       return {
         valid: false,
         error: `文件大小不能超過 ${this.formatFileSize(maxSize)}`
       };
     }
-    
+
     return { valid: true, error: null };
   },
 
@@ -170,7 +170,7 @@ export const AttachmentsManager = {
    */
   async uploadFile(file, onProgress) {
     // 預留給未來的伺服器上傳功能
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(() => {
         resolve({
           success: true,
@@ -186,20 +186,20 @@ export const AttachmentsManager = {
    * @param {HTMLElement|string} container - 容器元素或 ID（可選）
    */
   displayAttachments(attachments, container) {
-    const preview = container 
+    const preview = container
       ? (typeof container === 'string' ? $(container) : container)
       : $('filePreview');
-    
+
     if (!preview) return;
-    
+
     const files = attachments || window._currentAttachments || [];
     this.currentAttachments = files;
-    
+
     if (files.length === 0) {
       preview.innerHTML = '';
       return;
     }
-    
+
     preview.innerHTML = this.renderAttachmentsList(files);
   },
 
@@ -212,7 +212,7 @@ export const AttachmentsManager = {
     if (!attachments || attachments.length === 0) {
       return '';
     }
-    
+
     return attachments.map((file, index) => this.renderAttachmentItem(file, index)).join('');
   },
 
@@ -252,7 +252,7 @@ export const AttachmentsManager = {
   downloadAttachment(index) {
     const file = window._currentAttachments[index];
     if (!file) return;
-    
+
     try {
       const link = document.createElement('a');
       link.href = file.data;
@@ -272,7 +272,7 @@ export const AttachmentsManager = {
    */
   downloadAttachmentFromDetail(index, file) {
     if (!file) return;
-    
+
     try {
       const link = document.createElement('a');
       link.href = file.data;
@@ -290,12 +290,12 @@ export const AttachmentsManager = {
    * @param {number|Object} attachmentIdOrObj - 附件 ID 或對象
    */
   previewAttachment(attachmentIdOrObj) {
-    const attachment = typeof attachmentIdOrObj === 'object' 
-      ? attachmentIdOrObj 
+    const attachment = typeof attachmentIdOrObj === 'object'
+      ? attachmentIdOrObj
       : window._currentAttachments[attachmentIdOrObj];
-    
+
     if (!attachment) return;
-    
+
     // 對於 PDF 可以在新視窗開啟
     if (attachment.type === 'application/pdf') {
       window.open(attachment.data, '_blank');
@@ -331,8 +331,8 @@ export const AttachmentsManager = {
   convertToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.onerror = (e) => reject(e);
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = e => reject(e);
       reader.readAsDataURL(file);
     });
   },
@@ -379,9 +379,9 @@ export const AttachmentsManager = {
    * @returns {string} 格式化後的大小
    */
   formatFileSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   },
 
   /**
@@ -408,8 +408,8 @@ export const AttachmentsManager = {
 
 // 設置全局函數供 onclick 使用
 if (typeof window !== 'undefined') {
-  window._removeAttachment = (index) => AttachmentsManager.removeAttachment(index);
-  window._downloadAttachment = (index) => AttachmentsManager.downloadAttachment(index);
+  window._removeAttachment = index => AttachmentsManager.removeAttachment(index);
+  window._downloadAttachment = index => AttachmentsManager.downloadAttachment(index);
   window._downloadAttachmentFromDetail = (index, file) => AttachmentsManager.downloadAttachmentFromDetail(index, file);
 }
 

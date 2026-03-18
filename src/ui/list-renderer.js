@@ -1,9 +1,9 @@
 /**
  * 列表渲染器 - 處理課堂記錄列表顯示
  * @module ui/list-renderer
- * 
+ *
  * 源代碼位置: system.js L2543-2729
- * 
+ *
  * 主要功能:
  * - 課堂記錄列表渲染
  * - 列表排序與過濾
@@ -27,8 +27,8 @@ function escapeHtml(s) {
 /**
  * DOM 選擇器
  */
-const $ = (id) => document.getElementById(id);
-const $q = (sel) => document.querySelector(sel);
+const $ = id => document.getElementById(id);
+const $q = sel => document.querySelector(sel);
 
 /**
  * 1-5 分評分項目 ID
@@ -51,11 +51,11 @@ function isWithinLast7Days(dateStr) {
  */
 function score1to5Average(list) {
   const vals = [];
-  list.forEach(r => { 
-    SCORE_1_5_IDS.forEach(id => { 
-      const v = r[id]; 
-      if (typeof v === 'number' && v >= 1 && v <= 5) vals.push(v); 
-    }); 
+  list.forEach(r => {
+    SCORE_1_5_IDS.forEach(id => {
+      const v = r[id];
+      if (typeof v === 'number' && v >= 1 && v <= 5) vals.push(v);
+    });
   });
   return vals.length === 0 ? null : (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2);
 }
@@ -66,9 +66,9 @@ function score1to5Average(list) {
  * @returns {string} 格式化後的大小
  */
 function formatFileSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /**
@@ -94,7 +94,7 @@ export const ListRenderer = {
     const displayRecords = records.slice(0, limit);
 
     el.innerHTML = displayRecords.map(r => this.renderRecordItem(r, options)).join('');
-    
+
     // 綁定點擊事件
     if (options.onItemClick) {
       el.querySelectorAll('li[data-date]').forEach(li => {
@@ -115,10 +115,10 @@ export const ListRenderer = {
   renderRecordItem(record, options = {}) {
     const testModeIndicator = record.creatorTestMode ? '🧪 ' : '';
     const meta = [
-      record.className, 
+      record.className,
       record.classSize != null ? `人數 ${record.classSize}` : ''
     ].filter(Boolean).join(' · ');
-    
+
     return `<li data-date="${escapeHtml(record.classDate || '')}">
       ${testModeIndicator}${record.classDate || '–'}
       ${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}
@@ -157,7 +157,7 @@ export const ListRenderer = {
       groups[k].sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
     });
 
-    let keys = Object.keys(groups).sort((a, b) => 
+    let keys = Object.keys(groups).sort((a, b) =>
       (groups[b][0]?.classDate || '').localeCompare(groups[a][0]?.classDate || '')
     );
 
@@ -193,7 +193,7 @@ export const ListRenderer = {
   renderActionsTable(records, tableBody, emptyElement, filters = {}) {
     const tbody = typeof tableBody === 'string' ? $(tableBody) : tableBody;
     const empty = typeof emptyElement === 'string' ? $(emptyElement) : emptyElement;
-    
+
     if (!tbody) return;
 
     const flat = [];
@@ -223,13 +223,13 @@ export const ListRenderer = {
 
     flat.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-    tbody.innerHTML = flat.map(f => 
+    tbody.innerHTML = flat.map(f =>
       `<tr>
         <td>${f.date || '–'}</td>
         <td>${escapeHtml(f.className)}</td>
         <td>${escapeHtml(f.name)}</td>
         <td>${escapeHtml(f.detail)}</td>
-        <td>${typeof f.mastery === 'number' ? f.mastery + '%' : f.mastery}</td>
+        <td>${typeof f.mastery === 'number' ? `${f.mastery}%` : f.mastery}</td>
       </tr>`
     ).join('');
 
@@ -247,34 +247,34 @@ export const ListRenderer = {
    */
   sortRecords(records, sortBy, order = 'asc') {
     const sorted = [...records];
-    
+
     switch (sortBy) {
-      case 'date-asc':
-      case 'date':
-        sorted.sort((a, b) => (a.classDate || '').localeCompare(b.classDate || ''));
-        break;
-      case 'date-desc':
-        sorted.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
-        break;
-      case 'name-asc':
-      case 'name':
-        sorted.sort((a, b) => 
-          ((a.className || '').trim() || '—').localeCompare((b.className || '').trim() || '—')
-        );
-        break;
-      case 'mastery-desc':
-      case 'mastery':
-        sorted.sort((a, b) => (b.mastery ?? 0) - (a.mastery ?? 0));
-        break;
-      case 'engagement-desc':
-      case 'engagement':
-        sorted.sort((a, b) => (b.engagement ?? 0) - (a.engagement ?? 0));
-        break;
-      default:
-        // 預設按日期降序
-        sorted.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
+    case 'date-asc':
+    case 'date':
+      sorted.sort((a, b) => (a.classDate || '').localeCompare(b.classDate || ''));
+      break;
+    case 'date-desc':
+      sorted.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
+      break;
+    case 'name-asc':
+    case 'name':
+      sorted.sort((a, b) =>
+        ((a.className || '').trim() || '—').localeCompare((b.className || '').trim() || '—')
+      );
+      break;
+    case 'mastery-desc':
+    case 'mastery':
+      sorted.sort((a, b) => (b.mastery ?? 0) - (a.mastery ?? 0));
+      break;
+    case 'engagement-desc':
+    case 'engagement':
+      sorted.sort((a, b) => (b.engagement ?? 0) - (a.engagement ?? 0));
+      break;
+    default:
+      // 預設按日期降序
+      sorted.sort((a, b) => (b.classDate || '').localeCompare(a.classDate || ''));
     }
-    
+
     return order === 'asc' ? sorted : sorted.reverse();
   },
 
@@ -288,7 +288,7 @@ export const ListRenderer = {
     let filtered = [...records];
 
     if (filters.className) {
-      filtered = filtered.filter(r => 
+      filtered = filtered.filter(r =>
         ((r.className || '').trim() || '—') === filters.className
       );
     }
@@ -395,9 +395,7 @@ export const ListRenderer = {
    * @returns {number} 總時長（分鐘）
    */
   calculateTotalDuration(records) {
-    return records.reduce((total, r) => {
-      return total + (r.classDurationMins || 0);
-    }, 0);
+    return records.reduce((total, r) => total + (r.classDurationMins || 0), 0);
   },
 
   /**
@@ -442,13 +440,13 @@ export const ListRenderer = {
 
     el.innerHTML = '<table class="simple-table">' +
       '<thead><tr><th>班別</th><th>堂數</th></tr></thead>' +
-      '<tbody>' +
-      keys.map(key => {
-        const label = key === '—' ? '未填寫班別' : escapeHtml(key);
-        const count = groups[key].length;
-        return `<tr><td>${label}</td><td class="text-right"><strong>${count}</strong></td></tr>`;
-      }).join('') +
-      '</tbody>' +
+      `<tbody>${
+        keys.map(key => {
+          const label = key === '—' ? '未填寫班別' : escapeHtml(key);
+          const count = groups[key].length;
+          return `<tr><td>${label}</td><td class="text-right"><strong>${count}</strong></td></tr>`;
+        }).join('')
+      }</tbody>` +
       '</table>';
   }
 };

@@ -31,10 +31,10 @@ class MemoryManagementService {
 
     // 設置定期清理
     this.setupPeriodicCleanup();
-    
+
     // 監聽頁面卸載事件
     this.setupPageUnloadHandlers();
-    
+
     this.isInitialized = true;
     console.log('✅ MemoryManagementService 初始化完成');
   }
@@ -235,16 +235,16 @@ class MemoryManagementService {
    */
   performCleanup() {
     const startTime = performance.now();
-    
+
     // 清理過期的定時器
     this.cleanupExpiredTimers();
-    
+
     // 清理無效的監聽器
     this.cleanupInvalidListeners();
-    
+
     // 清理無效的觀察器
     this.cleanupInvalidObservers();
-    
+
     const endTime = performance.now();
     console.log(`🧹 內存清理完成，耗時: ${(endTime - startTime).toFixed(2)}ms`);
   }
@@ -282,7 +282,7 @@ class MemoryManagementService {
 
     this.eventListeners.forEach((listenerInfo, id) => {
       const { target } = listenerInfo;
-      
+
       // 檢查目標是否仍然有效
       if (target === window || target === document) {
         return; // 全局對象始終有效
@@ -320,7 +320,7 @@ class MemoryManagementService {
    */
   cleanupAll() {
     console.log('🧹 開始清理所有內存資源...');
-    
+
     // 清理所有監聽器
     this.eventListeners.forEach((_, id) => {
       this.removeEventListener(id);

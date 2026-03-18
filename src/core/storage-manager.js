@@ -80,7 +80,7 @@ export const STORAGE_MANAGER = {
     try {
       this.channel = new BroadcastChannel('rs-system-sync');
 
-      this.channel.onmessage = (event) => {
+      this.channel.onmessage = event => {
         const { type } = event.data || {};
         if (type !== 'storage-updated') return;
 
@@ -114,7 +114,7 @@ export const STORAGE_MANAGER = {
         }, 300);
       };
 
-      this.channel.onerror = (error) => {
+      this.channel.onerror = error => {
         console.error('❌ BroadcastChannel 錯誤:', error);
       };
 
@@ -183,12 +183,12 @@ export const STORAGE_MANAGER = {
           }
         }
       }
-      
+
       const safe = Array.isArray(decoded) ? decoded : [];
       this.cache.checkpoints = safe;
       this.cache.lastSync = Date.now();
       console.log(`📦 getCheckpoints() 讀取筆數: ${safe.length}`);
-      
+
       // 創作者可以查看所有記錄，普通用戶只能查看自己的
       const currentUser = getCurrentUser();
       if (currentUser && currentUser.role === 'creator') {
@@ -218,7 +218,7 @@ export const STORAGE_MANAGER = {
     while (retryCount < this.CONFIG.MAX_RETRIES) {
       try {
         if (!Array.isArray(records)) throw new Error('數據格式無效');
-        
+
         // 為每筆記錄添加用戶ID（如果尚未添加）
         const currentUser = getCurrentUser();
         const recordsWithUserId = records.map(record => {
@@ -231,7 +231,7 @@ export const STORAGE_MANAGER = {
         // 統一使用 encodeURIComponent + btoa 編碼方式
         const jsonStr = JSON.stringify(recordsWithUserId);
         const encoded = btoa(encodeURIComponent(jsonStr));
-        
+
         if (encoded.length > this.CONFIG.STORAGE_QUOTA) {
           console.warn('⚠️ 存儲空間不足');
           this.cleanupOldData(recordsWithUserId);
@@ -243,7 +243,7 @@ export const STORAGE_MANAGER = {
         this.cache.lastSync = Date.now();
         console.log(`✅ STORAGE_MANAGER.saveCheckpoints() 保存 ${recordsWithUserId.length} 筆課堂記錄`);
         if (recordsWithUserId.length > 0) {
-          console.log(`📊 範例記錄:`, recordsWithUserId[0]);
+          console.log('📊 範例記錄:', recordsWithUserId[0]);
         }
 
         // ⭐ [PLAN-A1] 通知其他標籤頁數據已更新
@@ -318,7 +318,7 @@ export const STORAGE_MANAGER = {
   cleanupOldData(records) {
     try {
       if (records.length > 500) {
-        const sorted = [...records].sort((a, b) => 
+        const sorted = [...records].sort((a, b) =>
           (b.classDate || '').localeCompare(a.classDate || '')
         );
         return sorted.slice(0, 500);
@@ -352,14 +352,14 @@ export const STORAGE_MANAGER = {
    */
   saveBackup(data) {
     try {
-      const backup = { timestamp: Date.now(), data: data, version: '2.1' };
-      sessionStorage.setItem('backup_' + Date.now(), JSON.stringify(backup));
-      
+      const backup = { timestamp: Date.now(), data, version: '2.1' };
+      sessionStorage.setItem(`backup_${Date.now()}`, JSON.stringify(backup));
+
       const allBackups = Object.keys(sessionStorage)
         .filter(key => key.startsWith('backup_'))
         .sort()
         .reverse();
-      
+
       for (let i = 3; i < allBackups.length; i++) {
         sessionStorage.removeItem(allBackups[i]);
       }
@@ -379,7 +379,7 @@ export const STORAGE_MANAGER = {
         .filter(key => key.startsWith('backup_'))
         .sort()
         .reverse();
-      
+
       if (allBackups.length > 0) {
         const latestBackup = JSON.parse(sessionStorage.getItem(allBackups[0]));
         return latestBackup.data;
@@ -416,7 +416,7 @@ export const STORAGE_MANAGER = {
       } else {
         this.cache.checkpoints = [];
       }
-      
+
       const presetsRaw = localStorage.getItem(this.KEYS.PRESETS);
       this.cache.presets = presetsRaw ? JSON.parse(presetsRaw) : [];
       this.cache.lastSync = Date.now();
@@ -458,14 +458,14 @@ export const STORAGE_MANAGER = {
       const value = localStorage.getItem(key);
       if (value) {
         const size = (value.length / 1024).toFixed(2);
-        details[name] = size + ' KB';
+        details[name] = `${size} KB`;
         totalSize += parseFloat(size);
       }
     }
     return {
-      totalSize: totalSize.toFixed(2) + ' KB',
-      details: details,
-      usage: ((totalSize / (this.CONFIG.STORAGE_QUOTA / 1024)) * 100).toFixed(1) + '%'
+      totalSize: `${totalSize.toFixed(2)} KB`,
+      details,
+      usage: `${((totalSize / (this.CONFIG.STORAGE_QUOTA / 1024)) * 100).toFixed(1)}%`
     };
   }
 };

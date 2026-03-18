@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom';
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
   url: 'http://localhost:3000',
   pretendToBeVisual: true,
-  resources: 'usable',
+  resources: 'usable'
 });
 
 global.window = dom.window;
@@ -22,7 +22,7 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn(),
+  key: vi.fn()
 };
 
 global.localStorage = localStorageMock;
@@ -34,7 +34,7 @@ global.sessionStorage = {
   removeItem: vi.fn(),
   clear: vi.fn(),
   length: 0,
-  key: vi.fn(),
+  key: vi.fn()
 };
 
 // 模擬 fetch API
@@ -47,20 +47,20 @@ global.console = {
   warn: vi.fn(),
   error: vi.fn(),
   info: vi.fn(),
-  debug: vi.fn(),
+  debug: vi.fn()
 };
 
 // 測試前設置
 beforeEach(() => {
   // 清理所有模擬
   vi.clearAllMocks();
-  
+
   // 重置 localStorage
   localStorageMock.getItem.mockClear();
   localStorageMock.setItem.mockClear();
   localStorageMock.removeItem.mockClear();
   localStorageMock.clear.mockClear();
-  
+
   // 重置 fetch
   global.fetch.mockClear();
 });
@@ -69,10 +69,10 @@ beforeEach(() => {
 afterEach(() => {
   // 清理 DOM
   document.body.innerHTML = '';
-  
+
   // 清理定時器
   vi.clearAllTimers();
-  
+
   // 清理事件監聽器
   if (dom.window) {
     dom.window.close();

@@ -15,7 +15,7 @@ export const COVERAGE_CONFIG = {
       lines: 80,
       statements: 80
     },
-    
+
     // 各模組的覆蓋率門檻
     modules: {
       'src/core/': {
@@ -47,10 +47,10 @@ export const COVERAGE_CONFIG = {
 
   // 報告配置
   reporters: ['text', 'json', 'html', 'lcov', 'clover'],
-  
+
   // 輸出目錄
   outputDir: './test-results/coverage',
-  
+
   // 報告文件名
   reportFiles: {
     json: 'coverage-summary.json',
@@ -115,16 +115,16 @@ export const QUALITY_GATES = {
   testQuality: {
     // 最小測試數量
     minTests: 10,
-    
+
     // 最大失敗測試數量
     maxFailedTests: 0,
-    
+
     // 最大跳過測試數量
     maxSkippedTests: 2,
-    
+
     // 最小測試通過率
     minPassRate: 100,
-    
+
     // 最大測試執行時間（秒）
     maxTestDuration: 300
   },
@@ -133,16 +133,16 @@ export const QUALITY_GATES = {
   codeQuality: {
     // 最大 ESLint 錯誤數量
     maxLintErrors: 0,
-    
+
     // 最大 ESLint 警告數量
     maxLintWarnings: 5,
-    
+
     // 最大複雜度
     maxComplexity: 10,
-    
+
     // 最大函數長度
     maxFunctionLength: 50,
-    
+
     // 最大文件長度
     maxFileLength: 300
   },
@@ -151,16 +151,16 @@ export const QUALITY_GATES = {
   performance: {
     // 最大頁面加載時間（毫秒）
     maxPageLoadTime: 3000,
-    
+
     // 最大首次內容繪製時間（毫秒）
     maxFirstContentfulPaint: 1500,
-    
+
     // 最大最大內容繪製時間（毫秒）
     maxLargestContentfulPaint: 2500,
-    
+
     // 最大累積佈局偏移
     maxCumulativeLayoutShift: 0.1,
-    
+
     // 最大首次輸入延遲（毫秒）
     maxFirstInputDelay: 100
   },
@@ -176,7 +176,7 @@ export const QUALITY_GATES = {
       'insecure-deserialization',
       'weak-cryptography'
     ],
-    
+
     // 最大安全問題數量
     maxSecurityIssues: 0
   },
@@ -185,10 +185,10 @@ export const QUALITY_GATES = {
   accessibility: {
     // 最大可訪問性違規數量
     maxAccessibilityViolations: 5,
-    
+
     // 嚴重可訪問性違規數量
     criticalViolations: 0,
-    
+
     // 必須通過的可訪問性規則
     requiredRules: [
       'color-contrast',
@@ -216,7 +216,7 @@ export class CoverageAnalyzer {
    */
   analyze(coverageData) {
     this.results = coverageData;
-    
+
     const analysis = {
       global: this.analyzeGlobalCoverage(),
       modules: this.analyzeModuleCoverage(),
@@ -235,10 +235,10 @@ export class CoverageAnalyzer {
   analyzeGlobalCoverage() {
     const global = this.results.total;
     const thresholds = this.config.thresholds.global;
-    
+
     return {
       coverage: global,
-      thresholds: thresholds,
+      thresholds,
       passed: this.checkThresholds(global, thresholds),
       gaps: this.calculateCoverageGaps(global, thresholds)
     };
@@ -251,7 +251,7 @@ export class CoverageAnalyzer {
   analyzeModuleCoverage() {
     const modules = {};
     const thresholds = this.config.thresholds.modules;
-    
+
     Object.keys(thresholds).forEach(modulePath => {
       const moduleCoverage = this.getModuleCoverage(modulePath);
       modules[modulePath] = {
@@ -270,7 +270,7 @@ export class CoverageAnalyzer {
    */
   analyzeFileCoverage() {
     const files = {};
-    
+
     Object.keys(this.results.files || {}).forEach(filePath => {
       const fileCoverage = this.results.files[filePath];
       files[filePath] = {
@@ -310,7 +310,7 @@ export class CoverageAnalyzer {
   generateRecommendations() {
     const recommendations = [];
     const global = this.analyzeGlobalCoverage();
-    
+
     // 覆蓋率建議
     if (!global.passed) {
       recommendations.push({
@@ -358,7 +358,7 @@ export class CoverageAnalyzer {
    */
   calculateCoverageGaps(coverage, thresholds) {
     const gaps = {};
-    
+
     Object.keys(thresholds).forEach(metric => {
       const coverageValue = coverage[metric]?.pct || 0;
       const threshold = thresholds[metric];
@@ -374,7 +374,7 @@ export class CoverageAnalyzer {
    * @returns {Object} 模組覆蓋率
    */
   getModuleCoverage(modulePath) {
-    const moduleFiles = Object.keys(this.results.files || {}).filter(file => 
+    const moduleFiles = Object.keys(this.results.files || {}).filter(file =>
       file.startsWith(modulePath)
     );
 
@@ -384,7 +384,7 @@ export class CoverageAnalyzer {
 
     const moduleCoverage = moduleFiles.reduce((acc, file) => {
       const fileCoverage = this.results.files[file];
-      
+
       Object.keys(acc).forEach(metric => {
         acc[metric].covered += fileCoverage[metric]?.covered || 0;
         acc[metric].total += fileCoverage[metric]?.total || 0;
@@ -400,7 +400,7 @@ export class CoverageAnalyzer {
 
     // 計算百分比
     Object.keys(moduleCoverage).forEach(metric => {
-      moduleCoverage[metric].pct = moduleCoverage[metric].total > 0 
+      moduleCoverage[metric].pct = moduleCoverage[metric].total > 0
         ? Math.round((moduleCoverage[metric].covered / moduleCoverage[metric].total) * 100)
         : 0;
     });
@@ -415,7 +415,7 @@ export class CoverageAnalyzer {
    */
   identifyFileIssues(fileCoverage) {
     const issues = [];
-    
+
     if (fileCoverage.lines?.pct < 50) {
       issues.push({
         type: 'low-line-coverage',
@@ -450,7 +450,7 @@ export class CoverageAnalyzer {
    */
   generateFileRecommendations(fileCoverage) {
     const recommendations = [];
-    
+
     if (fileCoverage.lines?.pct < 80) {
       recommendations.push('增加單元測試以覆蓋更多代碼行');
     }
@@ -573,12 +573,12 @@ export const CoverageUtils = {
    * @param {Object} analysis - 分析結果
    * @returns {string} 格式化的報告
    */
-  formatReport: (analysis) => {
+  formatReport: analysis => {
     const report = [];
-    
+
     // 全局覆蓋率
     report.push('## 📊 覆蓋率報告\n');
-    report.push(`### 全局覆蓋率`);
+    report.push('### 全局覆蓋率');
     report.push(`- 行覆蓋率: ${analysis.global.coverage.lines.pct}%`);
     report.push(`- 函數覆蓋率: ${analysis.global.coverage.functions.pct}%`);
     report.push(`- 分支覆蓋率: ${analysis.global.coverage.branches.pct}%`);
@@ -586,9 +586,9 @@ export const CoverageUtils = {
     report.push(`- 狀態: ${analysis.global.passed ? '✅ 通過' : '❌ 未通過'}\n`);
 
     // 質量門檻
-    report.push(`### 質量門檻`);
+    report.push('### 質量門檻');
     report.push(`- 整體狀態: ${analysis.quality.overall ? '✅ 通過' : '❌ 未通過'}`);
-    
+
     Object.keys(analysis.quality.gates).forEach(gate => {
       const result = analysis.quality.gates[gate];
       report.push(`- ${gate}: ${result.passed ? '✅' : '❌'}`);
@@ -596,7 +596,7 @@ export const CoverageUtils = {
 
     // 建議
     if (analysis.recommendations.length > 0) {
-      report.push(`\n### 📝 建議`);
+      report.push('\n### 📝 建議');
       analysis.recommendations.forEach(rec => {
         report.push(`- ${rec.message} (${rec.priority})`);
       });
@@ -610,7 +610,7 @@ export const CoverageUtils = {
    * @param {Object} coverage - 覆蓋率數據
    * @returns {string} 徽章 URL
    */
-  generateBadge: (coverage) => {
+  generateBadge: coverage => {
     const percentage = coverage.lines?.pct || 0;
     const color = percentage >= 80 ? 'brightgreen' : percentage >= 60 ? 'yellow' : 'red';
     return `https://img.shields.io/badge/coverage-${percentage}%25-${color}`;
@@ -624,12 +624,12 @@ export const CoverageUtils = {
    */
   checkTrend: (current, previous) => {
     const trend = {};
-    
+
     Object.keys(current).forEach(metric => {
       const currentPct = current[metric]?.pct || 0;
       const previousPct = previous[metric]?.pct || 0;
       const diff = currentPct - previousPct;
-      
+
       trend[metric] = {
         current: currentPct,
         previous: previousPct,

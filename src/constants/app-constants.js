@@ -44,11 +44,11 @@ export const OPTION_GROUPS = [
  * 頁面標題映射
  * @constant {Object<string, string>}
  */
-export const PAGE_TITLES = { 
-  overview: '課堂概覽', 
-  students: '學生管理', 
-  actions: '動作記錄', 
-  analytics: '統計分析' 
+export const PAGE_TITLES = {
+  overview: '課堂概覽',
+  students: '學生管理',
+  actions: '動作記錄',
+  analytics: '統計分析'
 };
 
 /**

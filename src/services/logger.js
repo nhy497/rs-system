@@ -101,9 +101,9 @@ class LoggerService {
         timestamp: new Date().toISOString(),
         userId: currentUser?.id || 'unknown',
         username: currentUser?.username || '未知用戶',
-        action: action,
-        details: details,
-        metadata: metadata,
+        action,
+        details,
+        metadata,
         ipHash: this._getIpHash()
       };
 
@@ -129,9 +129,9 @@ class LoggerService {
       const currentUser = this._getCurrentUser();
       const logEntry = {
         timestamp: new Date().toISOString(),
-        eventType: eventType,
-        description: description,
-        severity: severity,
+        eventType,
+        description,
+        severity,
         userId: currentUser?.id || 'system',
         username: currentUser?.username || '系統',
         ipHash: this._getIpHash(),
@@ -160,7 +160,7 @@ class LoggerService {
   logAuditAction(action, target, reason = '', success = true) {
     try {
       const currentUser = this._getCurrentUser();
-      
+
       // 僅管理員可記錄審計日誌
       if (currentUser?.role !== 'creator') {
         console.warn('⚠️ 非管理員無法記錄審計日誌');
@@ -171,10 +171,10 @@ class LoggerService {
         timestamp: new Date().toISOString(),
         adminId: currentUser.id,
         adminUsername: currentUser.username,
-        action: action,
-        target: target,
-        reason: reason,
-        success: success,
+        action,
+        target,
+        reason,
+        success,
         ipHash: this._getIpHash(),
         changesSummary: this._generateChangeSummary(action, target)
       };
@@ -198,24 +198,24 @@ class LoggerService {
   _generateChangeSummary(action, target) {
     const summary = {};
     switch (action) {
-      case 'user_delete':
-        summary.deletedUser = target.username;
-        summary.deletedAt = new Date().toISOString();
-        break;
-      case 'user_create':
-        summary.newUser = target.username;
-        summary.role = target.role;
-        break;
-      case 'data_export':
-        summary.recordCount = target.count || 0;
-        summary.format = target.format || 'csv';
-        break;
-      case 'data_clear':
-        summary.clearedCount = target.count || 0;
-        break;
-      default:
-        summary.action = action;
-        summary.target = target;
+    case 'user_delete':
+      summary.deletedUser = target.username;
+      summary.deletedAt = new Date().toISOString();
+      break;
+    case 'user_create':
+      summary.newUser = target.username;
+      summary.role = target.role;
+      break;
+    case 'data_export':
+      summary.recordCount = target.count || 0;
+      summary.format = target.format || 'csv';
+      break;
+    case 'data_clear':
+      summary.clearedCount = target.count || 0;
+      break;
+    default:
+      summary.action = action;
+      summary.target = target;
     }
     return summary;
   }
@@ -311,58 +311,58 @@ class LoggerService {
     let headers = [];
 
     switch (logType) {
-      case 'coach':
-        logs = this.coachLogs;
-        headers = ['時間戳', '用戶ID', '用戶名', '操作類型', '詳細信息', '班級', '日期', 'IP雜湊'];
-        break;
-      case 'system':
-        logs = this.systemLogs;
-        headers = ['時間戳', '事件類型', '描述', '嚴重級別', '用戶名', 'IP雜湊'];
-        break;
-      case 'audit':
-        const currentUser = this._getCurrentUser();
-        if (currentUser?.role !== 'creator') {
-          throw new Error('非管理員無法導出審計日誌');
-        }
-        logs = this.auditLogs;
-        headers = ['時間戳', '管理員名', '操作類型', '操作對象', '操作原因', '成功', '變更摘要'];
-        break;
-      default:
-        throw new Error('未知的日誌類型');
+    case 'coach':
+      logs = this.coachLogs;
+      headers = ['時間戳', '用戶ID', '用戶名', '操作類型', '詳細信息', '班級', '日期', 'IP雜湊'];
+      break;
+    case 'system':
+      logs = this.systemLogs;
+      headers = ['時間戳', '事件類型', '描述', '嚴重級別', '用戶名', 'IP雜湊'];
+      break;
+    case 'audit':
+      const currentUser = this._getCurrentUser();
+      if (currentUser?.role !== 'creator') {
+        throw new Error('非管理員無法導出審計日誌');
+      }
+      logs = this.auditLogs;
+      headers = ['時間戳', '管理員名', '操作類型', '操作對象', '操作原因', '成功', '變更摘要'];
+      break;
+    default:
+      throw new Error('未知的日誌類型');
     }
 
     const rows = logs.map(log => {
       switch (logType) {
-        case 'coach':
-          return [
-            log.timestamp,
-            log.userId,
-            log.username,
-            log.action,
-            log.details,
-            log.metadata?.className || '',
-            log.metadata?.date || '',
-            log.ipHash
-          ];
-        case 'system':
-          return [
-            log.timestamp,
-            log.eventType,
-            log.description,
-            log.severity,
-            log.username,
-            log.ipHash
-          ];
-        case 'audit':
-          return [
-            log.timestamp,
-            log.adminUsername,
-            log.action,
-            JSON.stringify(log.target),
-            log.reason,
-            log.success ? '是' : '否',
-            JSON.stringify(log.changesSummary)
-          ];
+      case 'coach':
+        return [
+          log.timestamp,
+          log.userId,
+          log.username,
+          log.action,
+          log.details,
+          log.metadata?.className || '',
+          log.metadata?.date || '',
+          log.ipHash
+        ];
+      case 'system':
+        return [
+          log.timestamp,
+          log.eventType,
+          log.description,
+          log.severity,
+          log.username,
+          log.ipHash
+        ];
+      case 'audit':
+        return [
+          log.timestamp,
+          log.adminUsername,
+          log.action,
+          JSON.stringify(log.target),
+          log.reason,
+          log.success ? '是' : '否',
+          JSON.stringify(log.changesSummary)
+        ];
       }
     });
 
@@ -370,7 +370,7 @@ class LoggerService {
       row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(',')
     ).join('\n');
 
-    return '\uFEFF' + csv; // UTF-8 BOM
+    return `\uFEFF${csv}`; // UTF-8 BOM
   }
 
   /**
@@ -386,22 +386,22 @@ class LoggerService {
     }
 
     let count = 0;
-    
+
     switch (logType) {
-      case 'coach':
-        count = this.coachLogs.length;
-        this.coachLogs = [];
-        break;
-      case 'system':
-        count = this.systemLogs.length;
-        this.systemLogs = [];
-        break;
-      case 'audit':
-        count = this.auditLogs.length;
-        this.auditLogs = [];
-        break;
-      default:
-        return false;
+    case 'coach':
+      count = this.coachLogs.length;
+      this.coachLogs = [];
+      break;
+    case 'system':
+      count = this.systemLogs.length;
+      this.systemLogs = [];
+      break;
+    case 'audit':
+      count = this.auditLogs.length;
+      this.auditLogs = [];
+      break;
+    default:
+      return false;
     }
 
     this._saveLogs();
@@ -448,7 +448,7 @@ class LoggerService {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const combined = ua + lang + tz;
     let hash = 0;
-    
+
     for (let i = 0; i < combined.length; i++) {
       hash = ((hash << 5) - hash) + combined.charCodeAt(i);
       hash = hash & hash;

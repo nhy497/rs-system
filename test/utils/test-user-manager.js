@@ -28,16 +28,16 @@ export class TestUserManager {
     try {
       // 初始化用戶數據庫
       await testDatabase.initDatabase('users');
-      
+
       // 創建測試用戶
       const users = testDatabase.createTestUsers();
       await testDatabase.createTestData('users', users);
-      
+
       // 將用戶存儲到內存中
       users.forEach(user => {
         this.testUsers.set(user.username, user);
       });
-      
+
       console.log(`✅ 初始化 ${users.length} 個測試用戶`);
     } catch (error) {
       console.error('❌ 初始化測試用戶失敗:', error);
@@ -68,11 +68,11 @@ export class TestUserManager {
     try {
       await testDatabase.createTestData('users', [user]);
       this.testUsers.set(user.username, user);
-      
+
       console.log(`✅ 創建測試用戶: ${user.username}`);
       return user;
     } catch (error) {
-      console.error(`❌ 創建測試用戶失敗:`, error);
+      console.error('❌ 創建測試用戶失敗:', error);
       throw error;
     }
   }
@@ -111,7 +111,7 @@ export class TestUserManager {
    */
   async login(username, password) {
     const user = this.getUser(username);
-    
+
     if (!user) {
       return {
         success: false,
@@ -139,7 +139,7 @@ export class TestUserManager {
     // 生成會話令牌
     this.sessionToken = this.generateToken();
     this.currentUser = { ...user };
-    
+
     // 移除密碼字段
     delete this.currentUser.password;
 
@@ -161,7 +161,7 @@ export class TestUserManager {
    */
   logout() {
     const username = this.currentUser?.username;
-    
+
     this.currentUser = null;
     this.sessionToken = null;
 
@@ -216,7 +216,7 @@ export class TestUserManager {
    */
   async updateUser(username, updates) {
     const user = this.getUser(username);
-    
+
     if (!user) {
       return {
         success: false,
@@ -235,10 +235,10 @@ export class TestUserManager {
       // 更新數據庫
       const db = testDatabase.getDatabase('users');
       await db.put(updatedUser);
-      
+
       // 更新內存
       this.testUsers.set(username, updatedUser);
-      
+
       // 如果是當前用戶，也更新當前用戶信息
       if (this.currentUser && this.currentUser.username === username) {
         this.currentUser = { ...updatedUser };
@@ -251,7 +251,7 @@ export class TestUserManager {
         user: updatedUser
       };
     } catch (error) {
-      console.error(`❌ 更新用戶失敗:`, error);
+      console.error('❌ 更新用戶失敗:', error);
       return {
         success: false,
         error: '更新失敗',
@@ -267,7 +267,7 @@ export class TestUserManager {
    */
   async deleteUser(username) {
     const user = this.getUser(username);
-    
+
     if (!user) {
       return {
         success: false,
@@ -280,10 +280,10 @@ export class TestUserManager {
       // 從數據庫刪除
       const db = testDatabase.getDatabase('users');
       await db.remove(user);
-      
+
       // 從內存刪除
       this.testUsers.delete(username);
-      
+
       // 如果是當前用戶，登出
       if (this.currentUser && this.currentUser.username === username) {
         this.logout();
@@ -295,7 +295,7 @@ export class TestUserManager {
         message: '用戶刪除成功'
       };
     } catch (error) {
-      console.error(`❌ 刪除用戶失敗:`, error);
+      console.error('❌ 刪除用戶失敗:', error);
       return {
         success: false,
         error: '刪除失敗',
@@ -345,7 +345,7 @@ export class TestUserManager {
     // 按角色統計
     users.forEach(user => {
       stats.usersByRole[user.role] = (stats.usersByRole[user.role] || 0) + 1;
-      
+
       user.permissions.forEach(permission => {
         stats.usersByPermission[permission] = (stats.usersByPermission[permission] || 0) + 1;
       });
@@ -363,7 +363,7 @@ export class TestUserManager {
       this.testUsers.clear();
       this.currentUser = null;
       this.sessionToken = null;
-      
+
       console.log('✅ 重置所有測試用戶完成');
     } catch (error) {
       console.error('❌ 重置測試用戶失敗:', error);
@@ -467,7 +467,7 @@ export const TestUserUtils = {
     if (!credentials) {
       throw new Error(`找不到角色為 ${role} 的測試用戶`);
     }
-    
+
     return await testUserManager.login(credentials.username, credentials.password);
   },
 
@@ -485,11 +485,11 @@ export const TestUserUtils = {
         email: `${role}-test-${i}@test.com`,
         displayName: `測試${role}${i}`
       });
-      
+
       const user = await testUserManager.createUser(userData);
       users.push(user);
     }
-    
+
     return users;
   },
 

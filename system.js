@@ -1,9 +1,9 @@
 /**
  * RS-System 系統入口點重定向
- * 
+ *
  * 此文件僅用於向後相容，實際功能已遷移至模組化系統
  * 新的入口點：./src/index.js
- * 
+ *
  * @deprecated 請使用 ./src/index.js
  */
 
@@ -14,7 +14,7 @@ import('./src/index.js').then(module => {
   console.log('✅ 模組化系統載入完成');
 }).catch(error => {
   console.error('❌ 模組化系統載入失敗:', error);
-  
+
   // 顯示錯誤訊息給用戶
   if (typeof document !== 'undefined') {
     const errorDiv = document.createElement('div');

@@ -13,7 +13,7 @@ export function formatFileSize(bytes) {
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
 /**
@@ -49,7 +49,7 @@ export function formatDate(date, format = 'YYYY-MM-DD') {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  
+
   if (format === 'YYYY-MM-DD') return `${year}-${month}-${day}`;
   if (format === 'YYYY/MM/DD') return `${year}/${month}/${day}`;
   if (format === 'DD/MM/YYYY') return `${day}/${month}/${year}`;

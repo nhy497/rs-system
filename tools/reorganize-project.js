@@ -13,19 +13,19 @@ const REORGANIZATION_MAP = {
   // 配置檔案移動
   'firebase-config.js': 'src/config/firebase.js',
   'sync-config.js': 'src/config/sync.js',
-  
+
   // 服務檔案移動
   'logger-service.js': 'src/services/logger.js',
-  
+
   // 工具檔案移動
   'sync-utils.js': 'src/utils/sync.js',
-  
+
   // 樣式檔案移動
   'sync-styles.css': 'src/styles/sync.css',
-  
+
   // 向後相容檔案
   'system.js': 'src/compat/system.js',
-  
+
   // 文檔檔案移動
   'Introduction-with problems.pdf': 'docs/assets/Introduction-with-problems.pdf',
   'introduction-with-problem.pdf': 'docs/assets/introduction-with-problem.pdf',
@@ -35,11 +35,11 @@ const REORGANIZATION_MAP = {
   'REFACTORING_PLAN.md': 'docs/development/REFACTORING_PLAN.md',
   'TESTING_SETUP_COMPLETE.md': 'docs/development/TESTING_SETUP_COMPLETE.md',
   'security-analysis.html': 'docs/admin/security-analysis.html',
-  
+
   // 工具檔案移動
   'smart_rename_docs.py': 'tools/rename-docs.py',
   'smart_rename_docs_v3_git.py': 'tools/rename-docs-v3.py',
-  
+
   // 測試檔案移動
   'test-integration.html': 'test/integration/test-integration.html',
   'test-modules.html': 'test/unit/test-modules.html',
@@ -60,25 +60,25 @@ const PATH_UPDATE_RULES = [
     pattern: /from ['"]\.\/sync-config\.js['"]/g,
     replacement: "from './src/config/sync.js'"
   },
-  
+
   // 服務檔案路徑
   {
     pattern: /from ['"]\.\/logger-service\.js['"]/g,
     replacement: "from './src/services/logger.js'"
   },
-  
+
   // 工具檔案路徑
   {
     pattern: /from ['"]\.\/sync-utils\.js['"]/g,
     replacement: "from './src/utils/sync.js'"
   },
-  
+
   // 樣式檔案路徑
   {
     pattern: /<link[^>]*href=['"]sync-styles\.css['"][^>]*>/g,
     replacement: '<link rel="stylesheet" href="./src/styles/sync.css">'
   },
-  
+
   // 向後相容檔案路徑
   {
     pattern: /<script[^>]*src=['"]system\.js['"][^>]*>/g,
@@ -105,9 +105,9 @@ function moveFile(source, target) {
     console.warn(`⚠️  源檔案不存在: ${source}`);
     return false;
   }
-  
+
   ensureDirectoryExists(target);
-  
+
   try {
     fs.copyFileSync(source, target);
     fs.unlinkSync(source);
@@ -126,11 +126,11 @@ function updateFilePaths(filePath) {
   if (!fs.existsSync(filePath)) {
     return false;
   }
-  
+
   try {
     let content = fs.readFileSync(filePath, 'utf8');
     let updated = false;
-    
+
     PATH_UPDATE_RULES.forEach(rule => {
       const newContent = content.replace(rule.pattern, rule.replacement);
       if (newContent !== content) {
@@ -139,7 +139,7 @@ function updateFilePaths(filePath) {
         console.log(`🔧 更新路徑: ${filePath}`);
       }
     });
-    
+
     if (updated) {
       fs.writeFileSync(filePath, content, 'utf8');
       return true;
@@ -147,7 +147,7 @@ function updateFilePaths(filePath) {
   } catch (error) {
     console.error(`❌ 更新檔案失敗: ${filePath}`, error);
   }
-  
+
   return false;
 }
 
@@ -159,9 +159,9 @@ function moveDirectory(source, target) {
     console.warn(`⚠️  源目錄不存在: ${source}`);
     return false;
   }
-  
+
   ensureDirectoryExists(target);
-  
+
   try {
     // 遞歸複製目錄
     copyDirectoryRecursive(source, target);
@@ -182,13 +182,13 @@ function copyDirectoryRecursive(source, target) {
   if (!fs.existsSync(target)) {
     fs.mkdirSync(target, { recursive: true });
   }
-  
+
   const files = fs.readdirSync(source);
-  
+
   files.forEach(file => {
     const sourcePath = path.join(source, file);
     const targetPath = path.join(target, file);
-    
+
     if (fs.statSync(sourcePath).isDirectory()) {
       copyDirectoryRecursive(sourcePath, targetPath);
     } else {
@@ -217,7 +217,7 @@ function createDirectoryStructure() {
     'test/integration',
     'test/reports'
   ];
-  
+
   directories.forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -231,11 +231,11 @@ function createDirectoryStructure() {
  */
 function executeReorganization() {
   console.log('🚀 開始執行專案重組...\n');
-  
+
   // 創建目錄結構
   console.log('📂 創建目錄結構...');
   createDirectoryStructure();
-  
+
   // 移動檔案
   console.log('\n📁 移動檔案...');
   let movedFiles = 0;
@@ -244,21 +244,21 @@ function executeReorganization() {
       movedFiles++;
     }
   });
-  
+
   // 移動目錄
   console.log('\n📁 移動目錄...');
   const directories = [
     { source: 'abc', target: 'archive/abc' },
     { source: 'OLD_TESTS', target: 'archive/OLD_TESTS' }
   ];
-  
+
   let movedDirectories = 0;
   directories.forEach(({ source, target }) => {
     if (moveDirectory(source, target)) {
       movedDirectories++;
     }
   });
-  
+
   // 更新路徑引用
   console.log('\n🔧 更新路徑引用...');
   const filesToUpdate = [
@@ -268,20 +268,20 @@ function executeReorganization() {
     'src/main.js',
     'vitest.config.js'
   ];
-  
+
   let updatedFiles = 0;
   filesToUpdate.forEach(file => {
     if (updateFilePaths(file)) {
       updatedFiles++;
     }
   });
-  
+
   // 總結
   console.log('\n📊 重組完成統計:');
   console.log(`✅ 移動檔案: ${movedFiles}`);
   console.log(`✅ 移動目錄: ${movedDirectories}`);
   console.log(`✅ 更新檔案: ${updatedFiles}`);
-  
+
   console.log('\n🎉 專案重組完成！');
   console.log('⚠️  請執行以下命令驗證:');
   console.log('   npm run test');
@@ -319,7 +319,7 @@ function checkPrerequisites() {
   if (!fs.existsSync('.git')) {
     console.warn('⚠️  警告: 當前目錄不是 Git 倉庫');
   }
-  
+
   // 檢查是否有未提交的更改
   try {
     const gitStatus = require('child_process').execSync('git status --porcelain', { encoding: 'utf8' });
@@ -334,12 +334,12 @@ function checkPrerequisites() {
 // 主程序
 function main() {
   const args = process.argv.slice(2);
-  
+
   if (args.includes('--help') || args.includes('-h')) {
     showHelp();
     return;
   }
-  
+
   if (args.includes('--dry-run')) {
     console.log('🔍 模擬模式 - 將執行的操作:');
     Object.entries(REORGANIZATION_MAP).forEach(([source, target]) => {
@@ -347,7 +347,7 @@ function main() {
     });
     return;
   }
-  
+
   if (args.includes('--backup')) {
     console.log('💾 創建備份...');
     try {
@@ -357,9 +357,9 @@ function main() {
       console.warn('⚠️  備份失敗，繼續執行...');
     }
   }
-  
+
   checkPrerequisites();
-  
+
   if (args.includes('--confirm') || process.env.NODE_ENV === 'development') {
     executeReorganization();
   } else {

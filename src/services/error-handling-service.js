@@ -73,10 +73,10 @@ class ErrorHandlingService {
 
     // 設置全局錯誤處理器
     this.setupGlobalErrorHandlers();
-    
+
     // 註冊默認錯誤處理器
     this.registerDefaultHandlers();
-    
+
     this.isInitialized = true;
     console.log('✅ ErrorHandlingService 初始化完成');
   }
@@ -86,7 +86,7 @@ class ErrorHandlingService {
    */
   setupGlobalErrorHandlers() {
     // 捕獲未處理的 Promise 拒絕
-    window.addEventListener('unhandledrejection', (event) => {
+    window.addEventListener('unhandledrejection', event => {
       this.handleError(
         new RSSystemError(
           event.reason?.message || '未處理的 Promise 拒絕',
@@ -98,13 +98,13 @@ class ErrorHandlingService {
     });
 
     // 捕獲未處理的錯誤
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', event => {
       this.handleError(
         new RSSystemError(
           event.message || '未處理的錯誤',
           ErrorType.RUNTIME,
           ErrorSeverity.HIGH,
-          { 
+          {
             filename: event.filename,
             lineno: event.lineno,
             colno: event.colno,
@@ -120,31 +120,31 @@ class ErrorHandlingService {
    */
   registerDefaultHandlers() {
     // 驗證錯誤處理器
-    this.registerHandler(ErrorType.VALIDATION, (error) => {
+    this.registerHandler(ErrorType.VALIDATION, error => {
       console.warn('⚠️ 驗證錯誤:', error.message);
       this.showUserNotification(error.message, 'warning');
     });
 
     // 網絡錯誤處理器
-    this.registerHandler(ErrorType.NETWORK, (error) => {
+    this.registerHandler(ErrorType.NETWORK, error => {
       console.error('🌐 網絡錯誤:', error.message);
       this.showUserNotification('網絡連接失敗，請檢查網絡設置', 'error');
     });
 
     // 存儲錯誤處理器
-    this.registerHandler(ErrorType.STORAGE, (error) => {
+    this.registerHandler(ErrorType.STORAGE, error => {
       console.error('💾 存儲錯誤:', error.message);
       this.showUserNotification('數據保存失敗，請重試', 'error');
     });
 
     // 認證錯誤處理器
-    this.registerHandler(ErrorType.AUTHENTICATION, (error) => {
+    this.registerHandler(ErrorType.AUTHENTICATION, error => {
       console.error('🔐 認證錯誤:', error.message);
       this.showUserNotification('登入失敗，請檢查用戶名和密碼', 'error');
     });
 
     // 運行時錯誤處理器
-    this.registerHandler(ErrorType.RUNTIME, (error) => {
+    this.registerHandler(ErrorType.RUNTIME, error => {
       console.error('🚨 運行時錯誤:', error.message);
       if (error.severity === ErrorSeverity.CRITICAL) {
         this.showUserNotification('系統發生嚴重錯誤，請重新載入頁面', 'error');
@@ -172,10 +172,10 @@ class ErrorHandlingService {
     try {
       // 標準化錯誤對象
       const standardError = this.standardizeError(error);
-      
+
       // 記錄錯誤
       this.logError(standardError);
-      
+
       // 獲取錯誤處理器
       const handler = this.errorHandlers.get(standardError.type);
       if (handler) {
@@ -184,12 +184,12 @@ class ErrorHandlingService {
         // 默認處理器
         this.defaultErrorHandler(standardError, options);
       }
-      
+
       // 如果是嚴重錯誤，觸發錯誤事件
       if (standardError.severity === ErrorSeverity.CRITICAL) {
         this.dispatchErrorEvent(standardError);
       }
-      
+
     } catch (handlingError) {
       console.error('❌ 錯誤處理器本身發生錯誤:', handlingError);
     }
@@ -207,7 +207,7 @@ class ErrorHandlingService {
 
     // 根據錯誤消息推斷錯誤類型
     let type = ErrorType.RUNTIME;
-    let severity = ErrorSeverity.MEDIUM;
+    const severity = ErrorSeverity.MEDIUM;
 
     if (error.message.includes('network') || error.message.includes('fetch')) {
       type = ErrorType.NETWORK;
@@ -234,7 +234,7 @@ class ErrorHandlingService {
    */
   defaultErrorHandler(error, options) {
     console.error(`🚨 [${error.type.toUpperCase()}] ${error.message}`, error.context);
-    
+
     if (!options.silent) {
       this.showUserNotification('發生錯誤，請重試', 'error');
     }
@@ -246,12 +246,12 @@ class ErrorHandlingService {
    */
   logError(error) {
     this.errorLog.push(error);
-    
+
     // 限制日誌大小
     if (this.errorLog.length > this.maxLogSize) {
       this.errorLog = this.errorLog.slice(-this.maxLogSize);
     }
-    
+
     // 持久化重要錯誤
     if (error.severity === ErrorSeverity.HIGH || error.severity === ErrorSeverity.CRITICAL) {
       this.persistError(error);
@@ -266,12 +266,12 @@ class ErrorHandlingService {
     try {
       const errorLogs = JSON.parse(localStorage.getItem('errorLogs') || '[]');
       errorLogs.push(error.toJSON());
-      
+
       // 只保留最近100個錯誤
       if (errorLogs.length > 100) {
         errorLogs.splice(0, errorLogs.length - 100);
       }
-      
+
       localStorage.setItem('errorLogs', JSON.stringify(errorLogs));
     } catch (persistError) {
       console.error('❌ 無法持久化錯誤日誌:', persistError);
@@ -321,7 +321,7 @@ class ErrorHandlingService {
   safeExecute(fn, options = {}) {
     try {
       const result = fn();
-      
+
       // 如果返回 Promise，處理異步錯誤
       if (result && typeof result.catch === 'function') {
         return result.catch(error => {
@@ -329,7 +329,7 @@ class ErrorHandlingService {
           return null;
         });
       }
-      
+
       return result;
     } catch (error) {
       this.handleError(error, options);

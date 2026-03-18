@@ -1,16 +1,16 @@
 /**
  * 事件處理器 - 統一管理 DOM 事件綁定
  * @module ui/event-handlers
- * 
+ *
  * 源代碼位置: system.js L2837-3230
- * 
+ *
  * 主要功能:
  * - DOM 事件綁定
  * - 按鈕點擊處理
  * - 表單提交處理
  * - 鍵盤事件處理
  * - 自訂事件系統
- * 
+ *
  * 注意: 此模組提供事件綁定架構，實際的業務邏輯需要從外部注入
  */
 
@@ -19,9 +19,9 @@ import { LOGIN_MANAGER } from '../core/login-manager.js';
 /**
  * DOM 選擇器
  */
-const $ = (id) => document.getElementById(id);
-const $q = (sel) => document.querySelector(sel);
-const $qa = (sel) => document.querySelectorAll(sel);
+const $ = id => document.getElementById(id);
+const $q = sel => document.querySelector(sel);
+const $qa = sel => document.querySelectorAll(sel);
 
 /**
  * 選項組配置
@@ -170,7 +170,7 @@ export const EventHandlers = {
   bindExportButton() {
     const btn = $('btnExport');
     if (btn && this.handlers.onExport) {
-      this._addEventListener(btn, 'click', (e) => {
+      this._addEventListener(btn, 'click', e => {
         e.preventDefault();
         this.handlers.onExport();
       });
@@ -184,10 +184,10 @@ export const EventHandlers = {
     const btn = $('btnLogout');
     if (btn) {
       console.log('🔗 綁定登出按鈕');
-      this._addEventListener(btn, 'click', (e) => {
+      this._addEventListener(btn, 'click', e => {
         e.preventDefault();
         console.log('🔓 點擊登出按鈕');
-        
+
         if (confirm('確定要登出嗎？')) {
           // 直接調用登出功能
           if (typeof LOGIN_MANAGER !== 'undefined' && LOGIN_MANAGER.logout) {
@@ -224,11 +224,11 @@ export const EventHandlers = {
   bindClassTimeInputs() {
     const startTime = $('classStartTime');
     const endTime = $('classEndTime');
-    
+
     if (startTime && this.handlers.onUpdateClassDuration) {
       this._addEventListener(startTime, 'change', this.handlers.onUpdateClassDuration);
     }
-    
+
     if (endTime && this.handlers.onUpdateClassDuration) {
       this._addEventListener(endTime, 'change', this.handlers.onUpdateClassDuration);
     }
@@ -252,7 +252,7 @@ export const EventHandlers = {
     OPTION_GROUPS.forEach(g => {
       const container = $q(g.selector);
       if (!container) return;
-      
+
       container.querySelectorAll('button').forEach(btn => {
         this._addEventListener(btn, 'click', () => {
           container.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
@@ -288,7 +288,7 @@ export const EventHandlers = {
   bindNavigation() {
     const navItems = $qa('.nav-item[data-page]');
     navItems.forEach(el => {
-      this._addEventListener(el, 'click', (e) => {
+      this._addEventListener(el, 'click', e => {
         e.preventDefault();
         if (this.handlers.onSetPage) {
           this.handlers.onSetPage(el.dataset.page);
@@ -308,10 +308,10 @@ export const EventHandlers = {
         if (sidebar) sidebar.classList.toggle('collapsed');
       });
     }
-    
+
     const collapse = $('btnCollapseSidebar');
     if (collapse) {
-      this._addEventListener(collapse, 'click', (e) => {
+      this._addEventListener(collapse, 'click', e => {
         e.preventDefault();
         e.stopPropagation();
         const sidebar = $('sidebar');
@@ -335,27 +335,27 @@ export const EventHandlers = {
         this.handlers.onRefreshStats();
       });
     }
-    
+
     const dateFrom = $('filterDateFrom');
     if (dateFrom && this.handlers.onRefreshStats) {
       this._addEventListener(dateFrom, 'change', this.handlers.onRefreshStats);
     }
-    
+
     const dateTo = $('filterDateTo');
     if (dateTo && this.handlers.onRefreshStats) {
       this._addEventListener(dateTo, 'change', this.handlers.onRefreshStats);
     }
-    
+
     const search = $('studentSearch');
     if (search && this.handlers.onRefreshStats) {
       this._addEventListener(search, 'input', this.handlers.onRefreshStats);
     }
-    
+
     const sortBy = $('sortBy');
     if (sortBy && this.handlers.onRefreshStats) {
       this._addEventListener(sortBy, 'change', this.handlers.onRefreshStats);
     }
-    
+
     // 快速選擇班級
     const quickSelect = $('quickSelectClass');
     if (quickSelect) {
@@ -367,39 +367,39 @@ export const EventHandlers = {
         }
       });
     }
-    
+
     // 動作記錄篩選
     const actionFilterClass = $('actionFilterClass');
     if (actionFilterClass && this.handlers.onRefreshActionsView) {
       this._addEventListener(actionFilterClass, 'change', this.handlers.onRefreshActionsView);
     }
-    
+
     const actionDateFrom = $('actionDateFrom');
     if (actionDateFrom && this.handlers.onRefreshActionsView) {
       this._addEventListener(actionDateFrom, 'change', this.handlers.onRefreshActionsView);
     }
-    
+
     const actionDateTo = $('actionDateTo');
     if (actionDateTo && this.handlers.onRefreshActionsView) {
       this._addEventListener(actionDateTo, 'change', this.handlers.onRefreshActionsView);
     }
-    
+
     const actionSkillLevel = $('actionSkillLevel');
     if (actionSkillLevel && this.handlers.onRefreshActionsView) {
       this._addEventListener(actionSkillLevel, 'change', this.handlers.onRefreshActionsView);
     }
-    
+
     // 統計分析篩選
     const analyticsFilterClass = $('analyticsFilterClass');
     if (analyticsFilterClass && this.handlers.onRefreshAnalytics) {
       this._addEventListener(analyticsFilterClass, 'change', this.handlers.onRefreshAnalytics);
     }
-    
+
     const analyticsDateFrom = $('analyticsDateFrom');
     if (analyticsDateFrom && this.handlers.onRefreshAnalytics) {
       this._addEventListener(analyticsDateFrom, 'change', this.handlers.onRefreshAnalytics);
     }
-    
+
     const analyticsDateTo = $('analyticsDateTo');
     if (analyticsDateTo && this.handlers.onRefreshAnalytics) {
       this._addEventListener(analyticsDateTo, 'change', this.handlers.onRefreshAnalytics);
@@ -418,7 +418,7 @@ export const EventHandlers = {
         if (modal) modal.hidden = true;
       });
     }
-    
+
     const classDetailModal = $('classDetailModal');
     if (classDetailModal) {
       const backdrop = classDetailModal.querySelector('.modal-backdrop');
@@ -428,7 +428,7 @@ export const EventHandlers = {
         });
       }
     }
-    
+
     // 記錄詳情模態
     const closeDetail = $('closeDetail');
     if (closeDetail) {
@@ -437,7 +437,7 @@ export const EventHandlers = {
         if (modal) modal.hidden = true;
       });
     }
-    
+
     const detailModal = $('detailModal');
     if (detailModal) {
       const backdrop = detailModal.querySelector('.modal-backdrop');
@@ -457,7 +457,7 @@ export const EventHandlers = {
   onFormSubmit(formId, handler) {
     const form = $(formId);
     if (form) {
-      this._addEventListener(form, 'submit', (e) => {
+      this._addEventListener(form, 'submit', e => {
         e.preventDefault();
         handler(e);
       });
@@ -514,7 +514,7 @@ export const EventHandlers = {
    * @param {Function} handler - 處理函數
    */
   onKeyPress(key, handler) {
-    this._addEventListener(document, 'keydown', (e) => {
+    this._addEventListener(document, 'keydown', e => {
       if (e.key === key) {
         handler(e);
       }
@@ -564,7 +564,7 @@ export const EventHandlers = {
    */
   off(eventName, handler) {
     if (!this.customListeners[eventName]) return;
-    
+
     const index = this.customListeners[eventName].indexOf(handler);
     if (index > -1) {
       this.customListeners[eventName].splice(index, 1);

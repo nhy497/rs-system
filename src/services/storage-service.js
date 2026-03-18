@@ -24,14 +24,14 @@ export class StorageService {
    */
   async init(database, remoteURL = null) {
     this.db = database;
-    
+
     // 如果提供遠程 URL，啟用雲端同步
     if (remoteURL) {
       await this._setupSync(remoteURL);
     }
-    
+
     this._startChangesFeed();
-    console.log('✅ 儲存服務已初始化' + (remoteURL ? '（已啟用雲端同步）' : '（本地模式）'));
+    console.log(`✅ 儲存服務已初始化${remoteURL ? '（已啟用雲端同步）' : '（本地模式）'}`);
   }
 
   /**
@@ -43,23 +43,23 @@ export class StorageService {
   async _setupSync(remoteURL) {
     try {
       this.remoteDB = new PouchDB(remoteURL);
-      
+
       // 雙向同步
       this.syncHandler = this.db.sync(this.remoteDB, {
         live: true,
         retry: true
-      }).on('change', (info) => {
+      }).on('change', info => {
         console.log('�� 數據同步中:', info.direction);
       }).on('paused', () => {
         console.log('⏸️ 同步已暫停（等待變更）');
       }).on('active', () => {
         console.log('▶️ 同步重新啟動');
-      }).on('denied', (err) => {
+      }).on('denied', err => {
         console.error('❌ 同步被拒絕:', err);
-      }).on('error', (err) => {
+      }).on('error', err => {
         console.error('❌ 同步錯誤:', err);
       });
-      
+
       console.log('✅ 雲端同步已啟用:', remoteURL);
     } catch (error) {
       console.error('❌ 設置雲端同步失敗:', error);
@@ -74,12 +74,12 @@ export class StorageService {
   _startChangesFeed() {
     try {
       if (!this.db.changes) return; // PouchDB 未加載
-      
+
       this.changesFeed = this.db.changes({
         since: 'now',
         live: true,
         include_docs: true
-      }).on('change', (change) => {
+      }).on('change', change => {
         this.changeListeners.forEach(listener => {
           try {
             listener(change);
@@ -87,7 +87,7 @@ export class StorageService {
             console.error('監聽器執行失敗:', e);
           }
         });
-      }).on('error', (err) => {
+      }).on('error', err => {
         console.error('❌ 變動監聽錯誤:', err);
         setTimeout(() => this._startChangesFeed(), 5000);
       });
@@ -127,7 +127,7 @@ export class StorageService {
   async addCheckpoint(checkpointData) {
     try {
       if (!this.db) return null;
-      
+
       const doc = {
         type: 'checkpoint',
         className: checkpointData.className,
@@ -159,7 +159,7 @@ export class StorageService {
   async updateCheckpoint(id, updates) {
     try {
       if (!this.db) return null;
-      
+
       const doc = await this.db.get(id);
       const updated = {
         ...doc,
@@ -184,7 +184,7 @@ export class StorageService {
   async deleteCheckpoint(id) {
     try {
       if (!this.db) return false;
-      
+
       const doc = await this.db.get(id);
       await this.db.remove(doc);
       console.log('✅ 課堂記錄已刪除:', id);
@@ -202,7 +202,7 @@ export class StorageService {
   async getAllCheckpoints() {
     try {
       if (!this.db) return [];
-      
+
       const result = await this.db.allDocs({ include_docs: true });
       return result.rows
         .map(row => row.doc)
@@ -220,7 +220,7 @@ export class StorageService {
   async createBackup() {
     try {
       if (!this.db) return null;
-      
+
       const docs = await this.getAllCheckpoints();
       return {
         timestamp: new Date().toISOString(),
@@ -239,7 +239,7 @@ export class StorageService {
   async clearAllData() {
     try {
       if (!this.db) return false;
-      
+
       const docs = await this.db.allDocs();
       const toDelete = docs.rows.map(row => ({
         _id: row.id,

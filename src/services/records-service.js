@@ -32,7 +32,7 @@ export const RecordsService = {
         console.log(`📦 parseRecords() 使用緩存: ${this._cache.records.length} 筆`);
         return this._cache.records;
       }
-      
+
       const encoded = localStorage.getItem(STORAGE_KEY);
       if (!encoded) {
         console.log('📦 parseRecords() 讀取筆數: 0 (無數據)');
@@ -40,7 +40,7 @@ export const RecordsService = {
         this._cache.lastSync = Date.now();
         return [];
       }
-      
+
       let records = [];
       try {
         // 統一編碼方式：encodeURIComponent + btoa（支援中文）
@@ -59,17 +59,17 @@ export const RecordsService = {
           }
         }
       }
-      
+
       const safe = Array.isArray(records) ? records : [];
       console.log(`📦 parseRecords() 讀取筆數: ${safe.length}`);
       if (safe.length > 0) {
-        console.log(`📊 第一筆記錄範例:`, safe[0]);
+        console.log('📊 第一筆記錄範例:', safe[0]);
       }
-      
+
       // 更新緩存
       this._cache.records = safe;
       this._cache.lastSync = Date.now();
-      
+
       return safe;
     } catch (e) {
       console.error('❌ parseRecords() 讀取失敗:', e);
@@ -86,7 +86,7 @@ export const RecordsService = {
   saveRecords(records) {
     try {
       if (!Array.isArray(records)) throw new Error('資料格式無效：必須是陣列');
-      
+
       // 為每筆記錄添加用戶ID（如果需要）
       const recordsWithUserId = records.map(record => {
         // 如果全域有 getCurrentUser 函數，使用它
@@ -98,29 +98,29 @@ export const RecordsService = {
         }
         return record;
       });
-      
+
       // 統一編碼方式：encodeURIComponent + btoa（支援中文）
       const jsonStr = JSON.stringify(recordsWithUserId);
       const encoded = btoa(encodeURIComponent(jsonStr));
-      
+
       // 檢查儲存空間
       if (encoded.length > 4 * 1024 * 1024) { // 4MB 限制
         console.warn('⚠️ 數據過大，嘗試清理舊記錄');
-        const sorted = recordsWithUserId.sort((a, b) => 
+        const sorted = recordsWithUserId.sort((a, b) =>
           new Date(b.createdAt || b.classDate) - new Date(a.createdAt || a.classDate)
         );
         return this.saveRecords(sorted.slice(0, 500)); // 只保留最新 500 筆
       }
-      
+
       localStorage.setItem(STORAGE_KEY, encoded);
-      
+
       // 更新緩存
       this._cache.records = recordsWithUserId;
       this._cache.lastSync = Date.now();
-      
+
       console.log(`✅ saveRecords() 已儲存 ${recordsWithUserId.length} 筆課堂記錄`);
       if (recordsWithUserId.length > 0) {
-        console.log(`📊 範例記錄:`, recordsWithUserId[0]);
+        console.log('📊 範例記錄:', recordsWithUserId[0]);
       }
     } catch (e) {
       console.error('❌ saveRecords() 保存失敗:', e);
@@ -129,7 +129,7 @@ export const RecordsService = {
         console.error(message);
         if (typeof toast === 'function') toast(message);
       } else {
-        const message = '❌ 無法保存數據：' + e.message;
+        const message = `❌ 無法保存數據：${e.message}`;
         console.error(message);
         if (typeof toast === 'function') toast(message);
       }
@@ -168,10 +168,10 @@ export const RecordsService = {
         createdAt: new Date().toISOString(),
         ...data
       };
-      
+
       records.push(newRecord);
       this.saveRecords(records);
-      
+
       console.log(`✅ 記錄創建成功: ${newRecord.id}`);
       return { success: true, record: newRecord };
     } catch (error) {
@@ -190,20 +190,20 @@ export const RecordsService = {
     try {
       const records = this.getAllRecords();
       const index = records.findIndex(r => r.id === id);
-      
+
       if (index === -1) {
         throw new Error('記錄不存在');
       }
-      
+
       records[index] = {
         ...records[index],
         ...data,
         id: records[index].id, // 保持 ID 不變
         updatedAt: new Date().toISOString()
       };
-      
+
       this.saveRecords(records);
-      
+
       console.log(`✅ 記錄更新成功: ${id}`);
       return { success: true, record: records[index] };
     } catch (error) {
@@ -221,14 +221,14 @@ export const RecordsService = {
     try {
       const records = this.getAllRecords();
       const index = records.findIndex(r => r.id === id);
-      
+
       if (index === -1) {
         throw new Error('記錄不存在');
       }
-      
+
       records.splice(index, 1);
       this.saveRecords(records);
-      
+
       console.log(`✅ 記錄刪除成功: ${id}`);
       return { success: true };
     } catch (error) {

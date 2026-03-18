@@ -1,7 +1,7 @@
 /**
  * 📝 主控台輸出增強器
  * 提供人性化的主控台訊息，方便開發和除錯
- * 
+ *
  * 使用方法：
  * console.success('操作成功');
  * console.error_('發生錯誤');
@@ -58,10 +58,10 @@
 
   // 格式化樣式
   const styles = {
-    header: (color) => `color: ${color}; font-size: 16px; font-weight: bold;`,
-    subheader: (color) => `color: ${color}; font-size: 14px; font-weight: bold;`,
-    normal: (color) => `color: ${color}; font-size: 12px;`,
-    bold: (color) => `color: ${color}; font-size: 12px; font-weight: bold;`,
+    header: color => `color: ${color}; font-size: 16px; font-weight: bold;`,
+    subheader: color => `color: ${color}; font-size: 14px; font-weight: bold;`,
+    normal: color => `color: ${color}; font-size: 12px;`,
+    bold: color => `color: ${color}; font-size: 12px; font-weight: bold;`,
     muted: `color: ${COLORS.MUTED}; font-size: 11px;`,
     separator: `color: ${COLORS.MUTED};`
   };
@@ -199,7 +199,7 @@
 
     add(type, message, details) {
       const entry = {
-        timestamp: new Date().toLocaleTimeString('zh-TW', { 
+        timestamp: new Date().toLocaleTimeString('zh-TW', {
           hour12: false,
           hour: '2-digit',
           minute: '2-digit',
@@ -219,8 +219,8 @@
 
     show(filterType = null) {
       console.header('系統事件記錄');
-      
-      const filtered = filterType 
+
+      const filtered = filterType
         ? this.logs.filter(log => log.type === filterType)
         : this.logs;
 
@@ -259,7 +259,7 @@
   // 追蹤所有事件
   const originalConsoleLog = console.log;
   const trackableTypes = ['success', 'error_', 'warn_', 'info_', 'system', 'save', 'load', 'sync'];
-  
+
   trackableTypes.forEach(type => {
     const originalMethod = console[type];
     console[type] = function(...args) {
@@ -277,7 +277,7 @@
   // 幫助訊息
   console.showHelp = function() {
     console.header('主控台增強功能');
-    
+
     const methods = [
       { name: 'console.success(msg)', desc: '成功訊息 (綠色)' },
       { name: 'console.error_(msg)', desc: '錯誤訊息 (紅色)' },
@@ -299,7 +299,7 @@
     ];
 
     console.table(methods);
-    console.log(`%c提示: 使用 statusTracker.show() 查看所有系統事件`, styles.muted);
+    console.log('%c提示: 使用 statusTracker.show() 查看所有系統事件', styles.muted);
   };
 
   // 初始化訊息

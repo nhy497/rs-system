@@ -1,17 +1,17 @@
 /**
  * RS-System 主入口點
  * @module main
- * 
+ *
  * 此模組提供統一的 API 存取點，匯出所有核心功能模組。
  * 適用於：
  * - ES 模組環境
  * - 需要按需導入特定功能
  * - 自訂初始化流程
- * 
+ *
  * @example
  * // 導入特定模組
  * import { AppInit, APP_CONFIG } from './src/main.js';
- * 
+ *
  * @example
  * // 導入所有模組
  * import * as RSSystem from './src/main.js';
@@ -93,24 +93,24 @@ export const VERSION_INFO = {
 
 /**
  * 快速初始化應用程式
- * 
+ *
  * 這是最簡單的初始化方式，自動執行所有初始化步驟。
- * 
+ *
  * @param {Object} [options={}] - 初始化選項
  * @param {string} [options.env] - 環境名稱 ('development' | 'production' | 'test')
  * @param {boolean} [options.skipAuth] - 是否跳過認證檢查
  * @param {boolean} [options.skipUI] - 是否跳過 UI 初始化
  * @param {Function} [options.onProgress] - 進度回調函式
  * @returns {Promise<boolean>} 初始化是否成功
- * 
+ *
  * @example
  * // 基本使用
  * await initApp();
- * 
+ *
  * @example
  * // 開發環境初始化
  * await initApp({ env: 'development' });
- * 
+ *
  * @example
  * // 帶進度回調
  * await initApp({
@@ -126,11 +126,11 @@ export async function initApp(options = {}) {
 
 /**
  * 初始化登入頁面
- * 
+ *
  * 在登入頁面自動設置登入/註冊表單處理邏輯。
- * 
+ *
  * @returns {Promise<boolean>} 初始化是否成功
- * 
+ *
  * @example
  * // 在 login.html 中使用
  * await initLoginPage();
@@ -143,7 +143,7 @@ export async function initLoginPage() {
 /**
  * 獲取應用程式資訊
  * @returns {Object} 應用程式資訊
- * 
+ *
  * @example
  * const info = getAppInfo();
  * console.log(info.version); // "3.0.0"
@@ -166,7 +166,7 @@ export function getAppInfo() {
  * 檢查模組是否可用
  * @param {string} moduleName - 模組名稱
  * @returns {boolean} 模組是否可用
- * 
+ *
  * @example
  * if (isModuleAvailable('core')) {
  *   // 使用核心模組
@@ -174,7 +174,7 @@ export function getAppInfo() {
  */
 export function isModuleAvailable(moduleName) {
   const availableModules = ['init', 'core', 'services', 'ui', 'utils', 'constants'];
-  
+
   return availableModules.includes(moduleName);
 }
 

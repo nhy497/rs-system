@@ -3,10 +3,10 @@
  * @module services/users-service
  */
 
-import { 
-  loadUsersFromStorage, 
-  saveUsersToStorage, 
-  hashPasswordCompat 
+import {
+  loadUsersFromStorage,
+  saveUsersToStorage,
+  hashPasswordCompat
 } from '../core/auth-config.js';
 
 /**
@@ -48,7 +48,7 @@ export const UsersService = {
       }
 
       const users = loadUsersFromStorage();
-      
+
       // 檢查用戶名是否已存在
       if (users.find(u => u.username === userData.username)) {
         throw new Error('用戶名已存在');
@@ -66,7 +66,7 @@ export const UsersService = {
 
       users.push(newUser);
       saveUsersToStorage(users);
-      
+
       console.log(`✅ 用戶 ${userData.username} 創建成功`);
       return { success: true, user: newUser };
     } catch (error) {
@@ -85,7 +85,7 @@ export const UsersService = {
     try {
       const users = loadUsersFromStorage();
       const userIndex = users.findIndex(u => u.username === username);
-      
+
       if (userIndex === -1) {
         throw new Error('用戶不存在');
       }
@@ -106,7 +106,7 @@ export const UsersService = {
 
       users[userIndex] = updatedUser;
       saveUsersToStorage(users);
-      
+
       console.log(`✅ 用戶 ${username} 更新成功`);
       return { success: true, user: updatedUser };
     } catch (error) {
@@ -129,14 +129,14 @@ export const UsersService = {
 
       const users = loadUsersFromStorage();
       const userIndex = users.findIndex(u => u.username === username);
-      
+
       if (userIndex === -1) {
         throw new Error('用戶不存在');
       }
 
       users.splice(userIndex, 1);
       saveUsersToStorage(users);
-      
+
       console.log(`✅ 用戶 ${username} 刪除成功`);
       return { success: true };
     } catch (error) {

@@ -58,7 +58,7 @@ export const LOGIN_MANAGER = {
 
       const users = loadUsersFromStorage();
       const user = users.find(u => u.username === username);
-      
+
       if (!user) {
         this.recordFailedAttempt(username);
         throw new Error('用戶名或密碼錯誤');
@@ -77,7 +77,7 @@ export const LOGIN_MANAGER = {
       const sessionData = {
         userId: user.userId || user.id,
         username: user.username,
-        sessionId: sessionId,
+        sessionId,
         createdAt: Date.now(),
         expiresAt: Date.now() + this.SECURITY.SESSION_TIMEOUT,
         ipHash: this.getIpHash(),
@@ -95,7 +95,7 @@ export const LOGIN_MANAGER = {
 
       this.state.activeSessions[sessionId] = sessionData;
       console.log(`✅ 用戶 ${username} 登入成功 | 會話ID: ${sessionId}`);
-      
+
       // 觸發登入狀態變化事件
       const userData = {
         id: user.userId || user.id,
@@ -105,7 +105,7 @@ export const LOGIN_MANAGER = {
         role: user.role || 'user'
       };
       this.dispatchLoginStateChange(userData, true);
-      
+
       return {
         success: true,
         user: userData
@@ -124,23 +124,23 @@ export const LOGIN_MANAGER = {
     try {
       const currentUser = this.getCurrentUser();
       const session = JSON.parse(localStorage.getItem('rs-system-session') || '{}');
-      
+
       // 記錄登出事件
       if (typeof loggerService !== 'undefined') {
         loggerService.logSystemEvent('logout', `用戶 ${currentUser?.username || '未知'} 已登出`, 'info');
       }
-      
+
       // 清除會話數據
       localStorage.removeItem('rs-system-session');
       localStorage.removeItem('current-user');
-      
+
       if (session.sessionId) {
         delete this.state.activeSessions[session.sessionId];
       }
-      
+
       // 觸發登出狀態變化事件
       this.dispatchLoginStateChange(null, false);
-      
+
       console.log('✅ 已登出');
       setTimeout(() => { window.location.href = 'login.html'; }, 500);
       return true;
@@ -242,12 +242,12 @@ export const LOGIN_MANAGER = {
    * @returns {Promise<boolean>} 密碼是否正確
    */
   async verifyPassword(password, hash) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (!hash) return resolve(false);
       const computed = this.hashPassword(password);
       let result = true;
       const minLength = Math.min(computed.length, hash.length);
-      
+
       for (let i = 0; i < minLength; i++) {
         if (computed[i] !== hash[i]) result = false;
       }
@@ -284,7 +284,7 @@ export const LOGIN_MANAGER = {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const combined = ua + lang + tz;
     let hash = 0;
-    
+
     for (let i = 0; i < combined.length; i++) {
       hash = ((hash << 5) - hash) + combined.charCodeAt(i);
       hash = hash & hash;

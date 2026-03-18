@@ -10,11 +10,11 @@ export class Toast {
       position: options.position || 'top-right',
       className: options.className || ''
     };
-    
+
     this.container = null;
     this.queue = [];
     this.isShowing = false;
-    
+
     this.init();
   }
 
@@ -27,7 +27,7 @@ export class Toast {
       z-index: 10000;
       pointer-events: none;
     `;
-    
+
     // 設置位置
     const positions = {
       'top-right': 'top: 1rem; right: 1rem;',
@@ -37,7 +37,7 @@ export class Toast {
       'bottom-left': 'bottom: 1rem; left: 1rem;',
       'bottom-center': 'bottom: 1rem; left: 50%; transform: translateX(-50%);'
     };
-    
+
     this.container.style.cssText += positions[this.options.position] || positions['top-right'];
     document.body.appendChild(this.container);
   }
@@ -55,9 +55,9 @@ export class Toast {
       duration: duration || this.options.duration,
       id: Date.now() + Math.random()
     };
-    
+
     this.queue.push(toast);
-    
+
     if (!this.isShowing) {
       this.processQueue();
     }
@@ -68,18 +68,18 @@ export class Toast {
       this.isShowing = false;
       return;
     }
-    
+
     this.isShowing = true;
     const toast = this.queue.shift();
-    
+
     await this.displayToast(toast);
-    
+
     // 處理下一個
     this.processQueue();
   }
 
   displayToast(toast) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       // 創建 Toast 元素
       const element = document.createElement('div');
       element.className = `toast toast-${toast.type} ${this.options.className}`;
@@ -98,7 +98,7 @@ export class Toast {
         animation: slideIn 0.3s ease-out;
         border-left: 4px solid;
       `;
-      
+
       // 設置類型樣式
       const typeStyles = {
         success: 'border-color: #10b981; color: #065f46;',
@@ -106,9 +106,9 @@ export class Toast {
         warning: 'border-color: #f59e0b; color: #92400e;',
         info: 'border-color: #3b82f6; color: #1e40af;'
       };
-      
+
       element.style.cssText += typeStyles[toast.type] || typeStyles.info;
-      
+
       // 設置圖示
       const icons = {
         success: '✅',
@@ -116,7 +116,7 @@ export class Toast {
         warning: '⚠️',
         info: 'ℹ️'
       };
-      
+
       element.innerHTML = `
         <span style="font-size: 1.25rem;">${icons[toast.type] || icons.info}</span>
         <span style="flex: 1;">${this.escapeHtml(toast.message)}</span>
@@ -130,16 +130,16 @@ export class Toast {
           opacity: 0.6;
         ">&times;</button>
       `;
-      
+
       // 關閉按鈕
       const closeBtn = element.querySelector('.toast-close');
       closeBtn.addEventListener('click', () => {
         this.hideToast(element, resolve);
       });
-      
+
       // 顯示 Toast
       this.container.appendChild(element);
-      
+
       // 自動關閉
       setTimeout(() => {
         this.hideToast(element, resolve);
@@ -149,7 +149,7 @@ export class Toast {
 
   hideToast(element, callback) {
     element.style.animation = 'slideOut 0.3s ease-in';
-    
+
     setTimeout(() => {
       if (element.parentNode) {
         element.parentNode.removeChild(element);
@@ -200,7 +200,7 @@ export class Toast {
 }
 
 // CSS 動畫
- const style = document.createElement('style');
+const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
     from {

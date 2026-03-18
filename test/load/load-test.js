@@ -12,13 +12,13 @@ import { testUserManager } from '../utils/test-user-manager.js';
 const LOAD_TEST_CONFIG = {
   // 並發用戶數
   concurrentUsers: 10,
-  
+
   // 測試持續時間（秒）
   duration: 60,
-  
+
   // 用戶行為間隔（毫秒）
   userInterval: 1000,
-  
+
   // 測試場景
   scenarios: [
     {
@@ -67,7 +67,7 @@ const LOAD_TEST_CONFIG = {
       ]
     }
   ],
-  
+
   // 性能指標閾值
   thresholds: {
     responseTime: 3000, // 響應時間 < 3秒
@@ -119,10 +119,10 @@ class LoadTester {
 
       // 等待所有用戶完成
       await Promise.all(userPromises);
-      
+
       this.results.endTime = new Date();
       console.log('✅ 負載測試完成');
-      
+
       return this.generateReport();
     } catch (error) {
       console.error('❌ 負載測試失敗:', error);
@@ -146,10 +146,10 @@ class LoadTester {
 
     try {
       this.results.totalUsers++;
-      
+
       // 選擇測試場景
       const scenario = this.selectScenario();
-      
+
       // 記錄場景統計
       if (!this.results.scenarios[scenario.name]) {
         this.results.scenarios[scenario.name] = {
@@ -160,20 +160,20 @@ class LoadTester {
           errors: []
         };
       }
-      
+
       this.results.scenarios[scenario.name].users++;
-      
+
       // 執行場景
       const startTime = Date.now();
       await this.executeScenario(page, scenario);
       const duration = Date.now() - startTime;
-      
+
       this.results.completedUsers++;
       this.results.scenarios[scenario.name].completed++;
       this.results.scenarios[scenario.name].totalDuration += duration;
-      
+
       console.log(`✅ 用戶 ${userId} 完成 ${scenario.name} (${duration}ms)`);
-      
+
     } catch (error) {
       this.results.failedUsers++;
       this.results.errors.push({
@@ -182,12 +182,12 @@ class LoadTester {
         error: error.message,
         timestamp: new Date()
       });
-      
+
       if (this.results.scenarios[scenario.name]) {
         this.results.scenarios[scenario.name].failed++;
         this.results.scenarios[scenario.name].errors.push(error.message);
       }
-      
+
       console.error(`❌ 用戶 ${userId} 失敗:`, error.message);
     } finally {
       await context.close();
@@ -202,14 +202,14 @@ class LoadTester {
   selectScenario() {
     const totalWeight = this.config.scenarios.reduce((sum, s) => sum + s.weight, 0);
     let random = Math.random() * totalWeight;
-    
+
     for (const scenario of this.config.scenarios) {
       random -= scenario.weight;
       if (random <= 0) {
         return scenario;
       }
     }
-    
+
     return this.config.scenarios[0];
   }
 
@@ -221,10 +221,10 @@ class LoadTester {
   async executeScenario(page, scenario) {
     for (const action of scenario.actions) {
       const actionStartTime = Date.now();
-      
+
       try {
         await this.executeAction(page, action);
-        
+
         const actionDuration = Date.now() - actionStartTime;
         this.results.responseTimes.push({
           action: action.type,
@@ -232,17 +232,17 @@ class LoadTester {
           scenario: scenario.name,
           timestamp: new Date()
         });
-        
+
         this.results.totalRequests++;
         this.results.successfulRequests++;
-        
+
       } catch (error) {
         this.results.totalRequests++;
         this.results.failedRequests++;
-        
+
         throw error;
       }
-      
+
       // 等待指定的時間
       if (action.wait) {
         await page.waitForTimeout(action.wait);
@@ -257,34 +257,34 @@ class LoadTester {
    */
   async executeAction(page, action) {
     switch (action.type) {
-      case 'navigate':
-        await page.goto(action.url, { waitUntil: 'networkidle' });
-        break;
-        
-      case 'click':
-        await page.click(action.selector);
-        break;
-        
-      case 'fill':
-        await page.fill(action.selector, action.value);
-        break;
-        
-      case 'select':
-        await page.selectOption(action.selector, action.value);
-        break;
-        
-      case 'scroll':
-        await page.evaluate((amount) => {
-          window.scrollBy(0, amount);
-        }, action.amount);
-        break;
-        
-      case 'wait':
-        await page.waitForTimeout(action.duration);
-        break;
-        
-      default:
-        throw new Error(`未知的動作類型: ${action.type}`);
+    case 'navigate':
+      await page.goto(action.url, { waitUntil: 'networkidle' });
+      break;
+
+    case 'click':
+      await page.click(action.selector);
+      break;
+
+    case 'fill':
+      await page.fill(action.selector, action.value);
+      break;
+
+    case 'select':
+      await page.selectOption(action.selector, action.value);
+      break;
+
+    case 'scroll':
+      await page.evaluate(amount => {
+        window.scrollBy(0, amount);
+      }, action.amount);
+      break;
+
+    case 'wait':
+      await page.waitForTimeout(action.duration);
+      break;
+
+    default:
+      throw new Error(`未知的動作類型: ${action.type}`);
     }
   }
 
@@ -294,17 +294,17 @@ class LoadTester {
    */
   generateReport() {
     const duration = this.results.endTime - this.results.startTime;
-    const avgResponseTime = this.results.responseTimes.length > 0 
+    const avgResponseTime = this.results.responseTimes.length > 0
       ? this.results.responseTimes.reduce((sum, r) => sum + r.duration, 0) / this.results.responseTimes.length
       : 0;
-    
-    const errorRate = this.results.totalRequests > 0 
+
+    const errorRate = this.results.totalRequests > 0
       ? (this.results.failedRequests / this.results.totalRequests) * 100
       : 0;
 
     const report = {
       summary: {
-        duration: duration,
+        duration,
         totalUsers: this.results.totalUsers,
         completedUsers: this.results.completedUsers,
         failedUsers: this.results.failedUsers,
@@ -312,10 +312,10 @@ class LoadTester {
         totalRequests: this.results.totalRequests,
         successfulRequests: this.results.successfulRequests,
         failedRequests: this.results.failedRequests,
-        errorRate: errorRate,
-        avgResponseTime: avgResponseTime
+        errorRate,
+        avgResponseTime
       },
-      
+
       performance: {
         responseTimes: {
           min: Math.min(...this.results.responseTimes.map(r => r.duration)),
@@ -329,11 +329,11 @@ class LoadTester {
         throughput: this.results.successfulRequests / (duration / 1000), // 請求/秒
         concurrency: this.config.concurrentUsers
       },
-      
+
       scenarios: {},
-      
+
       errors: this.results.errors,
-      
+
       thresholds: {
         responseTime: this.config.thresholds.responseTime,
         errorRate: this.config.thresholds.errorRate,
@@ -365,7 +365,7 @@ class LoadTester {
    */
   calculatePercentile(values, percentile) {
     if (values.length === 0) return 0;
-    
+
     const sorted = values.slice().sort((a, b) => a - b);
     const index = Math.ceil((percentile / 100) * sorted.length) - 1;
     return sorted[Math.max(0, index)];
@@ -385,10 +385,10 @@ class LoadTester {
  */
 async function runLoadTest() {
   const loadTester = new LoadTester();
-  
+
   try {
     const report = await loadTester.start();
-    
+
     console.log('\n📊 負載測試報告:');
     console.log('='.repeat(50));
     console.log(`測試持續時間: ${report.summary.duration}ms`);
@@ -402,7 +402,7 @@ async function runLoadTest() {
     console.log(`錯誤率: ${report.summary.errorRate.toFixed(2)}%`);
     console.log(`平均響應時間: ${report.summary.avgResponseTime.toFixed(2)}ms`);
     console.log(`吞吐量: ${report.performance.throughput.toFixed(2)} 請求/秒`);
-    
+
     console.log('\n📈 響應時間統計:');
     console.log(`最小值: ${report.performance.responseTimes.min}ms`);
     console.log(`最大值: ${report.performance.responseTimes.max}ms`);
@@ -411,7 +411,7 @@ async function runLoadTest() {
     console.log(`P90: ${report.performance.responseTimes.p90.toFixed(2)}ms`);
     console.log(`P95: ${report.performance.responseTimes.p95.toFixed(2)}ms`);
     console.log(`P99: ${report.performance.responseTimes.p99.toFixed(2)}ms`);
-    
+
     console.log('\n🎭 場景統計:');
     Object.keys(report.scenarios).forEach(scenarioName => {
       const scenario = report.scenarios[scenarioName];
@@ -422,25 +422,25 @@ async function runLoadTest() {
       console.log(`  成功率: ${scenario.successRate.toFixed(2)}%`);
       console.log(`  平均持續時間: ${scenario.avgDuration.toFixed(2)}ms`);
     });
-    
+
     console.log('\n🎯 閾值檢查:');
     console.log(`響應時間閾值: ${report.thresholds.responseTime}ms`);
     console.log(`錯誤率閾值: ${report.thresholds.errorRate}%`);
     console.log(`測試結果: ${report.thresholds.passed ? '✅ 通過' : '❌ 未通過'}`);
-    
+
     if (report.errors.length > 0) {
       console.log('\n❌ 錯誤詳情:');
       report.errors.slice(0, 10).forEach(error => {
         console.log(`用戶 ${error.userId} (${error.scenario}): ${error.error}`);
       });
-      
+
       if (report.errors.length > 10) {
         console.log(`... 還有 ${report.errors.length - 10} 個錯誤`);
       }
     }
-    
+
     return report;
-    
+
   } catch (error) {
     console.error('負載測試執行失敗:', error);
     throw error;

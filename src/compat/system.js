@@ -55,7 +55,7 @@
       TricksManager,
       AttachmentsManager,
       EventHandlers,
-      UserDisplayManager,
+      UserDisplayManager
     } = await import('../main.js');
 
     // ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
  * Firebase 配置和初始化
  * 支援多用戶認證和實時數據同步
  * v3.0: 多用戶系統準備中
- * 
+ *
  * 注意：請根據實際的 Firebase 項目配置更新以下值
  * 或將 firebaseEnabled 設置為 false 以禁用 Firebase 功能
  */
@@ -10,12 +10,12 @@
 // Firebase 配置（請根據 Firebase 項目更新）
 // 如未配置，系統將自動降級至 localStorage 本地存儲
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_PROJECT.firebaseapp.com',
+  projectId: 'YOUR_PROJECT_ID',
+  storageBucket: 'YOUR_PROJECT.appspot.com',
+  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+  appId: 'YOUR_APP_ID'
 };
 
 // Firebase 初始化標誌
@@ -33,7 +33,7 @@ function initializeFirebase() {
     console.warn('Firebase SDK not loaded. Using local storage only.');
     return false;
   }
-  
+
   try {
     firebase.initializeApp(firebaseConfig);
     firebaseInitialized = true;
@@ -92,7 +92,7 @@ const Auth = {
   /**
    * 監聽認證狀態變化
    */
-  onAuthStateChanged: (callback) => {
+  onAuthStateChanged: callback => {
     if (!firebaseEnabled) {
       callback(null);
       return;
@@ -116,7 +116,7 @@ const Database = {
   /**
    * 保存課堂記錄到 Firebase
    */
-  saveRecord: async (record) => {
+  saveRecord: async record => {
     if (!firebaseEnabled) {
       // 降級到本地儲存
       const list = parseRecords();
@@ -131,17 +131,17 @@ const Database = {
     try {
       const user = firebase.auth().currentUser;
       if (!user) throw new Error('User not authenticated');
-      
+
       const db = firebase.database();
       const recordId = `${record.classDate}_${record.className}`;
       const path = `users/${user.uid}/records/${recordId}`;
-      
+
       await db.ref(path).set({
         ...record,
         userId: user.uid,
         updatedAt: firebase.database.ServerValue.TIMESTAMP
       });
-      
+
       return record;
     } catch (error) {
       console.error('Database.saveRecord failed:', error);
@@ -161,14 +161,14 @@ const Database = {
     try {
       const user = firebase.auth().currentUser;
       if (!user) return [];
-      
+
       const db = firebase.database();
       const snapshot = await db.ref(`users/${user.uid}/records`).once('value');
       const data = snapshot.val();
-      
+
       if (!data) return [];
-      
-      return Object.values(data).sort((a, b) => 
+
+      return Object.values(data).sort((a, b) =>
         (b.classDate || '').localeCompare(a.classDate || '')
       );
     } catch (error) {
@@ -194,11 +194,11 @@ const Database = {
     try {
       const user = firebase.auth().currentUser;
       if (!user) throw new Error('User not authenticated');
-      
+
       const db = firebase.database();
       const recordId = `${classDate}_${className}`;
       const path = `users/${user.uid}/records/${recordId}`;
-      
+
       await db.ref(path).remove();
     } catch (error) {
       console.error('Database.deleteRecord failed:', error);
@@ -209,7 +209,7 @@ const Database = {
   /**
    * 訂閱用戶記錄的實時更新
    */
-  subscribeToRecords: (callback) => {
+  subscribeToRecords: callback => {
     if (!firebaseEnabled) {
       // 定期輪詢本地儲存
       setInterval(() => {
@@ -224,18 +224,18 @@ const Database = {
         callback([]);
         return () => {};
       }
-      
+
       const db = firebase.database();
       const ref = db.ref(`users/${user.uid}/records`);
-      
-      ref.on('value', (snapshot) => {
+
+      ref.on('value', snapshot => {
         const data = snapshot.val();
-        const records = data ? Object.values(data).sort((a, b) => 
+        const records = data ? Object.values(data).sort((a, b) =>
           (b.classDate || '').localeCompare(a.classDate || '')
         ) : [];
         callback(records);
       });
-      
+
       return () => ref.off(); // 返回取消訂閱函數
     } catch (error) {
       console.error('Database.subscribeToRecords failed:', error);
@@ -261,15 +261,15 @@ const AdminPanel = {
     try {
       const user = firebase.auth().currentUser;
       if (!user) throw new Error('User not authenticated');
-      
+
       // 檢查用戶是否為管理員（自行實現管理員標誌）
       const isAdmin = await AdminPanel.checkAdminAccess(user.uid);
       if (!isAdmin) throw new Error('Unauthorized: Admin access required');
-      
+
       const db = firebase.database();
       const snapshot = await db.ref('users').once('value');
       const data = snapshot.val();
-      
+
       const allRecords = [];
       for (const userId in data) {
         const records = data[userId].records || {};
@@ -281,8 +281,8 @@ const AdminPanel = {
           });
         }
       }
-      
-      return allRecords.sort((a, b) => 
+
+      return allRecords.sort((a, b) =>
         (b.classDate || '').localeCompare(a.classDate || '')
       );
     } catch (error) {
@@ -294,7 +294,7 @@ const AdminPanel = {
   /**
    * 檢查管理員訪問權限
    */
-  checkAdminAccess: async (userId) => {
+  checkAdminAccess: async userId => {
     if (!firebaseEnabled) return false;
 
     try {
@@ -318,12 +318,12 @@ const AdminPanel = {
 
     try {
       const records = await AdminPanel.getAllRecords();
-      
+
       const stats = {
         totalRecords: records.length,
         totalUsers: new Set(records.map(r => r.userId)).size,
         totalClasses: new Set(records.map(r => r.classDate)).size,
-        averageEngagement: records.length > 0 
+        averageEngagement: records.length > 0
           ? (records.reduce((sum, r) => sum + (r.engagement || 0), 0) / records.length).toFixed(1)
           : 0,
         averageMastery: records.length > 0
@@ -332,18 +332,18 @@ const AdminPanel = {
         classesByUser: {},
         recordsByMonth: {}
       };
-      
+
       // 統計每個用戶的課堂數
       records.forEach(r => {
         if (!stats.classesByUser[r.userId]) stats.classesByUser[r.userId] = 0;
         stats.classesByUser[r.userId]++;
-        
+
         // 統計每月記錄
         const month = (r.classDate || '').substring(0, 7);
         if (!stats.recordsByMonth[month]) stats.recordsByMonth[month] = 0;
         stats.recordsByMonth[month]++;
       });
-      
+
       return stats;
     } catch (error) {
       console.error('AdminPanel.getPlatformStats failed:', error);

@@ -47,38 +47,38 @@ if (typeof loggerService !== 'undefined') {
   console.log(`  系統事件: ${stats.systemLogsCount} 條`);
   console.log(`  審計日誌: ${stats.auditLogsCount} 條`);
 } else {
-  console.log(`  ❌ 日誌系統未加載`);
+  console.log('  ❌ 日誌系統未加載');
 }
 
 // 檢查 5: PouchDB
 console.log('\n【檢查 5】PouchDB:');
 if (typeof PouchDB !== 'undefined') {
-  console.log(`  ✅ PouchDB 庫已加載`);
+  console.log('  ✅ PouchDB 庫已加載');
   if (typeof storageService !== 'undefined') {
-    console.log(`  ✅ StorageService 已初始化`);
+    console.log('  ✅ StorageService 已初始化');
   }
 } else {
-  console.log(`  ⚠️ PouchDB 庫未加載 (將使用 localStorage)`);
+  console.log('  ⚠️ PouchDB 庫未加載 (將使用 localStorage)');
 }
 
 // 檢查 6: 表單元素
 console.log('\n【檢查 6】關鍵表單元素:');
 const formElements = [
-  'classDate', 'className', 'classSize', 
+  'classDate', 'className', 'classSize',
   'classStartTime', 'classEndTime', 'classDuration',
   'classLocation', 'teachingRole',
   'engagement', 'atmosphere', 'skillLevel',
   'btnSave', 'btnClear', 'btnLogout'
 ];
 
-let missingElements = [];
+const missingElements = [];
 formElements.forEach(id => {
   const el = document.getElementById(id);
   if (!el) missingElements.push(id);
 });
 
 if (missingElements.length === 0) {
-  console.log(`  ✅ 所有必需元素存在`);
+  console.log('  ✅ 所有必需元素存在');
 } else {
   console.log(`  ❌ 缺失元素: ${missingElements.join(', ')}`);
 }
@@ -101,11 +101,11 @@ window.testLogin = async function(username = 'creator', password = '1234') {
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     const user = users.find(u => u.username === username);
     if (!user) {
-      console.log(`❌ 用戶不存在`);
+      console.log('❌ 用戶不存在');
       return;
     }
     const result = await LOGIN_MANAGER.login(username, password);
-    console.log(result.success ? `✅ 登入成功` : `❌ 登入失敗: ${result.error}`);
+    console.log(result.success ? '✅ 登入成功' : `❌ 登入失敗: ${result.error}`);
   } catch (error) {
     console.error('❌ 測試失敗:', error.message);
   }
@@ -125,12 +125,12 @@ window.testSaveRecord = function() {
       mastery: 80,
       notes: 'Phase 3 測試記錄'
     };
-    
+
     const records = JSON.parse(atob(localStorage.getItem('rope-skip-checkpoints') || btoa(JSON.stringify([]))));
     records.push(testRecord);
     localStorage.setItem('rope-skip-checkpoints', btoa(JSON.stringify(records)));
-    
-    console.log(`✅ 記錄已保存`);
+
+    console.log('✅ 記錄已保存');
     console.log(`  日期: ${testRecord.classDate}`);
     console.log(`  班級: ${testRecord.className}`);
     console.log(`  總記錄數: ${records.length}`);
@@ -146,16 +146,16 @@ window.testLoggerService = function() {
       console.log('❌ 日誌系統未加載');
       return;
     }
-    
+
     // 記錄測試事件
     loggerService.logCoachAction('test_action', '這是一條測試日誌', { test: true });
     loggerService.logSystemEvent('test_event', '系統測試事件', 'info');
-    
+
     // 查詢日誌
     const logs = loggerService.getCoachLogs();
     const events = loggerService.getSystemLogs();
-    
-    console.log(`✅ 日誌系統正常`);
+
+    console.log('✅ 日誌系統正常');
     console.log(`  教練日誌: ${logs.length} 條`);
     console.log(`  系統事件: ${events.length} 條`);
   } catch (error) {

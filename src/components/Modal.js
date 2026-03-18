@@ -17,7 +17,7 @@ export class Modal {
       closeOnBackdrop: options.closeOnBackdrop !== false,
       className: options.className || ''
     };
-    
+
     this.element = null;
     this.isOpen = false;
   }
@@ -31,20 +31,20 @@ export class Modal {
       console.warn('Modal 已經打開');
       return;
     }
-    
+
     // 合併配置
     this.options = { ...this.options, ...options };
-    
+
     // 創建 Modal 元素
     this.render();
-    
+
     // 綁定事件
     this.bindEvents();
-    
+
     // 顯示
     document.body.appendChild(this.element);
     this.isOpen = true;
-    
+
     // 動畫效果
     requestAnimationFrame(() => {
       this.element.classList.add('show');
@@ -68,7 +68,7 @@ export class Modal {
       opacity: 0;
       transition: opacity 0.3s ease;
     `;
-    
+
     this.element.innerHTML = `
       <div class="modal-backdrop" style="
         position: absolute;
@@ -102,7 +102,7 @@ export class Modal {
 
   renderHeader() {
     if (!this.options.title && !this.options.showClose) return '';
-    
+
     return `
       <div class="modal-header" style="
         padding: 1.5rem;
@@ -144,7 +144,7 @@ export class Modal {
 
   renderFooter() {
     if (!this.options.showFooter) return '';
-    
+
     return `
       <div class="modal-footer" style="
         padding: 1.5rem;
@@ -186,13 +186,13 @@ export class Modal {
       const backdrop = this.element.querySelector('.modal-backdrop');
       backdrop.addEventListener('click', () => this.close());
     }
-    
+
     // 關閉按鈕
     const closeBtn = this.element.querySelector('.modal-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => this.close());
     }
-    
+
     // 取消按鈕
     const cancelBtn = this.element.querySelector('.modal-cancel');
     if (cancelBtn) {
@@ -203,7 +203,7 @@ export class Modal {
         this.close();
       });
     }
-    
+
     // 確認按鈕
     const confirmBtn = this.element.querySelector('.modal-confirm');
     if (confirmBtn) {
@@ -219,9 +219,9 @@ export class Modal {
         }
       });
     }
-    
+
     // ESC 鍵關閉
-    this.handleEsc = (e) => {
+    this.handleEsc = e => {
       if (e.key === 'Escape' && this.isOpen) {
         this.close();
       }
@@ -234,23 +234,23 @@ export class Modal {
    */
   close() {
     if (!this.isOpen) return;
-    
+
     // 動畫效果
     this.element.classList.remove('show');
     this.element.style.opacity = '0';
-    
+
     const dialog = this.element.querySelector('.modal-dialog');
     if (dialog) {
       dialog.style.transform = 'scale(0.9)';
     }
-    
+
     setTimeout(() => {
       if (this.element && this.element.parentNode) {
         this.element.parentNode.removeChild(this.element);
       }
       this.isOpen = false;
       document.body.style.overflow = ''; // 恢復滞動
-      
+
       // 移除事件監聽
       document.removeEventListener('keydown', this.handleEsc);
     }, 300);
@@ -262,7 +262,7 @@ export class Modal {
    */
   updateContent(content) {
     if (!this.isOpen) return;
-    
+
     const body = this.element.querySelector('.modal-body');
     if (body) {
       body.innerHTML = content;
@@ -275,7 +275,7 @@ export class Modal {
    */
   updateTitle(title) {
     if (!this.isOpen) return;
-    
+
     const header = this.element.querySelector('.modal-header h3');
     if (header) {
       header.textContent = title;
@@ -335,7 +335,7 @@ export const modal = {
     m.open();
     return m;
   },
-  
+
   /**
    * 顯示警告對話框
    */
@@ -348,7 +348,7 @@ export const modal = {
     m.open();
     return m;
   },
-  
+
   /**
    * 顯示自定義內容
    */

@@ -14,13 +14,13 @@
     'rs-system-system-logs',
     'rs-system-audit-logs'
   ]);
-  const prefixKey = (key) => (TEST_KEYS.has(key) ? `dev-${key}` : key);
+  const prefixKey = key => (TEST_KEYS.has(key) ? `dev-${key}` : key);
   const origGet = localStorage.getItem.bind(localStorage);
   const origSet = localStorage.setItem.bind(localStorage);
   const origRemove = localStorage.removeItem.bind(localStorage);
-  localStorage.getItem = (key) => origGet(prefixKey(key));
+  localStorage.getItem = key => origGet(prefixKey(key));
   localStorage.setItem = (key, val) => origSet(prefixKey(key), val);
-  localStorage.removeItem = (key) => origRemove(prefixKey(key));
+  localStorage.removeItem = key => origRemove(prefixKey(key));
   console.log('🔒 dev/system-test.js 已啟用測試資料隔離 (dev-* keys)');
 })();
 
@@ -45,7 +45,7 @@ function switchTab(tabName) {
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.classList.remove('active');
   });
-  
+
   // 顯示選中的標籤
   document.getElementById(`tab-${tabName}`).classList.add('active');
   event.target.classList.add('active');
@@ -58,17 +58,17 @@ function addResult(containerId, message, type = 'info') {
   const container = document.getElementById(containerId);
   const resultDiv = document.createElement('div');
   resultDiv.className = `test-result ${type}`;
-  
+
   const icon = {
     'pass': '✅',
     'fail': '❌',
     'warn': '⚠️',
     'info': 'ℹ️'
   }[type] || 'ℹ️';
-  
+
   resultDiv.textContent = `${icon} ${message}`;
   container.appendChild(resultDiv);
-  
+
   // 滾動到最新結果
   resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -79,7 +79,7 @@ function addResult(containerId, message, type = 'info') {
 function addLog(logId, message, type = 'info') {
   const logEl = document.getElementById(logId);
   if (!logEl) return;
-  
+
   const time = new Date().toLocaleTimeString('zh-TW');
   const icon = {
     'info': 'ℹ️',
@@ -87,7 +87,7 @@ function addLog(logId, message, type = 'info') {
     'error': '❌',
     'warn': '⚠️'
   }[type] || 'ℹ️';
-  
+
   logEl.textContent += `[${time}] ${icon} ${message}\n`;
   logEl.scrollTop = logEl.scrollHeight;
 }
@@ -102,12 +102,12 @@ function updateStats(category, result) {
   } else {
     testResults[category].fail++;
   }
-  
+
   // 更新對應分類的統計
   document.getElementById(`${category}-total`).textContent = testResults[category].total;
   document.getElementById(`${category}-pass`).textContent = testResults[category].pass;
   document.getElementById(`${category}-fail`).textContent = testResults[category].fail;
-  
+
   // 更新總體統計
   updateSummaryStats();
 }
@@ -120,12 +120,12 @@ function updateSummaryStats() {
   const pass = Object.values(testResults).reduce((sum, cat) => sum + cat.pass, 0);
   const fail = Object.values(testResults).reduce((sum, cat) => sum + cat.fail, 0);
   const rate = total > 0 ? Math.round((pass / total) * 100) : 0;
-  
+
   document.getElementById('summary-total').textContent = total;
   document.getElementById('summary-pass').textContent = pass;
   document.getElementById('summary-fail').textContent = fail;
   document.getElementById('summary-rate').textContent = `${rate}%`;
-  
+
   const progressFill = document.getElementById('summary-progress');
   if (progressFill) {
     progressFill.style.width = `${rate}%`;
@@ -143,68 +143,68 @@ function createNewUser() {
   const password = document.getElementById('new-password').value.trim();
   const role = document.querySelector('input[name="user-role"]:checked').value;
   const containerId = 'create-user-results';
-  
+
   document.getElementById(containerId).innerHTML = '';
   addLog('create-user-log', '=== 創建新用戶 ===', 'info');
-  
+
   // 驗證輸入
   if (!username) {
     addResult(containerId, '用戶名不能為空', 'fail');
     addLog('create-user-log', '用戶名為空', 'error');
     return;
   }
-  
+
   if (!password) {
     addResult(containerId, '密碼不能為空', 'fail');
     addLog('create-user-log', '密碼為空', 'error');
     return;
   }
-  
+
   if (username.length < 3) {
     addResult(containerId, '用戶名至少需要 3 個字符', 'fail');
     addLog('create-user-log', '用戶名過短', 'error');
     return;
   }
-  
+
   if (password.length < 4) {
     addResult(containerId, '密碼至少需要 4 個字符', 'fail');
     addLog('create-user-log', '密碼過短', 'error');
     return;
   }
-  
+
   try {
     // 獲取現有用戶列表
     const users = localStorage.getItem('users');
-    let usersList = users ? JSON.parse(users) : [];
-    
+    const usersList = users ? JSON.parse(users) : [];
+
     // 允許創建無限測試用戶賬號，即使用戶名相同也可以創建
     // （通過時間戳和隨機值確保每個用戶都有唯一的 ID）
-    addLog('create-user-log', `允許創建無限用戶，即使名稱重複也無限制...`, 'info');
-    
+    addLog('create-user-log', '允許創建無限用戶，即使名稱重複也無限制...', 'info');
+
     // 創建新用戶
     const newUser = {
       id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       userId: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      username: username,
-      password: password,
-      role: role,
+      username,
+      password,
+      role,
       createdAt: new Date().toISOString()
     };
-    
+
     // 添加到用戶列表
     usersList.push(newUser);
     localStorage.setItem('users', JSON.stringify(usersList));
-    
+
     addResult(containerId, `✅ 用戶創建成功: ${username}`, 'pass');
     addLog('create-user-log', `用戶 ID: ${newUser.id}`, 'success');
     addLog('create-user-log', `用戶名: ${newUser.username}`, 'success');
     addLog('create-user-log', `角色: ${newUser.role}`, 'success');
     addLog('create-user-log', `創建時間: ${newUser.createdAt}`, 'info');
-    
+
     // 清空輸入框
     document.getElementById('new-username').value = '';
     document.getElementById('new-password').value = '';
-    
+
     // 更新統計
     refreshUserStats();
     updateStats('login', true);
@@ -225,23 +225,23 @@ function bulkCreateUsers() {
   const prefix = prefixInput.value.trim() || 'test';
   const containerId = 'bulk-create-results';
   const logId = 'bulk-create-log';
-  
+
   // 驗證數量
   if (count < 10 || count > 100) {
     addResult(containerId, '帳戶數量必須在 10-100 之間', 'fail');
     addLog(logId, '帳戶數量超出範圍', 'error');
     return;
   }
-  
+
   document.getElementById(containerId).innerHTML = '';
   addLog(logId, `=== 批量建立 ${count} 個測試帳戶 ===`, 'info');
-  
+
   try {
     const users = localStorage.getItem('users');
-    let usersList = users ? JSON.parse(users) : [];
+    const usersList = users ? JSON.parse(users) : [];
     const startCount = usersList.length;
     const createdUsers = [];
-    
+
     for (let i = 1; i <= count; i++) {
       const newUser = {
         id: `user_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
@@ -253,24 +253,24 @@ function bulkCreateUsers() {
       };
       usersList.push(newUser);
       createdUsers.push(newUser);
-      
+
       if (i % 10 === 0) {
         addLog(logId, `已建立 ${i}/${count} 個帳戶...`, 'info');
       }
     }
-    
+
     localStorage.setItem('users', JSON.stringify(usersList));
-    
-    addResult(containerId, `✅ 批量建立成功！`, 'pass');
+
+    addResult(containerId, '✅ 批量建立成功！', 'pass');
     addResult(containerId, `總計 ${count} 個帳戶已建立`, 'pass');
     addResult(containerId, `帳戶範圍: ${prefix}_1 ~ ${prefix}_${count}`, 'info');
     addResult(containerId, `帳戶密碼: pass1, pass2, ..., pass${count}`, 'info');
     addResult(containerId, `Creator 帳戶: ${prefix}_1, ${prefix}_11, ${prefix}_21...`, 'info');
-    
-    addLog(logId, `✅ 批量建立完成！`, 'success');
+
+    addLog(logId, '✅ 批量建立完成！', 'success');
     addLog(logId, `共建立 ${count} 個帳戶，名稱前綴: ${prefix}`, 'success');
     addLog(logId, `總用戶數: ${startCount} → ${usersList.length}`, 'success');
-    
+
     refreshUserStats();
     updateStats('login', true);
   } catch (error) {
@@ -287,18 +287,18 @@ function bulkClearUsers() {
   if (!confirm('確定要清除所有測試帳戶嗎？（保留 creator 帳戶）')) {
     return;
   }
-  
+
   try {
     const users = localStorage.getItem('users');
     let usersList = users ? JSON.parse(users) : [];
     const beforeCount = usersList.length;
-    
+
     usersList = usersList.filter(u => u.username === 'creator');
     localStorage.setItem('users', JSON.stringify(usersList));
-    
+
     addResult('bulk-create-results', `✅ 已清除 ${beforeCount - usersList.length} 個測試帳戶`, 'pass');
     addLog('bulk-create-log', `清除完成：${beforeCount} → ${usersList.length} 個帳戶`, 'success');
-    
+
     refreshUserStats();
     updateStats('login', true);
   } catch (error) {
@@ -314,10 +314,10 @@ function refreshUserStats() {
   try {
     const users = localStorage.getItem('users');
     const usersList = users ? JSON.parse(users) : [];
-    
+
     document.getElementById('users-total').textContent = usersList.length;
     document.getElementById('users-existing').textContent = usersList.length;
-    
+
     // 計算 Creator 和其他用戶
     const creators = usersList.filter(u => u.username === 'creator').length;
     document.getElementById('users-created').textContent = usersList.length - creators;
@@ -333,10 +333,10 @@ function listAllUsers() {
   const containerId = 'users-list-results';
   const table = document.getElementById('users-table');
   const tbody = document.getElementById('users-tbody');
-  
+
   document.getElementById(containerId).innerHTML = '';
   tbody.innerHTML = '';
-  
+
   try {
     const users = localStorage.getItem('users');
     if (!users) {
@@ -344,24 +344,24 @@ function listAllUsers() {
       table.style.display = 'none';
       return;
     }
-    
+
     const usersList = JSON.parse(users);
-    
+
     if (usersList.length === 0) {
       addResult(containerId, '用戶列表為空', 'warn');
       table.style.display = 'none';
       return;
     }
-    
+
     addResult(containerId, `找到 ${usersList.length} 個用戶:`, 'pass');
-    
+
     usersList.forEach((user, index) => {
       const row = tbody.insertRow();
       row.insertCell(0).textContent = user.id || user.userId || 'N/A';
       row.insertCell(1).textContent = user.username;
       row.insertCell(2).textContent = user.password;
       row.insertCell(3).textContent = user.role || 'user';
-      
+
       const actionCell = row.insertCell(4);
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = '🗑️';
@@ -369,7 +369,7 @@ function listAllUsers() {
       deleteBtn.onclick = () => deleteUser(user.username);
       actionCell.appendChild(deleteBtn);
     });
-    
+
     table.style.display = 'table';
   } catch (error) {
     addResult(containerId, `列表失敗: ${error.message}`, 'fail');
@@ -384,15 +384,15 @@ function deleteUser(username) {
   if (!confirm(`確定要刪除用戶 "${username}" 嗎?`)) {
     return;
   }
-  
+
   try {
     const users = localStorage.getItem('users');
     if (!users) return;
-    
+
     let usersList = JSON.parse(users);
     usersList = usersList.filter(u => u.username !== username);
     localStorage.setItem('users', JSON.stringify(usersList));
-    
+
     addResult('users-list-results', `✅ 用戶已刪除: ${username}`, 'pass');
     listAllUsers();
     refreshUserStats();
@@ -407,25 +407,25 @@ function deleteUser(username) {
 function searchUser() {
   const username = prompt('輸入要搜尋的用戶名:');
   if (!username) return;
-  
+
   const containerId = 'users-list-results';
   document.getElementById(containerId).innerHTML = '';
-  
+
   try {
     const users = localStorage.getItem('users');
     if (!users) {
       addResult(containerId, '未找到用戶數據', 'warn');
       return;
     }
-    
+
     const usersList = JSON.parse(users);
     const user = usersList.find(u => u.username === username);
-    
+
     if (!user) {
       addResult(containerId, `未找到用戶: ${username}`, 'warn');
       return;
     }
-    
+
     addResult(containerId, `找到用戶: ${username}`, 'pass');
     addResult(containerId, `用戶 ID: ${user.id || user.userId}`, 'info');
     addResult(containerId, `密碼: ${user.password}`, 'info');
@@ -442,7 +442,7 @@ function clearAllUsers() {
   if (!confirm('確定要清除所有用戶嗎? 此操作無法撤銷!')) {
     return;
   }
-  
+
   try {
     localStorage.removeItem('users');
     addResult('users-list-results', '✅ 所有用戶已清除', 'pass');
@@ -460,18 +460,18 @@ async function createAndLoginTestUser() {
   const containerId = 'quick-test-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('quick-test-log', '=== 創建並登入測試用戶 ===', 'info');
-  
+
   const timestamp = Date.now();
   const testUsername = `testuser_${timestamp}`;
   const testPassword = 'test1234';
-  
+
   try {
     // Step 1: 創建用戶
     addLog('quick-test-log', `Step 1: 創建用戶 ${testUsername}...`, 'info');
-    
+
     const users = localStorage.getItem('users');
-    let usersList = users ? JSON.parse(users) : [];
-    
+    const usersList = users ? JSON.parse(users) : [];
+
     const newUser = {
       id: `user_${timestamp}_test`,
       userId: `user_${timestamp}_test`,
@@ -480,26 +480,26 @@ async function createAndLoginTestUser() {
       role: 'user',
       createdAt: new Date().toISOString()
     };
-    
+
     usersList.push(newUser);
     localStorage.setItem('users', JSON.stringify(usersList));
-    
+
     addResult(containerId, `✅ 用戶已創建: ${testUsername}`, 'pass');
-    addLog('quick-test-log', `用戶創建成功`, 'success');
-    
+    addLog('quick-test-log', '用戶創建成功', 'success');
+
     // Step 2: 登入用戶
     addLog('quick-test-log', `Step 2: 登入用戶 ${testUsername}...`, 'info');
-    
+
     const loginResult = await performLogin(testUsername, testPassword);
-    
+
     if (loginResult) {
       addResult(containerId, `✅ 登入成功: ${testUsername}`, 'pass');
-      addLog('quick-test-log', `登入成功，會話已創建`, 'success');
+      addLog('quick-test-log', '登入成功，會話已創建', 'success');
     } else {
-      addResult(containerId, `❌ 登入失敗`, 'fail');
-      addLog('quick-test-log', `登入失敗`, 'error');
+      addResult(containerId, '❌ 登入失敗', 'fail');
+      addLog('quick-test-log', '登入失敗', 'error');
     }
-    
+
     refreshUserStats();
   } catch (error) {
     addResult(containerId, `操作失敗: ${error.message}`, 'fail');
@@ -514,21 +514,21 @@ function createMultipleUsers() {
   const containerId = 'quick-test-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('quick-test-log', '=== 創建多個測試用戶 ===', 'info');
-  
+
   const testUsers = [
     { username: 'alice', password: 'alice123', role: 'user' },
     { username: 'bob', password: 'bob123', role: 'user' },
     { username: 'charlie', password: 'charlie123', role: 'user' },
     { username: 'teacher1', password: 'teacher123', role: 'creator' }
   ];
-  
+
   try {
     const users = localStorage.getItem('users');
-    let usersList = users ? JSON.parse(users) : [];
-    
+    const usersList = users ? JSON.parse(users) : [];
+
     let createdCount = 0;
     let skippedCount = 0;
-    
+
     testUsers.forEach(testUser => {
       // 檢查用戶是否存在
       if (usersList.some(u => u.username === testUser.username)) {
@@ -536,7 +536,7 @@ function createMultipleUsers() {
         skippedCount++;
         return;
       }
-      
+
       const newUser = {
         id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userId: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -545,14 +545,14 @@ function createMultipleUsers() {
         role: testUser.role,
         createdAt: new Date().toISOString()
       };
-      
+
       usersList.push(newUser);
       addLog('quick-test-log', `✅ 創建用戶: ${testUser.username} (角色: ${testUser.role})`, 'success');
       createdCount++;
     });
-    
+
     localStorage.setItem('users', JSON.stringify(usersList));
-    
+
     addResult(containerId, `創建了 ${createdCount} 個用戶，跳過了 ${skippedCount} 個已存在的用戶`, 'pass');
     refreshUserStats();
   } catch (error) {
@@ -567,7 +567,7 @@ function createMultipleUsers() {
 function updateLoginMode() {
   const mode = document.querySelector('input[name="login-mode"]:checked').value;
   const customFields = document.getElementById('custom-login-fields');
-  
+
   if (mode === 'custom') {
     customFields.style.display = 'block';
   } else {
@@ -582,19 +582,19 @@ function showAvailableUsers() {
   const containerId = 'login-status-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('login-log', '=== 可用用戶列表 ===', 'info');
-  
+
   const users = localStorage.getItem('users');
   if (!users) {
     addResult(containerId, '未找到用戶數據', 'warn');
     addLog('login-log', '用戶數據庫為空', 'warn');
     return;
   }
-  
+
   try {
     const usersList = JSON.parse(users);
     addResult(containerId, `找到 ${usersList.length} 個用戶:`, 'info');
     addLog('login-log', `總用戶數: ${usersList.length}`, 'info');
-    
+
     usersList.forEach((user, index) => {
       const userInfo = `${index + 1}. ${user.username} (ID: ${user.id || user.userId}, 角色: ${user.role || 'user'})`;
       addResult(containerId, userInfo, 'info');
@@ -612,11 +612,11 @@ function showAvailableUsers() {
 function getRandomUser() {
   const users = localStorage.getItem('users');
   if (!users) return null;
-  
+
   try {
     const usersList = JSON.parse(users);
     if (usersList.length === 0) return null;
-    
+
     const randomIndex = Math.floor(Math.random() * usersList.length);
     return usersList[randomIndex];
   } catch (error) {
@@ -633,9 +633,9 @@ async function performCustomLogin() {
   const containerId = 'login-status-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('login-log', '=== 自定義登入測試 ===', 'info');
-  
+
   let username, password;
-  
+
   if (mode === 'creator') {
     // Creator 帳號
     username = 'creator';
@@ -652,30 +652,30 @@ async function performCustomLogin() {
     }
     username = randomUser.username;
     password = randomUser.password;
-    addLog('login-log', `選擇登入方式: 隨機用戶`, 'info');
+    addLog('login-log', '選擇登入方式: 隨機用戶', 'info');
     addLog('login-log', `隨機選擇的用戶: ${username}`, 'info');
   } else if (mode === 'custom') {
     // 自設用戶
     const usernameInput = document.getElementById('login-username');
     const passwordInput = document.getElementById('login-password');
-    
+
     username = usernameInput.value.trim();
     password = passwordInput.value.trim();
-    
+
     if (!username || !password) {
       addResult(containerId, '請輸入用戶名和密碼', 'warn');
       addLog('login-log', '用戶名或密碼為空', 'warn');
       updateStats('login', false);
       return;
     }
-    
+
     addLog('login-log', '選擇登入方式: 自設用戶', 'info');
     addLog('login-log', `輸入的用戶名: ${username}`, 'info');
   }
-  
+
   // 執行登入
   const result = await performLogin(username, password);
-  
+
   if (result) {
     addResult(containerId, `✅ 登入成功: ${username}`, 'pass');
   } else {
@@ -689,7 +689,7 @@ async function performCustomLogin() {
 async function performLogin(username, password) {
   const containerId = 'login-status-results';
   addLog('login-log', `嘗試登入: ${username}...`, 'info');
-  
+
   try {
     // 檢查用戶是否存在
     const users = localStorage.getItem('users');
@@ -699,17 +699,17 @@ async function performLogin(username, password) {
       updateStats('login', false);
       return false;
     }
-    
+
     const usersList = JSON.parse(users);
     const user = usersList.find(u => u.username === username);
-    
+
     if (!user) {
       addResult(containerId, `用戶不存在: ${username}`, 'fail');
       addLog('login-log', '用戶未找到', 'error');
       updateStats('login', false);
       return false;
     }
-    
+
     // 驗證密碼
     if (user.password !== password) {
       addResult(containerId, '密碼錯誤', 'fail');
@@ -717,7 +717,7 @@ async function performLogin(username, password) {
       updateStats('login', false);
       return false;
     }
-    
+
     // 創建會話
     const now = Date.now();
     const sessionData = {
@@ -729,7 +729,7 @@ async function performLogin(username, password) {
       role: user.role || 'user',
       ipHash: 'test-device'
     };
-    
+
     // 儲存會話和用戶信息
     localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
     localStorage.setItem('current-user', JSON.stringify({
@@ -738,7 +738,7 @@ async function performLogin(username, password) {
       username: user.username,
       role: user.role || 'user'
     }));
-    
+
     addResult(containerId, `✅ 登入成功: ${username}`, 'pass');
     addLog('login-log', `用戶 ${username} 已登入`, 'success');
     addLog('login-log', `會話 ID: ${sessionData.sessionId}`, 'success');
@@ -759,15 +759,15 @@ async function performLogin(username, password) {
 function performLogout() {
   const containerId = 'login-status-results';
   addLog('login-log', '執行登出...', 'info');
-  
+
   try {
     const currentUser = localStorage.getItem('current-user');
     if (currentUser) {
       const userData = JSON.parse(currentUser);
-      
+
       localStorage.removeItem('rs-system-session');
       localStorage.removeItem('current-user');
-      
+
       addResult(containerId, `✅ 登出成功: ${userData.username}`, 'pass');
       addLog('login-log', `用戶 ${userData.username} 已登出`, 'success');
       updateStats('login', true);
@@ -793,7 +793,7 @@ async function testValidLogin() {
   const containerId = 'login-status-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('login-log', '=== 測試有效登入 ===', 'info');
-  
+
   const result = await performLogin('creator', '1234');
   if (result) {
     addResult(containerId, '有效登入測試通過', 'pass');
@@ -808,7 +808,7 @@ async function testValidLogin() {
 async function testInvalidPassword() {
   const containerId = 'login-status-results';
   addLog('login-log', '=== 測試無效密碼 ===', 'info');
-  
+
   const result = await performLogin('creator', 'wrongpassword');
   if (!result) {
     addResult(containerId, '無效密碼檢測成功（正確拒絕）', 'pass');
@@ -825,7 +825,7 @@ async function testInvalidPassword() {
 async function testInvalidUser() {
   const containerId = 'login-status-results';
   addLog('login-log', '=== 測試無效用戶 ===', 'info');
-  
+
   const result = await performLogin('nonexistent', '1234');
   if (!result) {
     addResult(containerId, '無效用戶檢測成功（正確拒絕）', 'pass');
@@ -843,7 +843,7 @@ async function testLoginLogoutFlow() {
   const containerId = 'login-status-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('login-log', '=== 測試登入和登出完整流程 ===', 'info');
-  
+
   // Step 1: 登入
   addLog('login-log', 'Step 1: 執行登入...', 'info');
   let result = await performLogin('creator', '1234');
@@ -851,17 +851,17 @@ async function testLoginLogoutFlow() {
     addResult(containerId, '登入流程測試失敗（無法登入）', 'fail');
     return;
   }
-  
+
   // Step 2: 驗證登入狀態
   addLog('login-log', 'Step 2: 驗證登入狀態...', 'info');
   const session = localStorage.getItem('rs-system-session');
   const currentUser = localStorage.getItem('current-user');
-  
+
   if (!session || !currentUser) {
     addResult(containerId, '登入流程測試失敗（會話未保存）', 'fail');
     return;
   }
-  
+
   try {
     const sessionData = JSON.parse(session);
     const userData = JSON.parse(currentUser);
@@ -870,7 +870,7 @@ async function testLoginLogoutFlow() {
     addResult(containerId, `登入流程測試失敗（數據解析錯誤）: ${error.message}`, 'fail');
     return;
   }
-  
+
   // Step 3: 執行登出
   addLog('login-log', 'Step 3: 執行登出...', 'info');
   result = performLogout();
@@ -878,12 +878,12 @@ async function testLoginLogoutFlow() {
     addResult(containerId, '登入流程測試失敗（無法登出）', 'fail');
     return;
   }
-  
+
   // Step 4: 驗證登出狀態
   addLog('login-log', 'Step 4: 驗證登出狀態...', 'info');
   const sessionAfter = localStorage.getItem('rs-system-session');
   const userAfter = localStorage.getItem('current-user');
-  
+
   if (!sessionAfter && !userAfter) {
     addResult(containerId, '✅ 登入/登出完整流程測試通過', 'pass');
     addLog('login-log', '會話已完全清除', 'success');
@@ -902,21 +902,21 @@ function testLoginStatus() {
   const containerId = 'login-status-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('login-log', '開始測試登入狀態...', 'info');
-  
+
   const session = localStorage.getItem('rs-system-session');
   const currentUser = localStorage.getItem('current-user');
-  
+
   if (!session || !currentUser) {
     addResult(containerId, '未找到登入會話，用戶未登入', 'warn');
     addLog('login-log', '未找到會話數據', 'warn');
     updateStats('login', false);
     return;
   }
-  
+
   try {
     const sessionData = JSON.parse(session);
     const userData = JSON.parse(currentUser);
-    
+
     addResult(containerId, `用戶已登入: ${userData.username}`, 'pass');
     addLog('login-log', `用戶 ID: ${userData.id}`, 'success');
     addLog('login-log', `用戶名: ${userData.username}`, 'success');
@@ -935,18 +935,18 @@ function testLoginStatus() {
 function testSessionValidity() {
   const containerId = 'login-status-results';
   addLog('login-log', '開始驗證會話有效性...', 'info');
-  
+
   const session = localStorage.getItem('rs-system-session');
   if (!session) {
     addResult(containerId, '會話不存在', 'fail');
     updateStats('login', false);
     return;
   }
-  
+
   try {
     const sessionData = JSON.parse(session);
     const now = Date.now();
-    
+
     // 檢查必需字段
     if (!sessionData.userId || !sessionData.sessionId) {
       addResult(containerId, '會話數據結構不完整', 'fail');
@@ -954,7 +954,7 @@ function testSessionValidity() {
       updateStats('login', false);
       return;
     }
-    
+
     // 檢查過期時間
     if (sessionData.expiresAt && now > sessionData.expiresAt) {
       addResult(containerId, '會話已過期', 'fail');
@@ -962,11 +962,11 @@ function testSessionValidity() {
       updateStats('login', false);
       return;
     }
-    
-    const timeLeft = sessionData.expiresAt 
+
+    const timeLeft = sessionData.expiresAt
       ? ((sessionData.expiresAt - now) / 1000 / 60 / 60).toFixed(1)
       : 'N/A';
-    
+
     addResult(containerId, `會話有效，剩餘時間: ${timeLeft} 小時`, 'pass');
     addLog('login-log', `會話 ID: ${sessionData.sessionId}`, 'success');
     addLog('login-log', `剩餘時間: ${timeLeft} 小時`, 'success');
@@ -983,19 +983,19 @@ function testSessionValidity() {
 function testSessionData() {
   const containerId = 'login-status-results';
   addLog('login-log', '檢查會話數據結構...', 'info');
-  
+
   const session = localStorage.getItem('rs-system-session');
   if (!session) {
     addResult(containerId, '無會話數據', 'fail');
     updateStats('login', false);
     return;
   }
-  
+
   try {
     const sessionData = JSON.parse(session);
     const requiredFields = ['userId', 'sessionId', 'createdAt', 'expiresAt'];
     const missingFields = requiredFields.filter(field => !sessionData[field]);
-    
+
     if (missingFields.length > 0) {
       addResult(containerId, `缺少字段: ${missingFields.join(', ')}`, 'fail');
       addLog('login-log', `缺少必需字段: ${missingFields.join(', ')}`, 'error');
@@ -1029,7 +1029,7 @@ function testLoginRedirect() {
   const containerId = 'redirect-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('login-log', '測試登入重定向邏輯...', 'info');
-  
+
   const session = localStorage.getItem('rs-system-session');
   if (!session) {
     addResult(containerId, '無會話，應重定向到 login.html', 'pass');
@@ -1071,25 +1071,25 @@ function testSessionPersistence() {
 function testSessionExpiry() {
   const containerId = 'security-results';
   document.getElementById(containerId).innerHTML = '';
-  
+
   const session = localStorage.getItem('rs-system-session');
   if (!session) {
     addResult(containerId, '無會話數據', 'warn');
     updateStats('login', false);
     return;
   }
-  
+
   try {
     const sessionData = JSON.parse(session);
     const now = Date.now();
-    const expiresAt = sessionData.expiresAt;
-    
+    const {expiresAt} = sessionData;
+
     if (!expiresAt) {
       addResult(containerId, '會話無過期時間設置', 'warn');
       updateStats('login', false);
       return;
     }
-    
+
     const timeLeft = (expiresAt - now) / 1000 / 60 / 60;
     if (timeLeft > 0) {
       addResult(containerId, `會話未過期，剩餘 ${timeLeft.toFixed(1)} 小時`, 'pass');
@@ -1122,27 +1122,27 @@ function testLoginDataStorage() {
   const containerId = 'storage-login-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('storage-log', '測試登入資料儲存...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   const users = localStorage.getItem('users');
-  
+
   if (!currentUser) {
     addResult(containerId, '未找到當前用戶資料', 'fail');
     updateStats('storage', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     addResult(containerId, `用戶資料已儲存: ${userData.username}`, 'pass');
     addLog('storage-log', `用戶 ID: ${userData.id}`, 'success');
     addLog('storage-log', `用戶名: ${userData.username}`, 'success');
-    
+
     if (users) {
       const usersList = JSON.parse(users);
       addLog('storage-log', `用戶數據庫共有 ${usersList.length} 個用戶`, 'info');
     }
-    
+
     updateStats('storage', true);
   } catch (error) {
     addResult(containerId, `資料解析失敗: ${error.message}`, 'fail');
@@ -1157,7 +1157,7 @@ function testUserDataPersistence() {
   const containerId = 'storage-persistence-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('storage-log', '測試用戶資料持久性...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   if (currentUser) {
     addResult(containerId, '用戶資料在 localStorage 中持久存在', 'pass');
@@ -1175,10 +1175,10 @@ function testUserDataPersistence() {
 function viewStoredLoginData() {
   const containerId = 'storage-login-results';
   addLog('storage-log', '查看儲存的登入資料...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   const session = localStorage.getItem('rs-system-session');
-  
+
   if (currentUser) {
     try {
       const userData = JSON.parse(currentUser);
@@ -1188,7 +1188,7 @@ function viewStoredLoginData() {
       addResult(containerId, `無法解析用戶資料: ${error.message}`, 'fail');
     }
   }
-  
+
   if (session) {
     try {
       const sessionData = JSON.parse(session);
@@ -1239,7 +1239,7 @@ function buildSampleClassContent(currentUser = {}) {
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10);
   const className = `TEST-CLASS-${(currentUser.username || 'USER').toUpperCase()}`;
-  
+
   // 隨機選擇花式
   const allTricks = [
     { name: '單搖', detail: '基礎花式', level: '初級', skillLevel: '初級' },
@@ -1248,12 +1248,12 @@ function buildSampleClassContent(currentUser = {}) {
     { name: '三搖', detail: '超難度花式', level: '進階', skillLevel: '進階' },
     { name: '側搖', detail: '技巧花式', level: '中級', skillLevel: '中級' }
   ];
-  
+
   // 隨機選擇 1-3 個花式
   const trickCount = Math.floor(Math.random() * 3) + 1;
   const selectedTricks = [];
   const usedIndices = new Set();
-  
+
   while (selectedTricks.length < trickCount) {
     const idx = Math.floor(Math.random() * allTricks.length);
     if (!usedIndices.has(idx)) {
@@ -1266,17 +1266,17 @@ function buildSampleClassContent(currentUser = {}) {
       });
     }
   }
-  
+
   const avgMastery = Math.round(selectedTricks.reduce((a, b) => a + b.mastery, 0) / selectedTricks.length);
   const totalPlanned = selectedTricks.reduce((a, b) => a + (b.plannedTime || 0), 0);
   const totalActual = selectedTricks.reduce((a, b) => a + (b.actualTime || 0), 0);
-  
+
   const atmospheres = ['開心', '不開心', '認真學習', '心散', '一般'];
   const randomAtmosphere = atmospheres[Math.floor(Math.random() * atmospheres.length)];
-  
+
   // 為每筆課堂記錄添加唯一ID（複合主鍵：classDate + className + uniqueId）
   const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   return {
     id: uniqueId,
     classDate: dateStr,
@@ -1442,30 +1442,30 @@ function bulkAddClassContent() {
   const prefix = prefixInput.value.trim() || '批量測試班';
   const containerId = 'bulk-class-results';
   const logId = 'bulk-class-log';
-  
+
   // 驗證數量
   if (count < 1 || count > 100) {
     addResult(containerId, '課堂筆數必須在 1-100 之間', 'fail');
     addLog(logId, '課堂筆數超出範圍', 'error');
     return;
   }
-  
+
   const currentUserRaw = localStorage.getItem('current-user');
   if (!currentUserRaw) {
     addResult(containerId, '請先登入後再新增課堂', 'warn');
     return;
   }
-  
+
   document.getElementById(containerId).innerHTML = '';
   addLog(logId, `=== 批量新增 ${count} 筆課堂內容 ===`, 'info');
-  
+
   try {
     const currentUser = JSON.parse(currentUserRaw);
     const scopedKey = getUserScopedKeyForClass();
-    let records = loadClassRecordsForTest(scopedKey) || [];
+    const records = loadClassRecordsForTest(scopedKey) || [];
     const startCount = records.length;
     const today = new Date();
-    
+
     // 定義可用的花式池
     const allTricks = [
       { name: '單搖', detail: '基礎花式', level: '初級', skillLevel: '初級' },
@@ -1476,22 +1476,22 @@ function bulkAddClassContent() {
       { name: '後搖', detail: '進階技巧', level: '中級', skillLevel: '中級' },
       { name: '跳繩棒', detail: '特殊技巧', level: '進階', skillLevel: '進階' }
     ];
-    
+
     const atmospheres = ['開心', '不開心', '認真學習', '心散', '一般'];
     const locations = ['操場', '體育館', '教室', '多功能室', '活動中心'];
     const roles = ['主教練', '助教', '副教練'];
-    
+
     for (let i = 1; i <= count; i++) {
       const dateOffset = Math.floor((i - 1) / 5);
       const classDate = new Date(today);
       classDate.setDate(classDate.getDate() - dateOffset);
       const dateStr = classDate.toISOString().slice(0, 10);
-      
+
       // 隨機選擇 1-3 個不同的花式
       const trickCount = Math.floor(Math.random() * 3) + 1;
       const selectedTricks = [];
       const usedIndices = new Set();
-      
+
       while (selectedTricks.length < trickCount) {
         const idx = Math.floor(Math.random() * allTricks.length);
         if (!usedIndices.has(idx)) {
@@ -1504,14 +1504,14 @@ function bulkAddClassContent() {
           });
         }
       }
-      
+
       const avgMastery = Math.round(selectedTricks.reduce((a, b) => a + b.mastery, 0) / selectedTricks.length);
       const totalPlanned = selectedTricks.reduce((a, b) => a + (b.plannedTime || 0), 0);
       const totalActual = selectedTricks.reduce((a, b) => a + (b.actualTime || 0), 0);
-      
+
       // 為每筆課堂添加唯一ID（確保primary key不重複）
       const uniqueId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const classContent = {
         id: uniqueId,
         classDate: dateStr,
@@ -1544,26 +1544,26 @@ function bulkAddClassContent() {
         individual: Math.floor(Math.random() * 101),
         createdAt: new Date().toISOString()
       };
-      
+
       records.push(classContent);
-      
+
       if (i % 10 === 0) {
         addLog(logId, `已新增 ${i}/${count} 筆課堂...`, 'info');
       }
     }
-    
+
     saveClassRecordsForTest(scopedKey, records);
-    
-    addResult(containerId, `✅ 批量新增成功！`, 'pass');
+
+    addResult(containerId, '✅ 批量新增成功！', 'pass');
     addResult(containerId, `總計 ${count} 筆課堂已新增`, 'pass');
     addResult(containerId, `課堂名稱: ${prefix}-1 ~ ${prefix}-${count}`, 'info');
     addResult(containerId, `日期跨度: ${Math.floor((count - 1) / 5)} 天`, 'info');
-    
-    addLog(logId, `✅ 批量新增完成！`, 'success');
+
+    addLog(logId, '✅ 批量新增完成！', 'success');
     addLog(logId, `共新增 ${count} 筆課堂，名稱前綴: ${prefix}`, 'success');
     addLog(logId, `總課堂數: ${startCount} → ${records.length}`, 'success');
     addLog(logId, `保存鍵: ${scopedKey}`, 'success');
-    
+
     updateStats('storage', true);
   } catch (error) {
     addResult(containerId, `批量新增失敗: ${error.message}`, 'fail');
@@ -1578,23 +1578,23 @@ function bulkAddClassContent() {
 function bulkViewClassContent() {
   const containerId = 'bulk-class-results';
   document.getElementById(containerId).innerHTML = '';
-  
+
   const scopedKey = getUserScopedKeyForClass();
   const records = loadClassRecordsForTest(scopedKey);
-  
+
   if (!records || records.length === 0) {
     addResult(containerId, '尚無課堂內容', 'warn');
     return;
   }
-  
+
   addResult(containerId, `📊 共 ${records.length} 筆課堂記錄`, 'info');
-  
+
   // 顯示前 5 筆課堂摘要
   records.slice(0, 5).forEach((c, idx) => {
     const trickNames = (c.tricks || []).map(t => t.name).join('、') || '無';
     addResult(containerId, `[${idx + 1}] ${c.className} (${c.classDate}) - 花式: ${trickNames}`, 'info');
   });
-  
+
   if (records.length > 5) {
     addResult(containerId, `... 和 ${records.length - 5} 筆課堂`, 'info');
   }
@@ -1607,14 +1607,14 @@ function bulkClearClassContent() {
   if (!confirm('確定要清除所有課堂內容嗎？')) {
     return;
   }
-  
+
   try {
     const scopedKey = getUserScopedKeyForClass();
     localStorage.removeItem(scopedKey);
     localStorage.removeItem('rope-skip-checkpoints');
-    
-    addResult('bulk-class-results', `✅ 已清除所有課堂內容`, 'pass');
-    addLog('bulk-class-log', `清除完成`, 'success');
+
+    addResult('bulk-class-results', '✅ 已清除所有課堂內容', 'pass');
+    addLog('bulk-class-log', '清除完成', 'success');
   } catch (error) {
     addResult('bulk-class-results', `清除失敗: ${error.message}`, 'fail');
     addLog('bulk-class-log', `錯誤: ${error.message}`, 'error');
@@ -1627,20 +1627,20 @@ function bulkClearClassContent() {
 function testDataRelationship() {
   const containerId = 'relationship-results';
   document.getElementById(containerId).innerHTML = '';
-  
+
   const currentUser = localStorage.getItem('current-user');
   const session = localStorage.getItem('rs-system-session');
-  
+
   if (!currentUser || !session) {
     addResult(containerId, '缺少用戶或會話數據', 'fail');
     updateStats('storage', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     const sessionData = JSON.parse(session);
-    
+
     if (userData.id === sessionData.userId || userData.userId === sessionData.userId) {
       addResult(containerId, '用戶資料與會話資料正確關聯', 'pass');
       addLog('storage-log', '資料關聯測試通過', 'success');
@@ -1661,20 +1661,20 @@ function testDataRelationship() {
 async function testUserDataIsolation() {
   const containerId = 'relationship-results';
   addLog('storage-log', '測試用戶資料隔離...', 'info');
-  
+
   try {
     const databases = await indexedDB.databases();
-    const pouchDbs = databases.filter(db => 
+    const pouchDbs = databases.filter(db =>
       db.name.includes('_pouch_') || db.name.includes('rs-system')
     );
-    
+
     addResult(containerId, `找到 ${pouchDbs.length} 個 PouchDB 資料庫`, 'info');
     addLog('storage-log', `資料庫數量: ${pouchDbs.length}`, 'info');
-    
+
     pouchDbs.forEach(db => {
       addLog('storage-log', `- ${db.name}`, 'info');
     });
-    
+
     if (pouchDbs.length > 0) {
       addResult(containerId, '每個用戶擁有獨立的資料庫', 'pass');
       updateStats('storage', true);
@@ -1696,22 +1696,22 @@ async function testUserDataIsolation() {
 async function initializeUserDatabase() {
   const containerId = 'db-structure-results';
   addLog('db-log', '初始化用戶資料庫...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   if (!currentUser) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('database', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     const userId = userData.id || userData.userId;
     const dbName = `rs-system-${userId}`;
-    
+
     addLog('db-log', `為用戶 ${userData.username} 初始化資料庫...`, 'info');
     addLog('db-log', `資料庫名: ${dbName}`, 'info');
-    
+
     // 創建測試資料（模擬課程記錄）
     const testData = {
       _id: `course_${Date.now()}`,
@@ -1719,60 +1719,60 @@ async function initializeUserDatabase() {
       title: '測試課程',
       content: '這是一個測試課程記錄',
       createdAt: new Date().toISOString(),
-      userId: userId,
+      userId,
       username: userData.username
     };
-    
+
     // 創建 IndexedDB 數據庫來保存測試數據
     return new Promise((resolve, reject) => {
       try {
         const request = indexedDB.open(dbName, 1);
-        
+
         request.onerror = () => {
-          addResult(containerId, `❌ 創建數據庫失敗`, 'fail');
+          addResult(containerId, '❌ 創建數據庫失敗', 'fail');
           addLog('db-log', `IndexedDB 錯誤: ${request.error}`, 'error');
           updateStats('database', false);
           reject(request.error);
         };
-        
-        request.onsuccess = (event) => {
+
+        request.onsuccess = event => {
           const db = event.target.result;
-          
+
           // 創建一個 object store 用來存儲測試數據
           if (!db.objectStoreNames.contains('courses')) {
             const transaction = db.transaction(['courses'], 'readwrite');
             const store = transaction.objectStore('courses');
             store.add(testData);
-            
-            addLog('db-log', `已創建 'courses' 對象存儲`, 'info');
+
+            addLog('db-log', '已創建 \'courses\' 對象存儲', 'info');
           } else {
             const transaction = db.transaction(['courses'], 'readwrite');
             const store = transaction.objectStore('courses');
             store.add(testData);
-            
-            addLog('db-log', `已在現有 'courses' 存儲中添加測試數據`, 'info');
+
+            addLog('db-log', '已在現有 \'courses\' 存儲中添加測試數據', 'info');
           }
-          
+
           db.close();
-          
+
           // 同時在 localStorage 中存儲備份
           const dbKey = `${dbName}_test_data`;
           localStorage.setItem(dbKey, JSON.stringify(testData));
-          
+
           addResult(containerId, `✅ 資料庫初始化成功: ${dbName}`, 'pass');
-          addLog('db-log', `測試資料已創建 (IndexedDB + localStorage)`, 'success');
+          addLog('db-log', '測試資料已創建 (IndexedDB + localStorage)', 'success');
           addLog('db-log', `資料 ID: ${testData._id}`, 'info');
           updateStats('database', true);
           resolve(true);
         };
-        
-        request.onupgradeneeded = (event) => {
+
+        request.onupgradeneeded = event => {
           const db = event.target.result;
-          
+
           // 如果還沒有創建 object store，就創建一個
           if (!db.objectStoreNames.contains('courses')) {
             db.createObjectStore('courses', { keyPath: '_id' });
-            addLog('db-log', `已創建 'courses' 對象存儲`, 'info');
+            addLog('db-log', '已創建 \'courses\' 對象存儲', 'info');
           }
         };
       } catch (error) {
@@ -1782,7 +1782,7 @@ async function initializeUserDatabase() {
         reject(error);
       }
     });
-    
+
   } catch (error) {
     addResult(containerId, `初始化失敗: ${error.message}`, 'fail');
     addLog('db-log', `錯誤: ${error.message}`, 'error');
@@ -1797,16 +1797,16 @@ async function testDatabaseStructure() {
   const containerId = 'db-structure-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('db-log', '檢查資料庫結構...', 'info');
-  
+
   try {
     const databases = await indexedDB.databases();
     addResult(containerId, `系統中共有 ${databases.length} 個資料庫`, 'info');
     addLog('db-log', `資料庫總數: ${databases.length}`, 'info');
-    
+
     databases.forEach(db => {
       addLog('db-log', `- ${db.name} (v${db.version})`, 'info');
     });
-    
+
     updateStats('database', true);
   } catch (error) {
     addResult(containerId, `檢查失敗: ${error.message}`, 'fail');
@@ -1820,25 +1820,25 @@ async function testDatabaseStructure() {
 async function testUserDatabaseNaming() {
   const containerId = 'db-structure-results';
   addLog('db-log', '驗證資料庫命名規則...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   if (!currentUser) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('database', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     const userId = userData.id || userData.userId;
     const expectedDbName = `rs-system-${userId}`;
-    
+
     const databases = await indexedDB.databases();
-    const userDb = databases.find(db => 
-      db.name.includes(expectedDbName) || 
+    const userDb = databases.find(db =>
+      db.name.includes(expectedDbName) ||
       db.name.includes(`_pouch_${expectedDbName}`)
     );
-    
+
     if (userDb) {
       addResult(containerId, `✅ 資料庫命名正確: ${userDb.name}`, 'pass');
       addLog('db-log', `預期命名: ${expectedDbName}`, 'success');
@@ -1848,7 +1848,7 @@ async function testUserDatabaseNaming() {
       // 檢查 localStorage 中的備份數據
       const testDataKey = `${expectedDbName}_test_data`;
       const backupData = localStorage.getItem(testDataKey);
-      
+
       if (backupData) {
         addResult(containerId, `✅ 資料庫備份數據存在: ${expectedDbName}`, 'pass');
         addLog('db-log', `預期命名: ${expectedDbName}`, 'success');
@@ -1872,22 +1872,22 @@ async function testUserDatabaseNaming() {
 async function listAllDatabases() {
   const containerId = 'db-structure-results';
   addLog('db-log', '列出所有資料庫...', 'info');
-  
+
   try {
     const databases = await indexedDB.databases();
-    
+
     if (databases.length === 0) {
       addResult(containerId, '系統中無資料庫', 'warn');
       updateStats('database', false);
       return;
     }
-    
+
     addResult(containerId, `找到 ${databases.length} 個資料庫:`, 'info');
     databases.forEach((db, index) => {
       addResult(containerId, `${index + 1}. ${db.name} (版本 ${db.version})`, 'info');
       addLog('db-log', `${index + 1}. ${db.name} (v${db.version})`, 'info');
     });
-    
+
     updateStats('database', true);
   } catch (error) {
     addResult(containerId, `列表失敗: ${error.message}`, 'fail');
@@ -1922,10 +1922,10 @@ async function viewUserDatabases() {
       <tbody id="user-db-tbody"></tbody>
     </table>
   `;
-  
+
   const table = document.getElementById('user-db-table');
   let tbody = document.getElementById('user-db-tbody');
-  
+
   // 如果表格不存在，創建表格
   if (!table) {
     const div = document.createElement('div');
@@ -1935,34 +1935,34 @@ async function viewUserDatabases() {
   } else {
     tbody.innerHTML = '';
   }
-  
+
   addLog('db-log', '查看用戶資料庫...', 'info');
-  
+
   try {
     const users = localStorage.getItem('users');
     if (!users) {
       addResult('isolation-results', '未找到用戶列表', 'warn');
       return;
     }
-    
+
     const usersList = JSON.parse(users);
     const databases = await indexedDB.databases();
-    
+
     for (const user of usersList) {
       const userId = user.id || user.userId;
       const expectedDbName = `rs-system-${userId}`;
-      const userDb = databases.find(db => 
+      const userDb = databases.find(db =>
         db.name.includes(expectedDbName)
       );
-      
+
       const row = tbody.insertRow();
       row.style.borderBottom = '1px solid #dee2e6';
-      
+
       row.insertCell(0).textContent = userId;
       row.insertCell(1).textContent = user.username;
       row.insertCell(2).textContent = userDb ? userDb.name : '未找到';
       row.insertCell(3).textContent = 'N/A';
-      
+
       const statusCell = row.insertCell(4);
       const badge = document.createElement('span');
       badge.style.padding = '4px 12px';
@@ -1975,7 +1975,7 @@ async function viewUserDatabases() {
       badge.textContent = userDb ? '正常' : '缺失';
       statusCell.appendChild(badge);
     }
-    
+
     addResult('isolation-results', `✅ 顯示 ${usersList.length} 個用戶的資料庫狀態`, 'info');
     updateStats('database', true);
   } catch (error) {
@@ -2009,17 +2009,17 @@ function testCreatorRole() {
   const containerId = 'creator-role-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('creator-log', '驗證 Creator 角色...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   if (!currentUser) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('creator', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
-    
+
     if (userData.username === 'creator') {
       addResult(containerId, '當前用戶是 Creator', 'pass');
       addLog('creator-log', `用戶名: ${userData.username}`, 'success');
@@ -2046,7 +2046,7 @@ function testCreatorPermissions() {
     updateStats('creator', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     if (userData.username === 'creator') {
@@ -2068,7 +2068,7 @@ function testCreatorPermissions() {
  */
 function loginAsCreator() {
   addLog('creator-log', '以 Creator 身份登入...', 'info');
-  
+
   // 首先檢查是否已經以 Creator 身份登入
   const currentUser = localStorage.getItem('current-user');
   if (currentUser) {
@@ -2084,9 +2084,9 @@ function loginAsCreator() {
       // 繼續執行登入流程
     }
   }
-  
+
   // 嘗試自動登入
-  performLogin('creator', '1234').then((success) => {
+  performLogin('creator', '1234').then(success => {
     if (success) {
       addResult('creator-role-results', '✅ Creator 登入成功', 'pass');
       addLog('creator-log', '已自動登入 Creator 帳號', 'success');
@@ -2094,12 +2094,12 @@ function loginAsCreator() {
     } else {
       addResult('creator-role-results', '⚠️ Creator 登入失敗，請手動訪問 login.html', 'warn');
       addLog('creator-log', '測試帳號: username: creator, password: 1234', 'info');
-      
+
       setTimeout(() => {
         window.open('login.html', '_blank');
       }, 500);
     }
-  }).catch((error) => {
+  }).catch(error => {
     addResult('creator-role-results', `登入錯誤: ${error.message}`, 'fail');
     addLog('creator-log', `錯誤: ${error.message}`, 'error');
   });
@@ -2111,14 +2111,14 @@ function loginAsCreator() {
 function testCreatorUI() {
   const containerId = 'creator-ui-results';
   document.getElementById(containerId).innerHTML = '';
-  
+
   const currentUser = localStorage.getItem('current-user');
   if (!currentUser) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('creator', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     if (userData.username === 'creator') {
@@ -2142,14 +2142,14 @@ function testCreatorFeatures() {
   const containerId = 'creator-ui-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('creator-log', '測試 Creator 功能...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   if (!currentUser) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('creator', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     if (userData.username === 'creator') {
@@ -2159,7 +2159,7 @@ function testCreatorFeatures() {
         '✅ 統計報表',
         '✅ 系統設置'
       ];
-      
+
       addResult(containerId, 'Creator 應該擁有以下功能:', 'pass');
       features.forEach(feature => {
         addLog('creator-log', feature, 'success');
@@ -2181,7 +2181,7 @@ function testCreatorFeatures() {
 function viewCreatorInterface() {
   addResult('creator-ui-results', '打開主應用查看 Creator 界面', 'info');
   addLog('creator-log', '正在打開 index.html...', 'info');
-  
+
   setTimeout(() => {
     window.open('index.html', '_blank');
   }, 500);
@@ -2194,14 +2194,14 @@ function testCreatorManagement() {
   const containerId = 'creator-mgmt-results';
   document.getElementById(containerId).innerHTML = '';
   addLog('creator-log', '測試 Creator 管理功能...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   if (!currentUser) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('creator', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     if (userData.username === 'creator') {
@@ -2211,7 +2211,7 @@ function testCreatorManagement() {
         { name: '成績統計管理', status: '✅' },
         { name: '系統配置管理', status: '✅' }
       ];
-      
+
       addResult(containerId, 'Creator 管理功能已驗證:', 'pass');
       managementFeatures.forEach(feature => {
         addLog('creator-log', `${feature.status} ${feature.name}`, 'success');
@@ -2233,21 +2233,21 @@ function testCreatorManagement() {
 function testCreatorDataAccess() {
   const containerId = 'creator-mgmt-results';
   addLog('creator-log', '測試 Creator 資料訪問權限...', 'info');
-  
+
   const currentUser = localStorage.getItem('current-user');
   if (!currentUser) {
     addResult(containerId, '請先登入', 'warn');
     updateStats('creator', false);
     return;
   }
-  
+
   try {
     const userData = JSON.parse(currentUser);
     if (userData.username === 'creator') {
       // 檢查是否能訪問用戶數據
       const users = localStorage.getItem('users');
       const hasUserAccess = users ? true : false;
-      
+
       if (hasUserAccess) {
         addResult(containerId, '✅ Creator 可訪問所有用戶資料', 'pass');
         addLog('creator-log', '用戶資料訪問權限: 正常', 'success');
@@ -2276,19 +2276,19 @@ async function runAllTests() {
   document.getElementById(containerId).innerHTML = '';
   const logId = 'summary-log';
   document.getElementById(logId).textContent = '';
-  
+
   addLog(logId, '========== 開始執行所有測試 ==========', 'info');
   addResult(containerId, '正在執行所有測試...', 'info');
-  
+
   // 第一步：自動創建測試用戶以確保後面的測試能順利運行
   addLog(logId, '\n=== 自動創建測試用戶 ===', 'info');
   addResult(containerId, '正在創建測試用戶...', 'info');
-  
+
   try {
     // 獲取或創建用戶列表
-    let users = localStorage.getItem('users');
-    let usersList = users ? JSON.parse(users) : [];
-    
+    const users = localStorage.getItem('users');
+    const usersList = users ? JSON.parse(users) : [];
+
     // 定義測試用戶
     const testUsers = [
       { username: 'creator', password: '1234', role: 'creator' },
@@ -2297,7 +2297,7 @@ async function runAllTests() {
       { username: 'charlie', password: 'pass123', role: 'user' },
       { username: 'teacher1', password: 'pass123', role: 'user' }
     ];
-    
+
     // 創建測試用戶
     testUsers.forEach(testUser => {
       const newUser = {
@@ -2311,7 +2311,7 @@ async function runAllTests() {
       usersList.push(newUser);
       addLog(logId, `✅ 創建用戶: ${testUser.username} (${testUser.role})`, 'success');
     });
-    
+
     // 保存用戶列表
     localStorage.setItem('users', JSON.stringify(usersList));
     addLog(logId, `共創建 ${testUsers.length} 個測試用戶`, 'success');
@@ -2319,7 +2319,7 @@ async function runAllTests() {
   } catch (error) {
     addLog(logId, `創建測試用戶失敗: ${error.message}`, 'error');
   }
-  
+
   // 登入測試
   addLog(logId, '\n=== 登入測試 ===', 'info');
   testLoginStatus();
@@ -2328,17 +2328,17 @@ async function runAllTests() {
   await new Promise(r => setTimeout(r, 300));
   testSessionData();
   await new Promise(r => setTimeout(r, 300));
-  
+
   // 自動登入 Creator 以供後續測試使用
   addLog(logId, '\n=== 自動登入 Creator ===', 'info');
   await performLogin('creator', '1234');
   await new Promise(r => setTimeout(r, 500));
-  
+
   // 初始化資料庫
   addLog(logId, '\n=== 初始化資料庫 ===', 'info');
   await initializeUserDatabase();
   await new Promise(r => setTimeout(r, 500));
-  
+
   // 資料儲存測試
   addLog(logId, '\n=== 資料儲存測試 ===', 'info');
   testLoginDataStorage();
@@ -2351,7 +2351,7 @@ async function runAllTests() {
   await new Promise(r => setTimeout(r, 300));
   testDataRelationship();
   await new Promise(r => setTimeout(r, 300));
-  
+
   // 資料庫測試
   addLog(logId, '\n=== 資料庫測試 ===', 'info');
   await testDatabaseStructure();
@@ -2360,7 +2360,7 @@ async function runAllTests() {
   await new Promise(r => setTimeout(r, 300));
   await listAllDatabases();
   await new Promise(r => setTimeout(r, 300));
-  
+
   // Creator 測試
   addLog(logId, '\n=== Creator 測試 ===', 'info');
   testCreatorRole();
@@ -2375,7 +2375,7 @@ async function runAllTests() {
   await new Promise(r => setTimeout(r, 300));
   testCreatorDataAccess();
   await new Promise(r => setTimeout(r, 300));
-  
+
   addLog(logId, '\n========== 所有測試完成 ==========', 'success');
   addResult(containerId, '所有自動測試已完成，請查看各分類結果', 'pass');
 }
@@ -2393,14 +2393,14 @@ function exportTestReport() {
     },
     details: testResults
   };
-  
+
   const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = `test-report-${Date.now()}.json`;
   a.click();
-  
+
   addResult('summary-results', '測試報告已匯出', 'pass');
   addLog('summary-log', `報告匯出: test-report-${Date.now()}.json`, 'success');
 }
@@ -2415,13 +2415,13 @@ function resetAllTests() {
     database: { total: 0, pass: 0, fail: 0 },
     creator: { total: 0, pass: 0, fail: 0 }
   };
-  
+
   updateSummaryStats();
-  
+
   // 清空所有結果容器
   document.querySelectorAll('[id$="-results"]').forEach(el => el.innerHTML = '');
   document.querySelectorAll('.log-viewer').forEach(el => el.textContent = '');
-  
+
   addResult('summary-results', '所有測試已重置', 'info');
 }
 

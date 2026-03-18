@@ -8,19 +8,19 @@
  * @param {string} id - 元素 ID
  * @returns {HTMLElement|null} DOM 元素
  */
-export const $ = (id) => document.getElementById(id);
+export const $ = id => document.getElementById(id);
 
 /**
  * 查詢單個 DOM 元素
  * @param {string} selector - CSS 選擇器
  * @returns {Element|null} DOM 元素
  */
-export const $q = (selector) => document.querySelector(selector);
+export const $q = selector => document.querySelector(selector);
 
 /**
  * 查詢所有匹配的 DOM 元素
  * @param {string} selector - CSS 選擇器
  * @returns {NodeList} DOM 元素列表
  */
-export const $qa = (selector) => document.querySelectorAll(selector);
+export const $qa = selector => document.querySelectorAll(selector);
 

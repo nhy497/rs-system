@@ -24,10 +24,10 @@ class UserDisplayManager {
 
     // 監聽登入狀態變化
     this.setupLoginStateListener();
-    
+
     // 初始更新顯示
     this.updateUserDisplay();
-    
+
     this.isInitialized = true;
     console.log('✅ UserDisplayManager 初始化完成');
   }
@@ -37,7 +37,7 @@ class UserDisplayManager {
    */
   setupLoginStateListener() {
     // 監聽登入狀態變化事件
-    document.addEventListener('userLoginStateChanged', (event) => {
+    document.addEventListener('userLoginStateChanged', event => {
       const { user, isLoggedIn } = event.detail;
       this.handleLoginStateChange(user, isLoggedIn);
     });
@@ -50,7 +50,7 @@ class UserDisplayManager {
     });
 
     // 監聽存儲變化
-    window.addEventListener('storage', (event) => {
+    window.addEventListener('storage', event => {
       if (event.key === 'rs-system-session' || event.key === 'current-user') {
         this.updateUserDisplay();
       }
@@ -64,7 +64,7 @@ class UserDisplayManager {
    */
   handleLoginStateChange(user, isLoggedIn) {
     this.currentUser = user;
-    
+
     if (isLoggedIn && user) {
       this.updateSidebarUser(user);
       this.updateTopBarUser(user);
@@ -80,7 +80,7 @@ class UserDisplayManager {
     try {
       // 獲取當前登入用戶
       const currentUser = this.getCurrentUser();
-      
+
       if (currentUser) {
         this.updateSidebarUser(currentUser);
         this.updateTopBarUser(currentUser);
@@ -133,11 +133,11 @@ class UserDisplayManager {
   updateSidebarUser(user) {
     const userNameEl = $('sidebarUserName');
     const userRoleEl = $('sidebarUserRole');
-    
+
     if (userNameEl) {
       userNameEl.textContent = user.username || user.displayName || '未知用戶';
     }
-    
+
     if (userRoleEl) {
       const role = user.role || 'user';
       const roleText = this.getRoleDisplayName(role);
@@ -154,7 +154,7 @@ class UserDisplayManager {
    */
   updateTopBarUser(user) {
     const topBarTitle = $('topbarTitle');
-    
+
     if (topBarTitle) {
       const userName = user.username || user.displayName || '未知用戶';
       // 保持原有的頁面標題，在側邊欄顯示用戶信息
@@ -168,7 +168,7 @@ class UserDisplayManager {
    */
   updateUserAvatar(user) {
     const avatarEl = $('.user-avatar');
-    
+
     if (avatarEl) {
       // 如果有用戶頭像 URL
       if (user.avatar) {
@@ -189,12 +189,12 @@ class UserDisplayManager {
     const userRoleEl = $('sidebarUserRole');
     const topBarTitle = $('topbarTitle');
     const avatarEl = $('.user-avatar');
-    
+
     if (userNameEl) userNameEl.textContent = '未登錄';
     if (userRoleEl) userRoleEl.textContent = '訪客';
     if (topBarTitle) topBarTitle.textContent = '教練記錄系統';
     if (avatarEl) avatarEl.textContent = '👤';
-    
+
     this.currentUser = null;
   }
 
@@ -210,7 +210,7 @@ class UserDisplayManager {
       'user': '用戶',
       'guest': '訪客'
     };
-    
+
     return roleNames[role] || '用戶';
   }
 

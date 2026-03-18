@@ -5,7 +5,7 @@ describe('UserDisplayManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     document.body.innerHTML = '';
-    
+
     // 設置測試 DOM 結構
     document.body.innerHTML = `
       <div id="sidebarUserName"></div>

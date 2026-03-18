@@ -15,7 +15,7 @@
 function refreshAllViews() {
   try {
     console.log('🔄 開始刷新所有視圖...');
-    
+
     // 1. 刷新側邊欄統計數據
     refreshSidebarStats();
 
@@ -23,31 +23,31 @@ function refreshAllViews() {
     const activePage = document.querySelector('.page.active');
     if (activePage) {
       const pageId = activePage.id;
-      
+
       switch(pageId) {
-        case 'page-overview':
-          console.log('  ↳ 頁面: 課堂概覽 (無需刷新)');
-          break;
-          
-        case 'page-students':
-          console.log('  ↳ 刷新學生管理列表');
-          refreshStudentsPage();
-          break;
-          
-        case 'page-actions':
-          console.log('  ↳ 刷新動作記錄');
-          refreshActionsPage();
-          break;
-          
-        case 'page-analytics':
-          console.log('  ↳ 刷新統計分析');
-          refreshAnalyticsPage();
-          break;
-          
-        case 'page-data':
-          console.log('  ↳ 刷新用戶管理');
-          refreshDataPage();
-          break;
+      case 'page-overview':
+        console.log('  ↳ 頁面: 課堂概覽 (無需刷新)');
+        break;
+
+      case 'page-students':
+        console.log('  ↳ 刷新學生管理列表');
+        refreshStudentsPage();
+        break;
+
+      case 'page-actions':
+        console.log('  ↳ 刷新動作記錄');
+        refreshActionsPage();
+        break;
+
+      case 'page-analytics':
+        console.log('  ↳ 刷新統計分析');
+        refreshAnalyticsPage();
+        break;
+
+      case 'page-data':
+        console.log('  ↳ 刷新用戶管理');
+        refreshDataPage();
+        break;
       }
     }
 
@@ -69,12 +69,12 @@ function refreshSidebarStats() {
   try {
     const checkpoints = STORAGE_MANAGER.cache.checkpoints || [];
     const today = new Date().toISOString().split('T')[0];
-    
+
     // 更新今日課堂數
     const todayCount = checkpoints.filter(cp => cp.classDate === today).length;
     const todayEl = document.getElementById('todayCount');
     if (todayEl) todayEl.textContent = todayCount;
-    
+
     // 更新學生總數（以班級名稱計算）
     const uniqueClasses = new Set();
     checkpoints.forEach(cp => {
@@ -82,7 +82,7 @@ function refreshSidebarStats() {
     });
     const totalStudentsEl = document.getElementById('totalStudents');
     if (totalStudentsEl) totalStudentsEl.textContent = uniqueClasses.size;
-    
+
     console.log(`  ↳ 側邊欄統計: 今日 ${todayCount} 堂，共 ${uniqueClasses.size} 班級`);
   } catch (error) {
     console.error('⚠️ 刷新側邊欄統計失敗:', error);
@@ -181,12 +181,12 @@ function showSyncNotification(type, message) {
     console.warn('⚠️ Toast 元素不存在,使用控制台顯示:', message);
     return;
   }
-  
+
   // 設置消息和樣式
   toastEl.textContent = message;
   toastEl.className = `toast toast-${type}`;
   toastEl.hidden = false;
-  
+
   // 3秒後自動隱藏
   setTimeout(() => {
     toastEl.hidden = true;
@@ -199,7 +199,7 @@ function showSyncNotification(type, message) {
 function createSyncIndicator() {
   // 檢查是否已存在
   if (document.getElementById('syncIndicator')) return;
-  
+
   const indicator = document.createElement('div');
   indicator.id = 'syncIndicator';
   indicator.className = 'sync-indicator';
@@ -223,9 +223,9 @@ function createSyncIndicator() {
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     animation: slideIn 0.3s ease-out;
   `;
-  
+
   document.body.appendChild(indicator);
-  
+
   // 啟動時顯示2秒
   setTimeout(() => {
     indicator.style.display = 'flex';
@@ -244,22 +244,22 @@ function createSyncIndicator() {
  */
 const SYNC_PERFORMANCE_MONITOR = {
   startTime: null,
-  
+
   start() {
     this.startTime = performance.now();
   },
-  
+
   end() {
     if (this.startTime) {
       const duration = performance.now() - this.startTime;
       console.log(`⏱️ 同步完成，耗時: ${duration.toFixed(2)}ms`);
       this.startTime = null;
-      
+
       // 如果同步時間過長,顯示警告
       if (duration > 1000) {
         console.warn('⚠️ 同步耗時較長,可能影響用戶體驗');
       }
-      
+
       return duration;
     }
     return 0;

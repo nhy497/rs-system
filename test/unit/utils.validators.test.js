@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { 
-  isRequired, 
-  isValidDate, 
-  isValidTime, 
-  isInRange 
+import {
+  isRequired,
+  isValidDate,
+  isValidTime,
+  isInRange
 } from '../../src/utils/validators.js';
 
 describe('Validators', () => {
@@ -66,7 +66,7 @@ describe('Validators', () => {
     it('應該驗證日期對象', () => {
       const validDate = new Date('2024-01-15');
       const invalidDate = new Date('invalid');
-      
+
       expect(isValidDate(validDate)).toBe(true);
       expect(isValidDate(invalidDate)).toBe(false);
     });
@@ -105,7 +105,7 @@ describe('Validators', () => {
     it('應該驗證時間對象', () => {
       const validTime = new Date('2024-01-15T09:00:00');
       const invalidTime = new Date('invalid');
-      
+
       expect(isValidTime(validTime)).toBe(true);
       expect(isValidTime(invalidTime)).toBe(false);
     });

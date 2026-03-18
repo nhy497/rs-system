@@ -43,18 +43,18 @@ export const PresetsService = {
     try {
       const presets = this.getAllPresets();
       const trimmedName = className.trim();
-      
+
       if (!trimmedName) {
         throw new Error('班級名稱不能為空');
       }
-      
+
       if (presets.includes(trimmedName)) {
         throw new Error('班級預設已存在');
       }
-      
+
       presets.push(trimmedName);
       this.savePresets(presets);
-      
+
       console.log(`✅ 班級預設 ${trimmedName} 創建成功`);
       return { success: true, preset: trimmedName };
     } catch (error) {
@@ -73,23 +73,23 @@ export const PresetsService = {
     try {
       const presets = this.getAllPresets();
       const index = presets.indexOf(oldName);
-      
+
       if (index === -1) {
         throw new Error('班級預設不存在');
       }
-      
+
       const trimmedNewName = newName.trim();
       if (!trimmedNewName) {
         throw new Error('新班級名稱不能為空');
       }
-      
+
       if (presets.includes(trimmedNewName) && trimmedNewName !== oldName) {
         throw new Error('新班級名稱已存在');
       }
-      
+
       presets[index] = trimmedNewName;
       this.savePresets(presets);
-      
+
       console.log(`✅ 班級預設 ${oldName} 更新為 ${trimmedNewName}`);
       return { success: true, preset: trimmedNewName };
     } catch (error) {
@@ -107,14 +107,14 @@ export const PresetsService = {
     try {
       const presets = this.getAllPresets();
       const index = presets.indexOf(className);
-      
+
       if (index === -1) {
         throw new Error('班級預設不存在');
       }
-      
+
       presets.splice(index, 1);
       this.savePresets(presets);
-      
+
       console.log(`✅ 班級預設 ${className} 刪除成功`);
       return { success: true };
     } catch (error) {

@@ -41,7 +41,7 @@ export class TestDatabase {
     });
 
     this.databases.set(name, db);
-    
+
     console.log(`✅ 初始化測試數據庫: ${dbName}`);
     return db;
   }
@@ -87,7 +87,7 @@ export class TestDatabase {
       console.log(`✅ 創建 ${result.length} 條測試數據到 ${dbName}`);
       return result;
     } catch (error) {
-      console.error(`❌ 創建測試數據失敗:`, error);
+      console.error('❌ 創建測試數據失敗:', error);
       throw error;
     }
   }
@@ -111,7 +111,7 @@ export class TestDatabase {
       await db.bulkDocs(deleteDocs);
       console.log(`✅ 清理數據庫: ${name}`);
     } catch (error) {
-      console.error(`❌ 清理數據庫失敗:`, error);
+      console.error('❌ 清理數據庫失敗:', error);
     }
   }
 
@@ -128,7 +128,7 @@ export class TestDatabase {
       this.databases.delete(name);
       console.log(`✅ 刪除數據庫: ${name}`);
     } catch (error) {
-      console.error(`❌ 刪除數據庫失敗:`, error);
+      console.error('❌ 刪除數據庫失敗:', error);
     }
   }
 
@@ -136,10 +136,10 @@ export class TestDatabase {
    * 清理所有測試數據庫
    */
   async cleanupAll() {
-    const promises = Array.from(this.databases.keys()).map(name => 
+    const promises = Array.from(this.databases.keys()).map(name =>
       this.deleteDatabase(name)
     );
-    
+
     await Promise.all(promises);
     console.log('✅ 清理所有測試數據庫完成');
   }
@@ -299,7 +299,7 @@ export class TestDatabase {
   getTestCredentials(role = 'user') {
     const users = this.createTestUsers();
     const user = users.find(u => u.role === role);
-    
+
     if (!user) {
       throw new Error(`找不到角色為 ${role} 的測試用戶`);
     }
@@ -319,7 +319,7 @@ export class TestDatabase {
    */
   async simulateLogin(role) {
     const credentials = this.getTestCredentials(role);
-    
+
     // 模擬登入邏輯
     const loginResult = {
       success: true,
@@ -345,7 +345,7 @@ export const TestDataFactory = {
   users: () => testDatabase.createTestUsers(),
   classes: () => testDatabase.createTestClasses(),
   students: () => testDatabase.createTestStudents(),
-  
+
   // 創建自定義測試數據
   custom: (type, count = 1) => {
     const data = [];
@@ -367,15 +367,13 @@ export const TestUtils = {
    * 等待數據庫操作完成
    * @param {number} timeout - 超時時間（毫秒）
    */
-  waitForDb: (timeout = 5000) => {
-    return new Promise(resolve => setTimeout(resolve, timeout));
-  },
+  waitForDb: (timeout = 5000) => new Promise(resolve => setTimeout(resolve, timeout)),
 
   /**
    * 驗證數據庫狀態
    * @param {PouchDB} db - 數據庫實例
    */
-  validateDatabase: async (db) => {
+  validateDatabase: async db => {
     try {
       const info = await db.info();
       return info.doc_count >= 0;
@@ -389,12 +387,12 @@ export const TestUtils = {
    */
   cleanup: async () => {
     await testDatabase.cleanupAll();
-    
+
     // 清理 localStorage
     if (typeof localStorage !== 'undefined') {
       localStorage.clear();
     }
-    
+
     // 清理 sessionStorage
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.clear();
