@@ -80,7 +80,6 @@ jobs:
           }
           
           echo "✅ 單元測試完成"
-        continue-on-error: true
         timeout-minutes: 15
       
       # 錯誤處理：E2E 測試
@@ -137,7 +136,6 @@ jobs:
           }
           
           echo "✅ 代碼檢查完成"
-        continue-on-error: true
         timeout-minutes: 10
       
       # 錯誤處理：安全掃描
