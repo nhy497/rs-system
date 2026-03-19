@@ -19,7 +19,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [20.x]
       fail-fast: false # 允許其他任務繼續運行即使一個失敗
     
     # 設置超時時間
@@ -294,7 +294,7 @@ jobs:
       - name: 🔧 設置 Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '20.x'
           cache: 'npm'
         continue-on-error: false
       
@@ -308,7 +308,7 @@ jobs:
       - name: 📦 下載構建產物
         uses: actions/download-artifact@v4
         with:
-          name: dist-18.x
+          name: dist-20.x
           path: ./dist
         continue-on-error: true
       
@@ -370,7 +370,7 @@ jobs:
       - name: 📊 下載測試報告
         uses: actions/download-artifact@v4
         with:
-          name: test-reports-18.x
+          name: test-reports-${{ matrix.node-version }}
           path: ./test-results
         continue-on-error: true
       
