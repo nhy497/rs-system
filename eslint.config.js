@@ -63,7 +63,6 @@ export default [
         global: 'readonly',
 
         // 測試環境全局變量
-        global: 'readonly',
         before: 'readonly',
         after: 'readonly',
         describe: 'readonly',
@@ -135,7 +134,10 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      '@typescript-eslint/no-prototype-builtins': 'off'
+      '@typescript-eslint/no-prototype-builtins': 'off',
+      'no-useless-catch': 'off',
+      'no-case-declarations': 'off',
+      'no-control-regex': 'off'
     }
   },
   {
