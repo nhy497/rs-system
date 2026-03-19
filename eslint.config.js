@@ -140,7 +140,9 @@ export default [
       'no-unused-vars': 'off',
       'prefer-destructuring': 'off',
       'func-style': 'off',
-      'playwright/no-conditional-in-test': 'off'
+      'playwright/no-conditional-in-test': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-undef': 'off'
     }
   },
   {
