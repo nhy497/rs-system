@@ -11,7 +11,7 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
-        // Vitest 全局變量
+        // Vitest 全域變量
         describe: 'readonly',
         it: 'readonly',
         test: 'readonly',
@@ -22,7 +22,7 @@ export default [
         afterAll: 'readonly',
         vi: 'readonly',
 
-        // Playwright 全局變量
+        // Playwright 全域變量
         page: 'readonly',
         context: 'readonly',
         browser: 'readonly',
@@ -52,24 +52,42 @@ export default [
         fetch: 'readonly',
         indexedDB: 'readonly',
 
+        // Node.js 環境
+        process: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+
         // 測試環境全局變量
         before: 'readonly',
         after: 'readonly',
-        describe: 'readonly',
-        it: 'readonly',
-        test: 'readonly',
-        expect: 'readonly',
         assert: 'readonly',
         sinon: 'readonly',
         scenario: 'readonly',
-        overlapping: 'readonly'
-      },
-      plugins: {
-        '@typescript-eslint': typescript,
-        playwright
-      },
+        overlapping: 'readonly',
+
+        // 自定義全局變量
+        PouchDB: 'readonly',
+        CONFIG: 'readonly',
+        displayCheckpoints: 'readonly',
+        loadStudentsPage: 'readonly',
+        loadActionsPage: 'readonly',
+        loadAnalyticsPage: 'readonly',
+        loadDataPage: 'readonly',
+        populateClassFilter: 'readonly',
+        URL: 'readonly'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': typescript,
+      playwright
+    },
     rules: {
-      // JavaScript 規則
+      // 基本規則 - 放寬處理
       'no-console': 'warn',
       'no-debugger': 'error',
       'no-unused-vars': 'off',
@@ -134,37 +152,10 @@ export default [
     }
   },
   {
-    // 源碼文件規則
-    files: ['src/**/*.js', 'system.js', '!src/**/*.test.js'],
-    rules: {
-      'no-console': 'off',
-      'func-style': 'off',
-      'no-undef': 'off',
-      'no-unused-vars': 'off'
-    }
-  },
-  {
-    // 腳本文件規則
-    files: ['scripts/**/*.js', 'scripts/**/*.ps1'],
+    // 配置文件規則
+    files: ['*.config.js', 'vite.config.js', 'vitest.config.js'],
     rules: {
       'no-console': 'off'
-    }
-  },
-  {
-    // Playwright 測試規則
-    files: ['**/*.e2e.js', '**/*.e2e.spec.js', '**/test/e2e/**/*.js'],
-    plugins: {
-      playwright
-    },
-    rules: {
-      // 暫時禁用有問題的 Playwright 規則
-      // 'playwright/valid-expect': 'error',
-      'playwright/missing-playwright-await': 'error',
-      'playwright/no-conditional-in-test': 'warn',
-      'playwright/no-focused-test': 'error',
-      'playwright/no-skipped-test': 'warn',
-      'playwright/prefer-web-first-assertions': 'warn',
-      'playwright/prefer-to-have-count': 'warn'
     }
   },
   {
@@ -188,6 +179,23 @@ export default [
       'no-console': 'off',
       'func-style': 'off',
       'no-unused-vars': 'off'
+    }
+  },
+  {
+    // Playwright 測試規則
+    files: ['**/*.e2e.js', '**/*.e2e.spec.js', '**/test/e2e/**/*.js'],
+    plugins: {
+      playwright
+    },
+    rules: {
+      // 暫時禁用有問題的 Playwright 規則
+      // 'playwright/valid-expect': 'error',
+      'playwright/missing-playwright-await': 'error',
+      'playwright/no-conditional-in-test': 'warn',
+      'playwright/no-focused-test': 'error',
+      'playwright/no-skipped-test': 'warn',
+      'playwright/prefer-web-first-assertions': 'warn',
+      'playwright/prefer-to-have-count': 'warn'
     }
   },
   {
