@@ -38,7 +38,29 @@ export const STORAGE_MANAGER = {
   cache: {
     checkpoints: null,
     presets: null,
-    lastSync: 0
+    lastSync: 0,
+    cacheDuration: 300000 // 5 分鐘
+  },
+
+  /**
+   * 檢查緩存是否有效
+   * @private
+   * @returns {boolean}
+   */
+  _isCacheValid() {
+    return this.cache.checkpoints && 
+           Date.now() - this.cache.lastSync < this.cache.cacheDuration;
+  },
+
+  /**
+   * 清除無效緩存
+   * @private
+   */
+  _clearInvalidCache() {
+    if (!this._isCacheValid()) {
+      this.cache.checkpoints = null;
+      this.cache.lastSync = 0;
+    }
   },
 
   /**
@@ -148,7 +170,7 @@ export const STORAGE_MANAGER = {
   async getCheckpoints(userId = null) {
     try {
       // 優先使用緩存
-      if (this.cache.checkpoints && Date.now() - this.cache.lastSync < 300000) {
+      if (this._isCacheValid()) {
         const currentUser = getCurrentUser();
         if (currentUser && currentUser.role === 'creator') {
           return userId ? this.cache.checkpoints.filter(cp => cp.userId === userId) : this.cache.checkpoints;
@@ -397,6 +419,9 @@ export const STORAGE_MANAGER = {
    */
   async loadCache() {
     try {
+      // 清除無效緩存
+      this._clearInvalidCache();
+      
       // 直接從 localStorage 讀取，避免循環調用
       const encoded = localStorage.getItem(this.KEYS.CHECKPOINTS);
       if (encoded) {
@@ -409,6 +434,7 @@ export const STORAGE_MANAGER = {
             try {
               this.cache.checkpoints = JSON.parse(encoded);
             } catch (e3) {
+              console.warn('⚠️ 緩存解碼失敗，使用空數組:', e3);
               this.cache.checkpoints = [];
             }
           }

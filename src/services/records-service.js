@@ -22,13 +22,34 @@ export const RecordsService = {
   },
 
   /**
+   * 檢查緩存是否有效
+   * @private
+   * @returns {boolean}
+   */
+  _isCacheValid() {
+    return this._cache.records && 
+           Date.now() - this._cache.lastSync < this._cache.cacheDuration;
+  },
+
+  /**
+   * 清除無效緩存
+   * @private
+   */
+  _clearInvalidCache() {
+    if (!this._isCacheValid()) {
+      this._cache.records = null;
+      this._cache.lastSync = 0;
+    }
+  },
+
+  /**
    * 解析課堂記錄
    * @returns {Array} 記錄數組
    */
   parseRecords() {
     try {
       // 優先使用緩存（5分鐘內）
-      if (this._cache.records && Date.now() - this._cache.lastSync < this._cache.cacheDuration) {
+      if (this._isCacheValid()) {
         // 生產環境移除 console.log
         // console.log(`📦 parseRecords() 使用緩存: ${this._cache.records.length} 筆`);
         return this._cache.records;
