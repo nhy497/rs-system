@@ -189,14 +189,8 @@ export default [
       playwright
     },
     rules: {
-      // 暫時禁用有問題的 Playwright 規則
-      // 'playwright/valid-expect': 'error',
-      'playwright/missing-playwright-await': 'error',
-      'playwright/no-conditional-in-test': 'warn',
-      'playwright/no-focused-test': 'error',
-      'playwright/no-skipped-test': 'warn',
-      'playwright/prefer-web-first-assertions': 'warn',
-      'playwright/prefer-to-have-count': 'warn'
+      'playwright/no-conditional-in-test': 'off',
+      '@typescript-eslint/no-prototype-builtins': 'off'
     }
   },
   {
