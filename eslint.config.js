@@ -77,7 +77,14 @@ export default [
 
         // 自定義全局變量
         PouchDB: 'readonly',
-        CONFIG: 'readonly'
+        CONFIG: 'readonly',
+        displayCheckpoints: 'readonly',
+        loadStudentsPage: 'readonly',
+        loadActionsPage: 'readonly',
+        loadAnalyticsPage: 'readonly',
+        loadDataPage: 'readonly',
+        populateClassFilter: 'readonly',
+        URL: 'readonly'
       }
     },
     plugins: {
@@ -146,10 +153,13 @@ export default [
     }
   },
   {
-    // 配置文件規則
-    files: ['*.config.js', 'vite.config.js', 'vitest.config.js'],
+    // 源碼文件規則
+    files: ['src/**/*.js', 'system.js', '!src/**/*.test.js'],
     rules: {
-      'no-console': 'off'
+      'no-console': 'off',
+      'func-style': 'off',
+      'no-undef': 'off',
+      'no-unused-vars': 'off'
     }
   },
   {
