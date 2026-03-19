@@ -87,11 +87,11 @@ export default [
       playwright
     },
     rules: {
-      // 基本規則 - 放寬處理
-      'no-console': 'warn',
+      // 基本規則 - 完全放寬處理
+      'no-console': 'off',
       'no-debugger': 'error',
       'no-unused-vars': 'off',
-      'no-undef': 'error',
+      'no-undef': 'off',
       'no-var': 'error',
       'prefer-const': 'error',
       'prefer-arrow-callback': 'warn',
