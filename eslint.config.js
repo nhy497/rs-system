@@ -133,7 +133,8 @@ export default [
       '@typescript-eslint/no-prototype-builtins': 'off',
       'no-useless-catch': 'off',
       'no-case-declarations': 'off',
-      'no-control-regex': 'off'
+      'no-control-regex': 'off',
+      'playwright/no-conditional-in-test': 'off'
     }
   },
   {
