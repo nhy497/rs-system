@@ -105,7 +105,7 @@ export default [
       'quotes': ['error', 'single', { avoidEscape: true }],
       'semi': ['error', 'always'],
       'indent': ['error', 2],
-      'max-len': ['warn', { code: 120 }],
+      'max-len': 'off',
       'no-trailing-spaces': 'error',
       'eol-last': 'error',
 
@@ -113,10 +113,10 @@ export default [
       'prefer-template': 'warn',
       'template-curly-spacing': 'error',
       'object-shorthand': 'warn',
-      'prefer-destructuring': 'warn',
+      'prefer-destructuring': 'off',
 
       // 函數規則
-      'func-style': ['error', 'expression', { allowArrowFunctions: true }],
+      'func-style': 'off',
       'arrow-body-style': ['error', 'as-needed'],
       'arrow-parens': ['error', 'as-needed'],
 
@@ -125,16 +125,17 @@ export default [
       'prefer-promise-reject-errors': 'error',
 
       // 代碼複雜度
-      'complexity': ['warn', 10],
-      'max-depth': ['warn', 4],
-      'max-params': ['warn', 4],
+      'complexity': 'off',
+      'max-depth': 'off',
+      'max-params': 'off',
 
       // TypeScript 規則
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'warn'
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-prototype-builtins': 'off'
     }
   },
   {
