@@ -52,16 +52,6 @@ export default [
         fetch: 'readonly',
         indexedDB: 'readonly',
 
-        // Node.js 環境
-        process: 'readonly',
-        require: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        module: 'readonly',
-        exports: 'readonly',
-        Buffer: 'readonly',
-        global: 'readonly',
-
         // 測試環境全局變量
         before: 'readonly',
         after: 'readonly',
@@ -72,7 +62,7 @@ export default [
         assert: 'readonly',
         sinon: 'readonly',
         scenario: 'readonly',
-        overlapping: 'readonly',
+        overlapping: 'readonly'
 
         // 自定義全局變量
         PouchDB: 'readonly',
