@@ -29,13 +29,15 @@ export const RecordsService = {
     try {
       // 優先使用緩存（5分鐘內）
       if (this._cache.records && Date.now() - this._cache.lastSync < this._cache.cacheDuration) {
-        console.log(`📦 parseRecords() 使用緩存: ${this._cache.records.length} 筆`);
+        // 生產環境移除 console.log
+        // console.log(`📦 parseRecords() 使用緩存: ${this._cache.records.length} 筆`);
         return this._cache.records;
       }
 
       const encoded = localStorage.getItem(STORAGE_KEY);
       if (!encoded) {
-        console.log('📦 parseRecords() 讀取筆數: 0 (無數據)');
+        // 生產環境移除 console.log
+        // console.log('📦 parseRecords() 讀取筆數: 0 (無數據)');
         this._cache.records = [];
         this._cache.lastSync = Date.now();
         return [];
@@ -61,9 +63,11 @@ export const RecordsService = {
       }
 
       const safe = Array.isArray(records) ? records : [];
-      console.log(`📦 parseRecords() 讀取筆數: ${safe.length}`);
+      // 生產環境移除 console.log
+      // console.log(`📦 parseRecords() 讀取筆數: ${safe.length}`);
       if (safe.length > 0) {
-        console.log('📊 第一筆記錄範例:', safe[0]);
+        // 生產環境移除 console.log
+      // console.log('📊 第一筆記錄範例:', safe[0]);
       }
 
       // 更新緩存
@@ -118,9 +122,11 @@ export const RecordsService = {
       this._cache.records = recordsWithUserId;
       this._cache.lastSync = Date.now();
 
-      console.log(`✅ saveRecords() 已儲存 ${recordsWithUserId.length} 筆課堂記錄`);
+      // 生產環境移除 console.log
+      // console.log(`✅ saveRecords() 已儲存 ${recordsWithUserId.length} 筆課堂記錄`);
       if (recordsWithUserId.length > 0) {
-        console.log('📊 範例記錄:', recordsWithUserId[0]);
+        // 生產環境移除 console.log
+      // console.log('📊 範例記錄:', recordsWithUserId[0]);
       }
     } catch (e) {
       console.error('❌ saveRecords() 保存失敗:', e);
@@ -172,7 +178,8 @@ export const RecordsService = {
       records.push(newRecord);
       this.saveRecords(records);
 
-      console.log(`✅ 記錄創建成功: ${newRecord.id}`);
+      // 生產環境移除 console.log
+      // console.log(`✅ 記錄創建成功: ${newRecord.id}`);
       return { success: true, record: newRecord };
     } catch (error) {
       console.error('❌ 創建記錄失敗:', error);
@@ -204,7 +211,8 @@ export const RecordsService = {
 
       this.saveRecords(records);
 
-      console.log(`✅ 記錄更新成功: ${id}`);
+      // 生產環境移除 console.log
+      // console.log(`✅ 記錄更新成功: ${id}`);
       return { success: true, record: records[index] };
     } catch (error) {
       console.error('❌ 更新記錄失敗:', error);
@@ -229,7 +237,8 @@ export const RecordsService = {
       records.splice(index, 1);
       this.saveRecords(records);
 
-      console.log(`✅ 記錄刪除成功: ${id}`);
+      // 生產環境移除 console.log
+      // console.log(`✅ 記錄刪除成功: ${id}`);
       return { success: true };
     } catch (error) {
       console.error('❌ 刪除記錄失敗:', error);
@@ -243,6 +252,7 @@ export const RecordsService = {
   clearCache() {
     this._cache.records = null;
     this._cache.lastSync = 0;
-    console.log('✅ 記錄服務緩存已清除');
+    // 生產環境移除 console.log
+    // console.log('✅ 記錄服務緩存已清除');
   }
 };

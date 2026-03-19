@@ -31,7 +31,8 @@ export class StorageService {
     }
 
     this._startChangesFeed();
-    console.log(`✅ 儲存服務已初始化${remoteURL ? '（已啟用雲端同步）' : '（本地模式）'}`);
+    // 生產環境移除 console.log
+    // console.log(`✅ 儲存服務已初始化${remoteURL ? '（已啟用雲端同步）' : '（本地模式）'}`);
   }
 
   /**
@@ -49,18 +50,19 @@ export class StorageService {
         live: true,
         retry: true
       }).on('change', info => {
-        console.log('�� 數據同步中:', info.direction);
+        // console.log('🔄 數據同步中:', info.direction);
       }).on('paused', () => {
-        console.log('⏸️ 同步已暫停（等待變更）');
+        // console.log('⏸️ 同步已暫停（等待變更）');
       }).on('active', () => {
-        console.log('▶️ 同步重新啟動');
+        // console.log('▶️ 同步重新啟動');
       }).on('denied', err => {
         console.error('❌ 同步被拒絕:', err);
       }).on('error', err => {
         console.error('❌ 同步錯誤:', err);
       });
 
-      console.log('✅ 雲端同步已啟用:', remoteURL);
+      // 生產環境移除 console.log
+      // console.log('✅ 雲端同步已啟用:', remoteURL);
     } catch (error) {
       console.error('❌ 設置雲端同步失敗:', error);
       console.warn('⚠️ 將繼續使用本地模式');
@@ -142,7 +144,8 @@ export class StorageService {
       };
 
       const result = await this.db.post(doc);
-      console.log('✅ 課堂記錄已新增:', result.id);
+      // 生產環境移除 console.log
+      // console.log('✅ 課堂記錄已新增:', result.id);
       return result;
     } catch (error) {
       console.error('❌ 新增課堂記錄失敗:', error);
@@ -168,7 +171,8 @@ export class StorageService {
       };
 
       const result = await this.db.put(updated);
-      console.log('✅ 課堂記錄已更新:', id);
+      // 生產環境移除 console.log
+      // console.log('✅ 課堂記錄已更新:', id);
       return result;
     } catch (error) {
       console.error('❌ 更新課堂記錄失敗:', error);
@@ -187,7 +191,8 @@ export class StorageService {
 
       const doc = await this.db.get(id);
       await this.db.remove(doc);
-      console.log('✅ 課堂記錄已刪除:', id);
+      // 生產環境移除 console.log
+      // console.log('✅ 課堂記錄已刪除:', id);
       return true;
     } catch (error) {
       console.error('❌ 刪除課堂記錄失敗:', error);
@@ -248,7 +253,8 @@ export class StorageService {
       }));
 
       await this.db.bulkDocs(toDelete);
-      console.log('⚠️ 所有資料已清除');
+      // 生產環境移除 console.log
+      // console.log('⚠️ 所有資料已清除');
       return true;
     } catch (error) {
       console.error('❌ 清除資料失敗:', error);

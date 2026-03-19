@@ -36,6 +36,42 @@ export default [
         localStorage: 'readonly',
         sessionStorage: 'readonly',
         navigator: 'readonly',
+        Event: 'readonly',
+        KeyboardEvent: 'readonly',
+        MouseEvent: 'readonly',
+        performance: 'readonly',
+        setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearTimeout: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        getComputedStyle: 'readonly',
+        PerformanceObserver: 'readonly',
+        devices: 'readonly',
+
+        // Node.js 環境
+        process: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+
+        // 測試環境全局變量
+        global: 'readonly',
+        before: 'readonly',
+        after: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        assert: 'readonly',
+        sinon: 'readonly',
+        scenario: 'readonly',
+        overlapping: 'readonly',
 
         // 自定義全局變量
         PouchDB: 'readonly',
@@ -133,6 +169,28 @@ export default [
     }
   },
   {
+    // 工具腳本規則
+    files: ['tools/**/*.js', 'dev/**/*.js'],
+    languageOptions: {
+      globals: {
+        // Node.js 環境
+        process: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+        console: 'writable'
+      }
+    },
+    rules: {
+      'no-console': 'off',
+      'func-style': 'off'
+    }
+  },
+  {
     // 忽略模式
     ignores: [
       'node_modules/**',
@@ -142,7 +200,13 @@ export default [
       'test-results/**',
       '*.min.js',
       'vendor/**',
-      'public/**'
+      'public/**',
+      '**/*.html',
+      '**/*.css',
+      '**/*.md',
+      '**/*.json',
+      '**/*.yml',
+      '**/*.yaml'
     ]
   }
 ];

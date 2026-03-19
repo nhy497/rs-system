@@ -39,7 +39,8 @@ class LoggerService {
       this.systemLogs = system ? JSON.parse(decodeURIComponent(atob(system))) : [];
       this.auditLogs = audit ? JSON.parse(decodeURIComponent(atob(audit))) : [];
 
-      console.log('✅ 日誌已加載');
+      // 生產環境移除 console.log
+      // console.log('✅ 日誌已加載');
     } catch (error) {
       console.error('❌ 加載日誌失敗:', error);
       this.coachLogs = [];
@@ -111,7 +112,8 @@ class LoggerService {
       this._cleanupLogs();
       this._saveLogs();
 
-      console.log(`✅ [教練日誌] ${action}: ${details}`);
+      // 生產環境移除 console.log
+      // console.log(`✅ [教練日誌] ${action}: ${details}`);
       return logEntry;
     } catch (error) {
       console.error('❌ 教練日誌記錄失敗:', error);
@@ -143,7 +145,8 @@ class LoggerService {
       this._saveLogs();
 
       const icon = { info: 'ℹ️', warning: '⚠️', error: '❌', critical: '🚨' }[severity] || 'ℹ️';
-      console.log(`${icon} [系統事件] ${eventType}: ${description}`);
+      // 生產環境移除 console.log
+      // console.log(`${icon} [系統事件] ${eventType}: ${description}`);
       return logEntry;
     } catch (error) {
       console.error('❌ 系統事件記錄失敗:', error);
@@ -184,7 +187,8 @@ class LoggerService {
       this._saveLogs();
 
       const status = success ? '✅' : '❌';
-      console.log(`${status} [審計] ${action}: ${JSON.stringify(target).substring(0, 50)}`);
+      // 生產環境移除 console.log
+      // console.log(`${status} [審計] ${action}: ${JSON.stringify(target).substring(0, 50)}`);
       return auditEntry;
     } catch (error) {
       console.error('❌ 審計日誌記錄失敗:', error);
@@ -406,7 +410,8 @@ class LoggerService {
 
     this._saveLogs();
     this.logAuditAction('logs_cleared', { logType, count }, '日誌清理');
-    console.log(`✅ 已清理 ${count} 條${logType}日誌`);
+    // 生產環境移除 console.log
+    // console.log(`✅ 已清理 ${count} 條${logType}日誌`);
     return true;
   }
 

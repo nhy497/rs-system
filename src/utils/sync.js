@@ -14,7 +14,8 @@
  */
 function refreshAllViews() {
   try {
-    console.log('🔄 開始刷新所有視圖...');
+    // 生產環境移除 console.log
+    // console.log('🔄 開始刷新所有視圖...');
 
     // 1. 刷新側邊欄統計數據
     refreshSidebarStats();
@@ -26,26 +27,31 @@ function refreshAllViews() {
 
       switch(pageId) {
       case 'page-overview':
-        console.log('  ↳ 頁面: 課堂概覽 (無需刷新)');
+        // 生產環境移除 console.log
+        // console.log('  ↳ 頁面: 課堂概覽 (無需刷新)');
         break;
 
       case 'page-students':
-        console.log('  ↳ 刷新學生管理列表');
+        // 生產環境移除 console.log
+        // console.log('  ↳ 刷新學生管理列表');
         refreshStudentsPage();
         break;
 
       case 'page-actions':
-        console.log('  ↳ 刷新動作記錄');
+        // 生產環境移除 console.log
+        // console.log('  ↳ 刷新動作記錄');
         refreshActionsPage();
         break;
 
       case 'page-analytics':
-        console.log('  ↳ 刷新統計分析');
+        // 生產環境移除 console.log
+        // console.log('  ↳ 刷新統計分析');
         refreshAnalyticsPage();
         break;
 
       case 'page-data':
-        console.log('  ↳ 刷新用戶管理');
+        // 生產環境移除 console.log
+        // console.log('  ↳ 刷新用戶管理');
         refreshDataPage();
         break;
       }
@@ -54,7 +60,8 @@ function refreshAllViews() {
     // 3. 更新全局篩選器
     refreshGlobalFilters();
 
-    console.log('✅ 視圖刷新完成');
+    // 生產環境移除 console.log
+    // console.log('✅ 視圖刷新完成');
     return true;
   } catch (error) {
     console.error('❌ 視圖刷新失敗:', error);
@@ -83,7 +90,8 @@ function refreshSidebarStats() {
     const totalStudentsEl = document.getElementById('totalStudents');
     if (totalStudentsEl) totalStudentsEl.textContent = uniqueClasses.size;
 
-    console.log(`  ↳ 側邊欄統計: 今日 ${todayCount} 堂，共 ${uniqueClasses.size} 班級`);
+    // 生產環境移除 console.log
+    // console.log(`  ↳ 側邊欄統計: 今日 ${todayCount} 堂，共 ${uniqueClasses.size} 班級`);
   } catch (error) {
     console.error('⚠️ 刷新側邊欄統計失敗:', error);
   }
@@ -252,12 +260,14 @@ const SYNC_PERFORMANCE_MONITOR = {
   end() {
     if (this.startTime) {
       const duration = performance.now() - this.startTime;
-      console.log(`⏱️ 同步完成，耗時: ${duration.toFixed(2)}ms`);
+      // 生產環境移除 console.log
+      // console.log('⏱️ 同步完成，耗時: ${duration.toFixed(2)}ms');
       this.startTime = null;
 
       // 如果同步時間過長,顯示警告
       if (duration > 1000) {
-        console.warn('⚠️ 同步耗時較長,可能影響用戶體驗');
+        // 生產環境移除 console.log
+      // console.log('⚠️ 同步耗時較長,可能影響用戶體驗');
       }
 
       return duration;
@@ -275,4 +285,5 @@ window.showSyncNotification = showSyncNotification;
 window.createSyncIndicator = createSyncIndicator;
 window.SYNC_PERFORMANCE_MONITOR = SYNC_PERFORMANCE_MONITOR;
 
-console.log('✅ sync-utils.js 已加載');
+// 生產環境移除 console.log
+// console.log('✅ sync-utils.js 已加載');

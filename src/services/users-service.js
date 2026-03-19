@@ -67,7 +67,8 @@ export const UsersService = {
       users.push(newUser);
       saveUsersToStorage(users);
 
-      console.log(`✅ 用戶 ${userData.username} 創建成功`);
+      // 生產環境移除 console.log
+      // console.log(`✅ 用戶 ${userData.username} 創建成功`);
       return { success: true, user: newUser };
     } catch (error) {
       console.error('❌ 創建用戶失敗:', error);
@@ -107,7 +108,8 @@ export const UsersService = {
       users[userIndex] = updatedUser;
       saveUsersToStorage(users);
 
-      console.log(`✅ 用戶 ${username} 更新成功`);
+      // 生產環境移除 console.log
+      // console.log(`✅ 用戶 ${username} 更新成功`);
       return { success: true, user: updatedUser };
     } catch (error) {
       console.error('❌ 更新用戶失敗:', error);
@@ -137,7 +139,8 @@ export const UsersService = {
       users.splice(userIndex, 1);
       saveUsersToStorage(users);
 
-      console.log(`✅ 用戶 ${username} 刪除成功`);
+      // 生產環境移除 console.log
+      // console.log(`✅ 用戶 ${username} 刪除成功`);
       return { success: true };
     } catch (error) {
       console.error('❌ 刪除用戶失敗:', error);
