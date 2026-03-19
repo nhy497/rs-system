@@ -95,7 +95,7 @@ export default [
       // JavaScript 規則
       'no-console': 'warn',
       'no-debugger': 'error',
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off',
       'no-undef': 'error',
       'no-var': 'error',
       'prefer-const': 'error',
@@ -130,7 +130,7 @@ export default [
       'max-params': 'off',
 
       // TypeScript 規則
-      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
