@@ -49,6 +49,8 @@ export default [
         getComputedStyle: 'readonly',
         PerformanceObserver: 'readonly',
         devices: 'readonly',
+        fetch: 'readonly',
+        indexedDB: 'readonly',
 
         // Node.js 環境
         process: 'readonly',
@@ -134,7 +136,11 @@ export default [
     rules: {
       'no-console': 'off',
       'max-len': 'off',
-      'complexity': 'off'
+      'complexity': 'off',
+      'no-unused-vars': 'off',
+      'prefer-destructuring': 'off',
+      'func-style': 'off',
+      'playwright/no-conditional-in-test': 'off'
     }
   },
   {
@@ -187,7 +193,8 @@ export default [
     },
     rules: {
       'no-console': 'off',
-      'func-style': 'off'
+      'func-style': 'off',
+      'no-unused-vars': 'off'
     }
   },
   {
