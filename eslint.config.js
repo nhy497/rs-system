@@ -63,23 +63,11 @@ export default [
         sinon: 'readonly',
         scenario: 'readonly',
         overlapping: 'readonly'
-
-        // 自定義全局變量
-        PouchDB: 'readonly',
-        CONFIG: 'readonly',
-        displayCheckpoints: 'readonly',
-        loadStudentsPage: 'readonly',
-        loadActionsPage: 'readonly',
-        loadAnalyticsPage: 'readonly',
-        loadDataPage: 'readonly',
-        populateClassFilter: 'readonly',
-        URL: 'readonly'
-      }
-    },
-    plugins: {
-      '@typescript-eslint': typescript,
-      playwright
-    },
+      },
+      plugins: {
+        '@typescript-eslint': typescript,
+        playwright
+      },
     rules: {
       // JavaScript 規則
       'no-console': 'warn',
