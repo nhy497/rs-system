@@ -15,7 +15,6 @@ npm-debug.log*
 
 # Build artifacts
 node_modules/
-package-lock.json
 dist/
 .vite/
 test-imports.mjs
