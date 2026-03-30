@@ -3,7 +3,16 @@
  * @module ui/modal-manager
  */
 
-import { escapeHtml, formatFileSize } from '../utils/helpers.js';
+import { escapeHtml as _escapeHtml } from '../utils/helpers.js';
+
+/**
+ * 格式化檔案大小
+ */
+function _formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 const $ = id => document.getElementById(id);
 
@@ -14,20 +23,9 @@ export const ModalManager = {
   openModal(modalId) {
     const modal = $(modalId);
     if (!modal) { console.warn(`Modal ${modalId} not found`); return; }
-    
-    // 設置ARIA屬性
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    
     modal.hidden = false;
     modal.style.display = 'block';
     this.currentModal = modalId;
-    
-    // 設置焦點
-    setTimeout(() => {
-      modal.focus();
-    }, 0);
-    
     this._triggerEvent('open', modalId);
   },
 
@@ -88,16 +86,16 @@ export const ModalManager = {
     modal.className = 'modal';
     modal.hidden = true;
     const buttonsHtml = (options.buttons || []).map(btn =>
-      `<button type="button" class="${btn.className || 'btn'}" data-action="${btn.action || 'close'}">${escapeHtml(btn.text)}</button>`
+      `<button type="button" class="${btn.className || 'btn'}" data-action="${btn.action || 'close'}">${_escapeHtml(btn.text)}</button>`
     ).join('');
     modal.innerHTML = `
       <div class="modal-backdrop"></div>
       <div class="modal-content">
         <div class="modal-header">
-          <h2>${escapeHtml(options.title || '')}</h2>
+          <h2>${_escapeHtml(options.title || '')}</h2>
           <button type="button" class="modal-close" aria-label="關閉">×</button>
         </div>
-        <div class="modal-body">${typeof options.content === 'string' ? escapeHtml(options.content) : ''}</div>
+        <div class="modal-body">${typeof options.content === 'string' ? _escapeHtml(options.content) : ''}</div>
         <div class="modal-footer">${buttonsHtml}</div>
       </div>`;
     document.body.appendChild(modal);
@@ -123,7 +121,7 @@ export const ModalManager = {
     return modal ? !modal.hidden : false;
   },
 
-  getCurrentModal() { return this.currentModal || null; },
+  getCurrentModal() { return this.currentModal; },
 
   onModalOpen(modalId, callback) {
     if (!this.listeners.open[modalId]) this.listeners.open[modalId] = [];
@@ -152,7 +150,7 @@ export const ModalManager = {
         bodyEl.innerHTML = '<p class="empty">此班別尚無課堂記錄。</p>';
       } else {
         bodyEl.innerHTML = `<ul class="class-session-list">${recs.map(r => `
-          <li class="class-session-item" data-date="${escapeHtml(r.classDate || '')}" data-class="${escapeHtml(r.className || '')}">
+          <li class="class-session-item" data-date="${_escapeHtml(r.classDate || '')}" data-class="${_escapeHtml(r.className || '')}">
             <span class="date">${r.classDate || '–'}</span>
             ${r.classSize != null ? `<span class="meta">人數 ${r.classSize}</span>` : ''}
             <span class="hint">點擊查看詳情</span>
@@ -176,7 +174,7 @@ export const ModalManager = {
 
   showRecordDetail(record, onLoadIntoForm, onDelete) {
     const tricksStr = Array.isArray(record.tricks) && record.tricks.length
-      ? record.tricks.map(t => { let s = escapeHtml(t.name); if (t.detail) s += `（${escapeHtml(t.detail)}）`; if (t.level) s += ` [${escapeHtml(t.level)}]`; return s; }).join('、')
+      ? record.tricks.map(t => { let s = _escapeHtml(t.name); if (t.detail) s += `（${_escapeHtml(t.detail)}）`; if (t.level) s += ` [${_escapeHtml(t.level)}]`; return s; }).join('、')
       : '—';
     let durationStr = '—';
     if (record.classStartTime && record.classEndTime) {
@@ -194,17 +192,17 @@ export const ModalManager = {
       const testModeBanner = record.creatorTestMode ? '<div style="background:#3498db;color:white;padding:12px;margin-bottom:16px;border-radius:6px;text-align:center;font-weight:600;">🧪 Creator 測試模式記錄</div>' : '';
       let attachmentsHtml = '';
       if (record.attachments?.length) {
-        attachmentsHtml = `<dt>附件</dt><dd>${record.attachments.map((file, i) => `<div style="display:flex;align-items:center;gap:.5rem;padding:.5rem;background:#f1f5f9;border-radius:4px;margin-top:.25rem;"><span style="flex:1">📎 ${escapeHtml(file.name)} (${formatFileSize(file.size)})</span><button type="button" onclick="window._downloadAttachmentFromDetail(${i},${JSON.stringify(file).replace(/"/g,'&quot;')})" class="btn btn-sm btn-primary-ghost" style="padding:.25rem .5rem;font-size:.8rem;">下載</button></div>`).join('')}</dd>`;
+        attachmentsHtml = `<dt>附件</dt><dd>${record.attachments.map((file, i) => `<div style="display:flex;align-items:center;gap:.5rem;padding:.5rem;background:#f1f5f9;border-radius:4px;margin-top:.25rem;"><span style="flex:1">📎 ${_escapeHtml(file.name)} (${_formatFileSize(file.size)})</span><button type="button" onclick="window._downloadAttachmentFromDetail(${i},${JSON.stringify(file).replace(/"/g,'&quot;')})" class="btn btn-sm btn-primary-ghost" style="padding:.25rem .5rem;font-size:.8rem;">下載</button></div>`).join('')}</dd>`;
       }
       bodyEl.innerHTML = `${testModeBanner}<dl>
-        <dt>基本資料</dt><dd>${record.classDate || '–'} | ${escapeHtml(record.className || '–')} | 人數 ${record.classSize ?? '–'}</dd>
-        ${record.classLocation ? `<dt>課堂位置</dt><dd>${escapeHtml(record.classLocation)}</dd>` : ''}
-        ${record.teachingRole ? `<dt>教學角色</dt><dd>${escapeHtml(record.teachingRole)}</dd>` : ''}
+        <dt>基本資料</dt><dd>${record.classDate || '–'} | ${_escapeHtml(record.className || '–')} | 人數 ${record.classSize ?? '–'}</dd>
+        ${record.classLocation ? `<dt>課堂位置</dt><dd>${_escapeHtml(record.classLocation)}</dd>` : ''}
+        ${record.teachingRole ? `<dt>教學角色</dt><dd>${_escapeHtml(record.teachingRole)}</dd>` : ''}
         <dt>課堂時間</dt><dd>${durationStr}</dd>
-        <dt>備注</dt><dd>${record.notes ? escapeHtml(record.notes).replace(/\n/g, '<br>') : '—'}</dd>
+        <dt>備注</dt><dd>${record.notes ? _escapeHtml(record.notes).replace(/\n/g, '<br>') : '—'}</dd>
         ${attachmentsHtml}
-        <dt>投入度</dt><dd>開心指數 ${record.engagement ?? '–'}/5 · 課堂氣氛 ${escapeHtml(record.atmosphere || '–')}</dd>
-        <dt>技能進步</dt><dd>教學花式：${tricksStr} · 掌握 ${record.mastery ?? '–'}% · 預算/實際 ${record.plannedTime ?? '–'}/${record.actualTime ?? '–'} 分鐘 · 技巧等級 ${escapeHtml(record.skillLevel || '–')}</dd>
+        <dt>投入度</dt><dd>開心指數 ${record.engagement ?? '–'}/5 · 課堂氣氛 ${_escapeHtml(record.atmosphere || '–')}</dd>
+        <dt>技能進步</dt><dd>教學花式：${tricksStr} · 掌握 ${record.mastery ?? '–'}% · 預算/實際 ${record.plannedTime ?? '–'}/${record.actualTime ?? '–'} 分鐘 · 技巧等級 ${_escapeHtml(record.skillLevel || '–')}</dd>
         <dt>團隊協作</dt><dd>幫助他人 ${record.helpOthers ?? '–'}% · 互動 ${record.interaction ?? '–'}% · 小組合作 ${record.teamwork ?? '–'}%</dd>
         <dt>心理與自信</dt><dd>自發練習 ${record.selfPractice ?? '–'}% · 主動學習 ${record.activeLearn ?? '–'}% · 積極性 ${record.positivity ?? '–'}/5 · 熱情 ${record.enthusiasm ?? '–'}/5</dd>
         <dt>教練質量</dt><dd>教學 ${record.teachScore ?? '–'}/10 · 滿意度 ${record.satisfaction ?? '–'}/5 · 紀律介入 ${record.disciplineCount ?? '–'} 次 · 靈活性 ${record.flexibility ?? '–'}/10 · 個別化 ${record.individual ?? '–'}%</dd>
@@ -231,14 +229,9 @@ export const ModalManager = {
     return modalId;
   },
 
-  escapeHtml(text) { return escapeHtml(text); },
-  formatFileSize(bytes) { return formatFileSize(bytes); }
+  escapeHtml(text) { return _escapeHtml(text); },
+  formatFileSize(bytes) { return _formatFileSize(bytes); }
 };
 
-export const {
-  openModal, closeModal, closeCurrentModal, closeAllModals,
-  confirm, showConfirm, alert, createModal, destroyModal,
-  isModalOpen, getCurrentModal, onModalOpen, onModalClose,
-  showClassDetail, showRecordDetail, showCustomModal,
-  escapeHtml, formatFileSize
-} = ModalManager;
+export function escapeHtml(text) { return _escapeHtml(text); }
+export function formatFileSize(bytes) { return _formatFileSize(bytes); }

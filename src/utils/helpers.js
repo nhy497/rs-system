@@ -4,7 +4,7 @@
  */
 
 /**
- * HTML 轉義防止 XSS 攻擊（不轉義 /，保持與瀏覽器 innerHTML 一致）
+ * HTML 轉義防止 XSS 攻擊（符合 OWASP 標準，包含轉義 /）
  * @param {string} text
  * @returns {string}
  */

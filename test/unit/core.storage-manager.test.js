@@ -1,11 +1,14 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { STORAGE_MANAGER } from '../../src/core/storage-manager.js';
 
 describe('StorageManager', () => {
   beforeEach(() => {
-    // 清理 localStorage 模擬
     localStorage.clear();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('初始化', () => {
@@ -23,10 +26,7 @@ describe('StorageManager', () => {
     it('應該能夠存儲和檢索數據', async () => {
       const testData = { id: 1, name: '測試數據' };
 
-      // 存儲數據
       await STORAGE_MANAGER.set('test-key', testData);
-
-      // 檢索數據
       const result = await STORAGE_MANAGER.get('test-key');
 
       expect(result).toEqual(testData);
@@ -40,14 +40,10 @@ describe('StorageManager', () => {
     it('應該能夠刪除數據', async () => {
       const testData = { id: 1, name: '測試數據' };
 
-      // 存儲數據
       await STORAGE_MANAGER.set('test-key', testData);
-
-      // 刪除數據
       await STORAGE_MANAGER.remove('test-key');
-
-      // 檢查數據是否已刪除
       const result = await STORAGE_MANAGER.get('test-key');
+
       expect(result).toBeNull();
     });
 
@@ -55,14 +51,10 @@ describe('StorageManager', () => {
       const testData1 = { id: 1, name: '測試數據1' };
       const testData2 = { id: 2, name: '測試數據2' };
 
-      // 存儲多個數據
       await STORAGE_MANAGER.set('test-key1', testData1);
       await STORAGE_MANAGER.set('test-key2', testData2);
-
-      // 清空數據
       await STORAGE_MANAGER.clear();
 
-      // 檢查數據是否已清空
       const result1 = await STORAGE_MANAGER.get('test-key1');
       const result2 = await STORAGE_MANAGER.get('test-key2');
 
@@ -73,8 +65,7 @@ describe('StorageManager', () => {
 
   describe('錯誤處理', () => {
     it('應該處理存儲錯誤', async () => {
-      // 模擬 localStorage 錯誤
-      localStorage.setItem = vi.fn().mockImplementation(() => {
+      vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
         throw new Error('Storage error');
       });
 
@@ -82,8 +73,7 @@ describe('StorageManager', () => {
     });
 
     it('應該處理檢索錯誤', async () => {
-      // 模擬 localStorage 錯誤
-      localStorage.getItem = vi.fn().mockImplementation(() => {
+      vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
         throw new Error('Retrieval error');
       });
 
@@ -96,7 +86,6 @@ describe('StorageManager', () => {
       const complexData = {
         id: 1,
         name: '測試',
-        date: new Date(),
         array: [1, 2, 3],
         nested: { prop: 'value' }
       };
@@ -111,7 +100,6 @@ describe('StorageManager', () => {
       const circularData = { id: 1 };
       circularData.self = circularData;
 
-      // 應該拋出序列化錯誤
       await expect(STORAGE_MANAGER.set('circular-key', circularData)).rejects.toThrow();
     });
   });

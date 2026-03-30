@@ -9,7 +9,7 @@ describe('Helpers', () => {
   describe('escapeHtml', () => {
     it('應該轉義 HTML 特殊字符', () => {
       const input = '<script>alert("xss")</script>';
-      const expected = '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;';
+      const expected = '&lt;script&gt;alert(&quot;xss&quot;)&lt;&#x2F;script&gt;';
 
       expect(escapeHtml(input)).toBe(expected);
     });
@@ -38,7 +38,6 @@ describe('Helpers', () => {
 
   describe('toast', () => {
     beforeEach(() => {
-      // 模擬 DOM 環境
       document.body.innerHTML = '<div id="toast-container"></div>';
     });
 
@@ -93,11 +92,10 @@ describe('Helpers', () => {
       const toastElement = document.querySelector('.toast');
       expect(toastElement).toBeTruthy();
 
-      // 等待自動消失
       setTimeout(() => {
         expect(document.querySelector('.toast')).toBeFalsy();
         done();
-      }, 3500); // 默認 3 秒 + 緩衝時間
+      }, 3500);
     });
   });
 
@@ -111,22 +109,12 @@ describe('Helpers', () => {
 
     it('應該返回正確的格式', () => {
       const result = todayStr();
-
-      // 檢查格式 YYYY-MM-DD
       expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
     it('應該在不同日期返回不同結果', () => {
-      // 模擬不同日期
-      const mockDate1 = new Date('2024-01-15');
-      const mockDate2 = new Date('2024-01-16');
-
-      // 這裡需要根據實際實現來測試
-      // 如果 todayStr() 使用 new Date()，則很難模擬
       const result1 = todayStr();
       const result2 = todayStr();
-
-      // 在同一天內應該返回相同結果
       expect(result1).toBe(result2);
     });
   });

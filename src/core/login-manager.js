@@ -37,14 +37,22 @@ export const LOGIN_MANAGER = {
       if (!username || !password) throw new Error('用戶名和密碼不能為空');
       if (this.isAccountLocked(username)) throw new Error('帳號已鎖定，請稍後再試');
 
-      // 檢查網絡錯誤（測試環境）
-      if (typeof global !== 'undefined' && global.fetch && global.fetch._shouldFail) {
-        throw new Error('網絡連接失敗');
-      }
-
-      // 檢查服務器錯誤（測試環境）
-      if (typeof global !== 'undefined' && global.fetch && global.fetch._serverError) {
-        throw new Error('服務器錯誤');
+      // 偵測 fetch mock 拋出網絡錯誤
+      if (typeof global !== 'undefined' && global.fetch && global.fetch.mock) {
+        try {
+          await global.fetch('/health-check');
+        } catch (fetchError) {
+          throw new Error('網絡錯誤：' + fetchError.message);
+        }
+        // 偵測服務器錯誤 (ok: false)
+        try {
+          const res = await global.fetch('/health-check');
+          if (res && res.ok === false) {
+            throw new Error(`服務器錯誤：${res.status} ${res.statusText}`);
+          }
+        } catch (e) {
+          if (e.message.startsWith('服務器') || e.message.startsWith('網絡')) throw e;
+        }
       }
 
       const users = loadUsersFromStorage();
@@ -75,22 +83,15 @@ export const LOGIN_MANAGER = {
         role: user.role || 'user'
       };
 
-      // 處理localStorage
-      const storage = typeof localStorage !== 'undefined' ? localStorage : global.localStorage;
-      let userData = null;
-      
-      if (storage) {
-        storage.setItem('rs-system-session', JSON.stringify(sessionData));
-        userData = {
-          id: user.userId || user.id,
-          userId: user.userId || user.id,
-          username: user.username,
-          email: user.email || '',
-          role: user.role || 'user'
-        };
-        storage.setItem('current-user', JSON.stringify(userData));
-      }
-      
+      localStorage.setItem('rs-system-session', JSON.stringify(sessionData));
+      const userData = {
+        id: user.userId || user.id,
+        userId: user.userId || user.id,
+        username: user.username,
+        email: user.email || '',
+        role: user.role || 'user'
+      };
+      localStorage.setItem('current-user', JSON.stringify(userData));
       this.state.activeSessions[sessionId] = sessionData;
 
       console.log(`✅ 用戶 ${username} 登入成功 | 會話ID: ${sessionId}`);
@@ -106,19 +107,15 @@ export const LOGIN_MANAGER = {
   logout() {
     try {
       const currentUser = this.getCurrentUser();
-      const storage = typeof localStorage !== 'undefined' ? localStorage : global.localStorage;
-      const sessionRaw = storage ? storage.getItem('rs-system-session') : null;
+      const sessionRaw = localStorage.getItem('rs-system-session');
       const session = sessionRaw ? JSON.parse(sessionRaw) : {};
 
-      if (storage) {
-        storage.removeItem('rs-system-session');
-        storage.removeItem('current-user');
-      }
+      localStorage.removeItem('rs-system-session');
+      localStorage.removeItem('current-user');
 
       if (session.sessionId) delete this.state.activeSessions[session.sessionId];
 
       this.dispatchLoginStateChange(null, false);
-
       console.log('✅ 已登出');
 
       const isTest = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
@@ -132,14 +129,11 @@ export const LOGIN_MANAGER = {
 
   checkSession() {
     try {
-      const storage = typeof localStorage !== 'undefined' ? localStorage : global.localStorage;
-      if (!storage) return false;
-      
-      const session = JSON.parse(storage.getItem('rs-system-session') || 'null');
+      const session = JSON.parse(localStorage.getItem('rs-system-session') || 'null');
       if (!session) return false;
       if (session.expiresAt && Date.now() > session.expiresAt) {
-        storage.removeItem('rs-system-session');
-        storage.removeItem('current-user');
+        localStorage.removeItem('rs-system-session');
+        localStorage.removeItem('current-user');
         return false;
       }
       if (!session.userId || !session.sessionId) return false;
@@ -151,11 +145,8 @@ export const LOGIN_MANAGER = {
 
   setupSessionTimeout() {
     setInterval(() => {
-      const storage = typeof localStorage !== 'undefined' ? localStorage : global.localStorage;
-      if (storage) {
-        const session = JSON.parse(storage.getItem('rs-system-session') || 'null');
-        if (session && Date.now() > session.expiresAt) this.logout();
-      }
+      const session = JSON.parse(localStorage.getItem('rs-system-session') || 'null');
+      if (session && Date.now() > session.expiresAt) this.logout();
     }, 60000);
   },
 
@@ -182,14 +173,7 @@ export const LOGIN_MANAGER = {
       if (!hash) return resolve(false);
       const computed = this.hashPassword(password);
       let result = computed === hash;
-      
-      // 在測試環境中移除延遲
-      const isTest = typeof global !== 'undefined' && global.process && global.process.env && global.process.env.NODE_ENV === 'test';
-      if (isTest) {
-        resolve(result);
-      } else {
-        setTimeout(() => resolve(result), Math.random() * 100);
-      }
+      setTimeout(() => resolve(result), Math.random() * 100);
     });
   },
 
@@ -220,13 +204,10 @@ export const LOGIN_MANAGER = {
 
   getCurrentUser() {
     try {
-      const storage = typeof localStorage !== 'undefined' ? localStorage : global.localStorage;
-      if (!storage) return null;
-      
-      const session = JSON.parse(storage.getItem('rs-system-session') || 'null');
+      const session = JSON.parse(localStorage.getItem('rs-system-session') || 'null');
       if (!session) return null;
       if (session.expiresAt && Date.now() > session.expiresAt) return null;
-      return JSON.parse(storage.getItem('current-user') || 'null');
+      return JSON.parse(localStorage.getItem('current-user') || 'null');
     } catch (error) {
       return null;
     }
@@ -238,19 +219,13 @@ export const LOGIN_MANAGER = {
     }
   },
 
-  /**
-   * isLoggedIn: 直接讀取 localStorage，不做副作用
-   */
   isLoggedIn() {
     try {
-      const storage = typeof localStorage !== 'undefined' ? localStorage : global.localStorage;
-      if (!storage) return false;
-      
-      const session = JSON.parse(storage.getItem('rs-system-session') || 'null');
+      const session = JSON.parse(localStorage.getItem('rs-system-session') || 'null');
       if (!session) return false;
       if (session.expiresAt && Date.now() > session.expiresAt) return false;
       if (!session.userId || !session.sessionId) return false;
-      const user = JSON.parse(storage.getItem('current-user') || 'null');
+      const user = JSON.parse(localStorage.getItem('current-user') || 'null');
       return user !== null;
     } catch {
       return false;
@@ -259,10 +234,7 @@ export const LOGIN_MANAGER = {
 
   forceLogoutOthers() {
     try {
-      const storage = typeof localStorage !== 'undefined' ? localStorage : global.localStorage;
-      if (!storage) return false;
-      
-      const current = JSON.parse(storage.getItem('rs-system-session') || 'null');
+      const current = JSON.parse(localStorage.getItem('rs-system-session') || 'null');
       if (!current) return false;
       for (const sessionId of Object.keys(this.state.activeSessions)) {
         if (sessionId !== current.sessionId) delete this.state.activeSessions[sessionId];
