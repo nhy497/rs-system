@@ -14,17 +14,57 @@ function _formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/**
+ * HTML 轉義（Modal 內部用，不轉義 / 以保持 HTML 結構正確）
+ */
+function _escapeHtmlSafe(text) {
+  if (text == null) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 const $ = id => document.getElementById(id);
 
 export const ModalManager = {
   currentModal: null,
   listeners: { open: {}, close: {} },
+  _previousFocus: null,
+  _globalListenersAttached: false,
+
+  _attachGlobalListeners() {
+    if (this._globalListenersAttached) return;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.currentModal) {
+        this.closeModal(this.currentModal);
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (!this.currentModal) return;
+      const modal = $(this.currentModal);
+      if (!modal) return;
+      // 點擊 modal 本身（背景）才關閉，點擊 modal-content 不關閉
+      if (e.target === modal) {
+        this.closeModal(this.currentModal);
+      }
+    });
+    this._globalListenersAttached = true;
+  },
 
   openModal(modalId) {
+    this._attachGlobalListeners();
     const modal = $(modalId);
     if (!modal) { console.warn(`Modal ${modalId} not found`); return; }
+    this._previousFocus = document.activeElement;
     modal.hidden = false;
     modal.style.display = 'block';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('tabindex', '-1');
+    modal.focus();
     this.currentModal = modalId;
     this._triggerEvent('open', modalId);
   },
@@ -34,7 +74,13 @@ export const ModalManager = {
     if (!modal) return;
     modal.hidden = true;
     modal.style.display = 'none';
-    if (this.currentModal === modalId) this.currentModal = null;
+    if (this.currentModal === modalId) {
+      this.currentModal = null;
+      if (this._previousFocus && typeof this._previousFocus.focus === 'function') {
+        this._previousFocus.focus();
+        this._previousFocus = null;
+      }
+    }
     this._triggerEvent('close', modalId);
   },
 
@@ -85,17 +131,18 @@ export const ModalManager = {
     modal.id = options.id;
     modal.className = 'modal';
     modal.hidden = true;
+    if (options.custom) modal.setAttribute('data-custom', 'true');
     const buttonsHtml = (options.buttons || []).map(btn =>
-      `<button type="button" class="${btn.className || 'btn'}" data-action="${btn.action || 'close'}">${_escapeHtml(btn.text)}</button>`
+      `<button type="button" class="${btn.className || 'btn'}" data-action="${btn.action || 'close'}">${_escapeHtmlSafe(btn.text)}</button>`
     ).join('');
     modal.innerHTML = `
       <div class="modal-backdrop"></div>
       <div class="modal-content">
         <div class="modal-header">
-          <h2>${_escapeHtml(options.title || '')}</h2>
+          <h3>${_escapeHtmlSafe(options.title || '')}</h3>
           <button type="button" class="modal-close" aria-label="關閉">×</button>
         </div>
-        <div class="modal-body">${typeof options.content === 'string' ? _escapeHtml(options.content) : ''}</div>
+        <div class="modal-body">${typeof options.content === 'string' ? options.content : ''}</div>
         <div class="modal-footer">${buttonsHtml}</div>
       </div>`;
     document.body.appendChild(modal);
@@ -118,7 +165,8 @@ export const ModalManager = {
 
   isModalOpen(modalId) {
     const modal = $(modalId);
-    return modal ? !modal.hidden : false;
+    if (!modal) return false;
+    return modal.style.display === 'block' && !modal.hidden;
   },
 
   getCurrentModal() { return this.currentModal; },
@@ -150,7 +198,7 @@ export const ModalManager = {
         bodyEl.innerHTML = '<p class="empty">此班別尚無課堂記錄。</p>';
       } else {
         bodyEl.innerHTML = `<ul class="class-session-list">${recs.map(r => `
-          <li class="class-session-item" data-date="${_escapeHtml(r.classDate || '')}" data-class="${_escapeHtml(r.className || '')}">
+          <li class="class-session-item" data-date="${_escapeHtmlSafe(r.classDate || '')}" data-class="${_escapeHtmlSafe(r.className || '')}">
             <span class="date">${r.classDate || '–'}</span>
             ${r.classSize != null ? `<span class="meta">人數 ${r.classSize}</span>` : ''}
             <span class="hint">點擊查看詳情</span>
@@ -174,7 +222,7 @@ export const ModalManager = {
 
   showRecordDetail(record, onLoadIntoForm, onDelete) {
     const tricksStr = Array.isArray(record.tricks) && record.tricks.length
-      ? record.tricks.map(t => { let s = _escapeHtml(t.name); if (t.detail) s += `（${_escapeHtml(t.detail)}）`; if (t.level) s += ` [${_escapeHtml(t.level)}]`; return s; }).join('、')
+      ? record.tricks.map(t => { let s = _escapeHtmlSafe(t.name); if (t.detail) s += `（${_escapeHtmlSafe(t.detail)}）`; if (t.level) s += ` [${_escapeHtmlSafe(t.level)}]`; return s; }).join('、')
       : '—';
     let durationStr = '—';
     if (record.classStartTime && record.classEndTime) {
@@ -192,17 +240,17 @@ export const ModalManager = {
       const testModeBanner = record.creatorTestMode ? '<div style="background:#3498db;color:white;padding:12px;margin-bottom:16px;border-radius:6px;text-align:center;font-weight:600;">🧪 Creator 測試模式記錄</div>' : '';
       let attachmentsHtml = '';
       if (record.attachments?.length) {
-        attachmentsHtml = `<dt>附件</dt><dd>${record.attachments.map((file, i) => `<div style="display:flex;align-items:center;gap:.5rem;padding:.5rem;background:#f1f5f9;border-radius:4px;margin-top:.25rem;"><span style="flex:1">📎 ${_escapeHtml(file.name)} (${_formatFileSize(file.size)})</span><button type="button" onclick="window._downloadAttachmentFromDetail(${i},${JSON.stringify(file).replace(/"/g,'&quot;')})" class="btn btn-sm btn-primary-ghost" style="padding:.25rem .5rem;font-size:.8rem;">下載</button></div>`).join('')}</dd>`;
+        attachmentsHtml = `<dt>附件</dt><dd>${record.attachments.map((file, i) => `<div style="display:flex;align-items:center;gap:.5rem;padding:.5rem;background:#f1f5f9;border-radius:4px;margin-top:.25rem;"><span style="flex:1">📎 ${_escapeHtmlSafe(file.name)} (${_formatFileSize(file.size)})</span><button type="button" onclick="window._downloadAttachmentFromDetail(${i},${JSON.stringify(file).replace(/"/g,'&quot;')})" class="btn btn-sm btn-primary-ghost" style="padding:.25rem .5rem;font-size:.8rem;">下載</button></div>`).join('')}</dd>`;
       }
       bodyEl.innerHTML = `${testModeBanner}<dl>
-        <dt>基本資料</dt><dd>${record.classDate || '–'} | ${_escapeHtml(record.className || '–')} | 人數 ${record.classSize ?? '–'}</dd>
-        ${record.classLocation ? `<dt>課堂位置</dt><dd>${_escapeHtml(record.classLocation)}</dd>` : ''}
-        ${record.teachingRole ? `<dt>教學角色</dt><dd>${_escapeHtml(record.teachingRole)}</dd>` : ''}
+        <dt>基本資料</dt><dd>${record.classDate || '–'} | ${_escapeHtmlSafe(record.className || '–')} | 人數 ${record.classSize ?? '–'}</dd>
+        ${record.classLocation ? `<dt>課堂位置</dt><dd>${_escapeHtmlSafe(record.classLocation)}</dd>` : ''}
+        ${record.teachingRole ? `<dt>教學角色</dt><dd>${_escapeHtmlSafe(record.teachingRole)}</dd>` : ''}
         <dt>課堂時間</dt><dd>${durationStr}</dd>
-        <dt>備注</dt><dd>${record.notes ? _escapeHtml(record.notes).replace(/\n/g, '<br>') : '—'}</dd>
+        <dt>備注</dt><dd>${record.notes ? _escapeHtmlSafe(record.notes).replace(/\n/g, '<br>') : '—'}</dd>
         ${attachmentsHtml}
-        <dt>投入度</dt><dd>開心指數 ${record.engagement ?? '–'}/5 · 課堂氣氛 ${_escapeHtml(record.atmosphere || '–')}</dd>
-        <dt>技能進步</dt><dd>教學花式：${tricksStr} · 掌握 ${record.mastery ?? '–'}% · 預算/實際 ${record.plannedTime ?? '–'}/${record.actualTime ?? '–'} 分鐘 · 技巧等級 ${_escapeHtml(record.skillLevel || '–')}</dd>
+        <dt>投入度</dt><dd>開心指數 ${record.engagement ?? '–'}/5 · 課堂氣氛 ${_escapeHtmlSafe(record.atmosphere || '–')}</dd>
+        <dt>技能進步</dt><dd>教學花式：${tricksStr} · 掌握 ${record.mastery ?? '–'}% · 預算/實際 ${record.plannedTime ?? '–'}/${record.actualTime ?? '–'} 分鐘 · 技巧等級 ${_escapeHtmlSafe(record.skillLevel || '–')}</dd>
         <dt>團隊協作</dt><dd>幫助他人 ${record.helpOthers ?? '–'}% · 互動 ${record.interaction ?? '–'}% · 小組合作 ${record.teamwork ?? '–'}%</dd>
         <dt>心理與自信</dt><dd>自發練習 ${record.selfPractice ?? '–'}% · 主動學習 ${record.activeLearn ?? '–'}% · 積極性 ${record.positivity ?? '–'}/5 · 熱情 ${record.enthusiasm ?? '–'}/5</dd>
         <dt>教練質量</dt><dd>教學 ${record.teachScore ?? '–'}/10 · 滿意度 ${record.satisfaction ?? '–'}/5 · 紀律介入 ${record.disciplineCount ?? '–'} 次 · 靈活性 ${record.flexibility ?? '–'}/10 · 個別化 ${record.individual ?? '–'}%</dd>
@@ -221,7 +269,8 @@ export const ModalManager = {
     const modalEl = this.createModal({
       id: options.id || `custom_${Date.now()}`,
       title,
-      content,
+      content: content || '',
+      custom: true,
       buttons: [{ text: '關閉', className: 'btn btn-primary', action: 'close' }]
     });
     const modalId = modalEl.id;
@@ -229,9 +278,10 @@ export const ModalManager = {
     return modalId;
   },
 
-  escapeHtml(text) { return _escapeHtml(text); },
+  // ModalManager.escapeHtml 唔轉義 / (向後兼容)
+  escapeHtml(text) { return _escapeHtmlSafe(text); },
   formatFileSize(bytes) { return _formatFileSize(bytes); }
 };
 
-export function escapeHtml(text) { return _escapeHtml(text); }
+export function escapeHtml(text) { return _escapeHtmlSafe(text); }
 export function formatFileSize(bytes) { return _formatFileSize(bytes); }

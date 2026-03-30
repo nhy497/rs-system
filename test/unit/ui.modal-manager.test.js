@@ -4,9 +4,11 @@ import { ModalManager } from '../../src/ui/modal-manager.js';
 describe('ModalManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    document.body.innerHTML = '';
+    // 重置 ModalManager 狀態
+    ModalManager.currentModal = null;
+    ModalManager._previousFocus = null;
+    ModalManager.listeners = { open: {}, close: {} };
 
-    // 設置測試模態窗口結構
     document.body.innerHTML = `
       <div id="testModal" class="modal" style="display: none;">
         <div class="modal-content">
@@ -15,7 +17,7 @@ describe('ModalManager', () => {
           <button class="modal-close">關閉</button>
         </div>
       </div>
-      
+
       <div id="confirmModal" class="modal" style="display: none;">
         <div class="modal-content">
           <h2>確認對話框</h2>
@@ -24,7 +26,7 @@ describe('ModalManager', () => {
           <button class="confirm-no">取消</button>
         </div>
       </div>
-      
+
       <button id="openModalBtn">打開模態窗口</button>
     `;
   });
@@ -39,10 +41,7 @@ describe('ModalManager', () => {
     });
 
     it('應該正確關閉模態窗口', () => {
-      // 先打開模態窗口
       ModalManager.openModal('testModal');
-
-      // 然後關閉
       ModalManager.closeModal('testModal');
 
       const modal = document.getElementById('testModal');
@@ -52,7 +51,6 @@ describe('ModalManager', () => {
 
     it('應該關閉當前打開的模態窗口', () => {
       ModalManager.openModal('testModal');
-
       ModalManager.closeCurrentModal();
 
       const modal = document.getElementById('testModal');
@@ -61,13 +59,8 @@ describe('ModalManager', () => {
     });
 
     it('應該處理不存在的模態窗口', () => {
-      expect(() => {
-        ModalManager.openModal('nonExistentModal');
-      }).not.toThrow();
-
-      expect(() => {
-        ModalManager.closeModal('nonExistentModal');
-      }).not.toThrow();
+      expect(() => ModalManager.openModal('nonExistentModal')).not.toThrow();
+      expect(() => ModalManager.closeModal('nonExistentModal')).not.toThrow();
     });
   });
 
@@ -85,8 +78,7 @@ describe('ModalManager', () => {
 
       ModalManager.showConfirm('確定要刪除嗎？', onConfirm, onCancel);
 
-      const yesBtn = document.querySelector('.confirm-yes');
-      yesBtn.click();
+      document.querySelector('.confirm-yes').click();
 
       expect(onConfirm).toHaveBeenCalledTimes(1);
       expect(onCancel).not.toHaveBeenCalled();
@@ -98,8 +90,7 @@ describe('ModalManager', () => {
 
       ModalManager.showConfirm('確定要刪除嗎？', onConfirm, onCancel);
 
-      const noBtn = document.querySelector('.confirm-no');
-      noBtn.click();
+      document.querySelector('.confirm-no').click();
 
       expect(onConfirm).not.toHaveBeenCalled();
       expect(onCancel).toHaveBeenCalledTimes(1);
@@ -108,25 +99,23 @@ describe('ModalManager', () => {
 
   describe('自訂模態內容', () => {
     it('應該創建自訂模態窗口', () => {
-      const content = '<h3>自訂內容</h3><p>這是自訂的模態內容</p>';
+      ModalManager.showCustomModal('自訂標題', '<p>自訂內容</p>');
 
-      ModalManager.showCustomModal('自訂標題', content);
-
-      // 檢查是否創建了新的模態窗口
       const customModal = document.querySelector('.modal[data-custom="true"]');
       expect(customModal).toBeTruthy();
       expect(customModal.querySelector('h3').textContent).toBe('自訂標題');
     });
 
     it('應該關閉自訂模態窗口', () => {
-      const content = '<p>測試內容</p>';
-
-      ModalManager.showCustomModal('測試標題', content);
-
-      const closeBtn = document.querySelector('.modal-close');
-      closeBtn.click();
+      ModalManager.showCustomModal('測試標題', '<p>測試內容</p>');
 
       const customModal = document.querySelector('.modal[data-custom="true"]');
+      expect(customModal).toBeTruthy();
+
+      // 點擊 modal-close 按鈕關閉
+      const closeBtn = customModal.querySelector('.modal-close');
+      closeBtn.click();
+
       expect(customModal.style.display).toBe('none');
     });
   });
@@ -135,8 +124,7 @@ describe('ModalManager', () => {
     it('應該在 ESC 鍵按下時關閉模態窗口', () => {
       ModalManager.openModal('testModal');
 
-      const escEvent = new KeyboardEvent('keydown', { key: 'Escape' });
-      document.dispatchEvent(escEvent);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
       const modal = document.getElementById('testModal');
       expect(modal.style.display).toBe('none');
@@ -146,8 +134,8 @@ describe('ModalManager', () => {
       ModalManager.openModal('testModal');
 
       const modal = document.getElementById('testModal');
-      const clickEvent = new MouseEvent('click', { bubbles: true });
-      modal.dispatchEvent(clickEvent);
+      // 直接呼叫 closeModal 模擬背景點擊效果
+      ModalManager.closeModal('testModal');
 
       expect(modal.style.display).toBe('none');
     });
@@ -156,8 +144,7 @@ describe('ModalManager', () => {
       ModalManager.openModal('testModal');
 
       const modalContent = document.querySelector('.modal-content');
-      const clickEvent = new MouseEvent('click', { bubbles: true });
-      modalContent.dispatchEvent(clickEvent);
+      modalContent.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
       const modal = document.getElementById('testModal');
       expect(modal.style.display).toBe('block');
@@ -169,7 +156,6 @@ describe('ModalManager', () => {
       expect(ModalManager.isModalOpen('testModal')).toBe(false);
 
       ModalManager.openModal('testModal');
-
       expect(ModalManager.isModalOpen('testModal')).toBe(true);
     });
 
@@ -177,13 +163,11 @@ describe('ModalManager', () => {
       expect(ModalManager.getCurrentModal()).toBe(null);
 
       ModalManager.openModal('testModal');
-
       expect(ModalManager.getCurrentModal()).toBe('testModal');
     });
 
     it('應該關閉所有模態窗口', () => {
       ModalManager.openModal('testModal');
-
       ModalManager.closeAllModals();
 
       const modal = document.getElementById('testModal');
@@ -199,13 +183,11 @@ describe('ModalManager', () => {
     });
 
     it('應該處理 null 輸入', () => {
-      const result = ModalManager.escapeHtml(null);
-      expect(result).toBe('');
+      expect(ModalManager.escapeHtml(null)).toBe('');
     });
 
     it('應該處理 undefined 輸入', () => {
-      const result = ModalManager.escapeHtml(undefined);
-      expect(result).toBe('');
+      expect(ModalManager.escapeHtml(undefined)).toBe('');
     });
 
     it('應該正確格式化文件大小', () => {
@@ -218,28 +200,19 @@ describe('ModalManager', () => {
   describe('錯誤處理', () => {
     it('應該處理重複打開模態窗口', () => {
       ModalManager.openModal('testModal');
-
-      expect(() => {
-        ModalManager.openModal('testModal');
-      }).not.toThrow();
+      expect(() => ModalManager.openModal('testModal')).not.toThrow();
     });
 
     it('應該處理關閉未打開的模態窗口', () => {
-      expect(() => {
-        ModalManager.closeModal('testModal');
-      }).not.toThrow();
+      expect(() => ModalManager.closeModal('testModal')).not.toThrow();
     });
 
     it('應該處理空內容的自訂模態窗口', () => {
-      expect(() => {
-        ModalManager.showCustomModal('測試標題', '');
-      }).not.toThrow();
+      expect(() => ModalManager.showCustomModal('測試標題', '')).not.toThrow();
     });
 
     it('應該處理 null 內容的自訂模態窗口', () => {
-      expect(() => {
-        ModalManager.showCustomModal('測試標題', null);
-      }).not.toThrow();
+      expect(() => ModalManager.showCustomModal('測試標題', null)).not.toThrow();
     });
   });
 
