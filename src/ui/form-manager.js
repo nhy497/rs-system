@@ -428,6 +428,51 @@ export const FormManager = {
   },
 
   /**
+   * 獲取範圍值（別名方法）
+   * @returns {Object} 範圍值對象
+   */
+  getRangeValues() {
+    return this.getAllRangeValues();
+  },
+
+  /**
+   * 設置範圍值
+   * @param {Object} values - 範圍值對象
+   */
+  setRangeValues(values) {
+    Object.entries(values).forEach(([id, value]) => {
+      const el = $(id);
+      if (el) {
+        el.value = value;
+        this.updateRangeValue(id, value);
+      }
+    });
+  },
+
+  /**
+   * 設置表單模式
+   * @param {string} formId - 表單ID
+   * @param {string} mode - 模式
+   */
+  setFormMode(formId, mode) {
+    const form = $(formId);
+    if (form) {
+      form.dataset.mode = mode;
+    }
+    this.mode = mode;
+  },
+
+  /**
+   * 獲取表單模式
+   * @param {string} formId - 表單ID
+   * @returns {string} 模式
+   */
+  getFormMode(formId) {
+    const form = $(formId);
+    return form ? (form.dataset.mode || this.mode) : this.mode;
+  },
+
+  /**
    * 獲取所有範圍值
    * @returns {Object} 範圍值對象
    */
@@ -516,15 +561,17 @@ export const {
   validateField,
   showValidationError,
   clearValidationErrors,
-  setFormMode,
-  getFormMode,
-  disableForm,
   enableForm,
+  disableForm,
   populateClassPresets,
   updateRangeValue,
   getAllRangeValues,
+  getRangeValues,
+  setRangeValues,
   bindRange,
-  bindAllRanges
+  bindAllRanges,
+  setFormMode,
+  getFormMode
 } = FormManager;
 
 // 導出常量

@@ -500,12 +500,40 @@ export const ModalManager = {
   },
 
   /**
+   * 顯示自訂模態窗口
+   * @param {string} title - 標題
+   * @param {string} content - 內容
+   * @param {Object} options - 選項
+   * @returns {string} 模態窗口 ID
+   */
+  showCustomModal(title, content, options = {}) {
+    const modalId = this.createModal({
+      id: options.id || `custom_${Date.now()}`,
+      title,
+      content,
+      buttons: [{ text: '關閉', className: 'btn btn-primary', action: 'close' }]
+    });
+    modal.setAttribute('data-custom', 'true');
+    this.openModal(modalId);
+    return modalId;
+  },
+
+  /**
    * 格式化檔案大小（導出版本）
    * @param {number} bytes - 字節數
    * @returns {string} 格式化後的大小
    */
   formatFileSize(bytes) {
     return formatFileSize(bytes);
+  },
+
+  /**
+   * HTML 轉義函數（導出版本）
+   * @param {string} s - 需要轉義的字符串
+   * @returns {string} 轉義後的字符串
+   */
+  escapeHtml(s) {
+    return escapeHtml(s);
   }
 };
 
@@ -526,5 +554,7 @@ export const {
   onModalClose,
   showClassDetail,
   showRecordDetail,
-  showCustomModal
+  showCustomModal,
+  escapeHtml,
+  formatFileSize
 } = ModalManager;

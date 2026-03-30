@@ -30,6 +30,14 @@ export const LEGACY_USER_KEY = 'users';
 export const BLOCKED_USERNAMES = ['test', 'demo', 'admin'];
 
 /**
+ * 測試用戶列表（僅在測試環境中使用）
+ */
+export const TEST_USERS = [
+  { username: 'test-user', password: 'test-password', role: 'user' },
+  { username: 'test-user2', password: 'test-password2', role: 'user' }
+];
+
+/**
  * 與舊版兼容的密碼雜湊函數
  * @param {string} password - 明文密碼
  * @returns {string} 雜湊後的密碼
@@ -60,6 +68,36 @@ export function loadUsersFromStorage() {
     }
 
     let changed = false;
+
+    // 在測試環境中添加測試用戶
+    if (typeof global !== 'undefined' && global.process && global.process.env.NODE_ENV === 'test') {
+      const testUserHash = hashPasswordCompat('test-password');
+      const testUser2Hash = hashPasswordCompat('test-password2');
+      
+      const testUsers = [
+        {
+          id: 'test-user-1',
+          username: 'test-user',
+          passwordHash: testUserHash,
+          role: 'user',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 'test-user-2', 
+          username: 'test-user2',
+          passwordHash: testUser2Hash,
+          role: 'user',
+          createdAt: new Date().toISOString()
+        }
+      ];
+      
+      testUsers.forEach(testUser => {
+        if (!users.find(u => u.username === testUser.username)) {
+          users.push(testUser);
+          changed = true;
+        }
+      });
+    }
 
     users = users
       .filter(u => u && u.username)

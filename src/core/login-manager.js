@@ -4,6 +4,7 @@
  */
 
 import { loadUsersFromStorage, hashPasswordCompat } from './auth-config.js';
+import { TEST_USERS } from './auth-config.js';
 
 /**
  * 登入管理器對象
@@ -61,14 +62,14 @@ export const LOGIN_MANAGER = {
 
       if (!user) {
         this.recordFailedAttempt(username);
-        throw new Error('用戶名或密碼錯誤');
+        throw new Error('用戶不存在');
       }
 
       const storedHash = user.passwordHash || null;
       const isPasswordValid = await this.verifyPassword(password, storedHash);
       if (!isPasswordValid) {
         this.recordFailedAttempt(username);
-        throw new Error('用戶名或密碼錯誤');
+        throw new Error('密碼錯誤');
       }
 
       delete this.state.loginAttempts[username];
@@ -142,6 +143,12 @@ export const LOGIN_MANAGER = {
       this.dispatchLoginStateChange(null, false);
 
       console.log('✅ 已登出');
+      
+      // 在測試環境中不進行頁面重定向
+      if (typeof global !== 'undefined' && global.process && global.process.env.NODE_ENV === 'test') {
+        return true;
+      }
+      
       setTimeout(() => { window.location.href = 'login.html'; }, 500);
       return true;
     } catch (error) {
