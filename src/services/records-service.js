@@ -3,7 +3,7 @@
  * @module services/records-service
  */
 
-import { STORAGE_KEY } from '../constants/app-constants.js';
+import { STORAGE_MANAGER } from '../core/storage-manager.js';
 import { formatFileSize } from '../utils/formatters.js';
 
 /**
@@ -12,93 +12,15 @@ import { formatFileSize } from '../utils/formatters.js';
  */
 export const RecordsService = {
   /**
-   * 緩存配置
-   * @private
-   */
-  _cache: {
-    records: null,
-    lastSync: 0,
-    cacheDuration: 300000 // 5 分鐘
-  },
-
-  /**
-   * 檢查緩存是否有效
-   * @private
-   * @returns {boolean}
-   */
-  _isCacheValid() {
-    return this._cache.records && 
-           Date.now() - this._cache.lastSync < this._cache.cacheDuration;
-  },
-
-  /**
-   * 清除無效緩存
-   * @private
-   */
-  _clearInvalidCache() {
-    if (!this._isCacheValid()) {
-      this._cache.records = null;
-      this._cache.lastSync = 0;
-    }
-  },
-
-  /**
    * 解析課堂記錄
    * @returns {Array} 記錄數組
    */
   parseRecords() {
     try {
-      // 優先使用緩存（5分鐘內）
-      if (this._isCacheValid()) {
-        // 生產環境移除 console.log
-        // console.log(`📦 parseRecords() 使用緩存: ${this._cache.records.length} 筆`);
-        return this._cache.records;
-      }
-
-      const encoded = localStorage.getItem(STORAGE_KEY);
-      if (!encoded) {
-        // 生產環境移除 console.log
-        // console.log('📦 parseRecords() 讀取筆數: 0 (無數據)');
-        this._cache.records = [];
-        this._cache.lastSync = Date.now();
-        return [];
-      }
-
-      let records = [];
-      try {
-        // 統一編碼方式：encodeURIComponent + btoa（支援中文）
-        records = JSON.parse(decodeURIComponent(atob(encoded)));
-      } catch (e1) {
-        try {
-          // 兼容舊的 btoa 方式
-          records = JSON.parse(atob(encoded));
-        } catch (e2) {
-          try {
-            // 最後嘗試直接 JSON 解析
-            records = JSON.parse(encoded);
-          } catch (e3) {
-            console.warn('⚠️ parseRecords() 解析失敗:', e3);
-            records = [];
-          }
-        }
-      }
-
-      const safe = Array.isArray(records) ? records : [];
-      // 生產環境移除 console.log
-      // console.log(`📦 parseRecords() 讀取筆數: ${safe.length}`);
-      if (safe.length > 0) {
-        // 生產環境移除 console.log
-      // console.log('📊 第一筆記錄範例:', safe[0]);
-      }
-
-      // 更新緩存
-      this._cache.records = safe;
-      this._cache.lastSync = Date.now();
-
-      return safe;
+      // 直接使用 storage-manager 的統一 cache 系統
+      return STORAGE_MANAGER.getCheckpoints();
     } catch (e) {
       console.error('❌ parseRecords() 讀取失敗:', e);
-      this._cache.records = [];
       return [];
     }
   },
@@ -124,24 +46,8 @@ export const RecordsService = {
         return record;
       });
 
-      // 統一編碼方式：encodeURIComponent + btoa（支援中文）
-      const jsonStr = JSON.stringify(recordsWithUserId);
-      const encoded = btoa(encodeURIComponent(jsonStr));
-
-      // 檢查儲存空間
-      if (encoded.length > 4 * 1024 * 1024) { // 4MB 限制
-        console.warn('⚠️ 數據過大，嘗試清理舊記錄');
-        const sorted = recordsWithUserId.sort((a, b) =>
-          new Date(b.createdAt || b.classDate) - new Date(a.createdAt || a.classDate)
-        );
-        return this.saveRecords(sorted.slice(0, 500)); // 只保留最新 500 筆
-      }
-
-      localStorage.setItem(STORAGE_KEY, encoded);
-
-      // 更新緩存
-      this._cache.records = recordsWithUserId;
-      this._cache.lastSync = Date.now();
+      // 使用 storage-manager 的統一保存方法
+      STORAGE_MANAGER.saveCheckpoints(recordsWithUserId);
 
       // 生產環境移除 console.log
       // console.log(`✅ saveRecords() 已儲存 ${recordsWithUserId.length} 筆課堂記錄`);
@@ -271,8 +177,9 @@ export const RecordsService = {
    * 清除緩存
    */
   clearCache() {
-    this._cache.records = null;
-    this._cache.lastSync = 0;
+    // 委託給 storage-manager 的統一 cache 管理
+    STORAGE_MANAGER.cache.checkpoints = null;
+    STORAGE_MANAGER.cache.lastSync = 0;
     // 生產環境移除 console.log
     // console.log('✅ 記錄服務緩存已清除');
   }

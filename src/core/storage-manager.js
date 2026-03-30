@@ -3,7 +3,7 @@
  * @module core/storage-manager
  */
 
-import { STORAGE_KEY } from '../constants/app-constants.js';
+import { encodeData, decodeData } from '../utils/encoding-utils.js';
 
 /**
  * 儲存管理器對象
@@ -187,36 +187,18 @@ export const STORAGE_MANAGER = {
         return [];
       }
 
-      let decoded = [];
-      try {
-        // 統一使用 encodeURIComponent + btoa 編碼方式
-        decoded = JSON.parse(decodeURIComponent(atob(encoded)));
-      } catch (e1) {
-        try {
-          // 兼容舊的 btoa 方式
-          decoded = JSON.parse(atob(encoded));
-        } catch (e2) {
-          // 最後嘗試直接解析
-          try {
-            decoded = JSON.parse(encoded);
-          } catch (e3) {
-            console.warn('⚠️ 解析課堂記錄失敗:', e3);
-            decoded = [];
-          }
-        }
-      }
-
-      const safe = Array.isArray(decoded) ? decoded : [];
-      this.cache.checkpoints = safe;
+      // 使用統一解碼工具
+      const decoded = decodeData(encoded);
+      this.cache.checkpoints = decoded;
       this.cache.lastSync = Date.now();
-      console.log(`📦 getCheckpoints() 讀取筆數: ${safe.length}`);
+      console.log(`📦 getCheckpoints() 讀取筆數: ${decoded.length}`);
 
       // 創作者可以查看所有記錄，普通用戶只能查看自己的
       const currentUser = getCurrentUser();
       if (currentUser && currentUser.role === 'creator') {
-        return userId ? safe.filter(cp => cp.userId === userId) : safe;
+        return userId ? decoded.filter(cp => cp.userId === userId) : decoded;
       }
-      return safe;
+      return decoded;
     } catch (error) {
       console.error('❌ getCheckpoints() 讀取失敗:', error);
       const backup = this.getBackup();
@@ -250,9 +232,9 @@ export const STORAGE_MANAGER = {
           return record;
         });
 
-        // 統一使用 encodeURIComponent + btoa 編碼方式
+        // 統一使用編碼工具
         const jsonStr = JSON.stringify(recordsWithUserId);
-        const encoded = btoa(encodeURIComponent(jsonStr));
+        const encoded = encodeData(jsonStr);
 
         if (encoded.length > this.CONFIG.STORAGE_QUOTA) {
           console.warn('⚠️ 存儲空間不足');
@@ -425,20 +407,8 @@ export const STORAGE_MANAGER = {
       // 直接從 localStorage 讀取，避免循環調用
       const encoded = localStorage.getItem(this.KEYS.CHECKPOINTS);
       if (encoded) {
-        try {
-          this.cache.checkpoints = JSON.parse(decodeURIComponent(atob(encoded)));
-        } catch (e1) {
-          try {
-            this.cache.checkpoints = JSON.parse(atob(encoded));
-          } catch (e2) {
-            try {
-              this.cache.checkpoints = JSON.parse(encoded);
-            } catch (e3) {
-              console.warn('⚠️ 緩存解碼失敗，使用空數組:', e3);
-              this.cache.checkpoints = [];
-            }
-          }
-        }
+        // 使用統一解碼工具
+        this.cache.checkpoints = decodeData(encoded);
       } else {
         this.cache.checkpoints = [];
       }

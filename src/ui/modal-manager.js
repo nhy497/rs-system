@@ -68,6 +68,7 @@ export const ModalManager = {
     }
 
     modal.hidden = false;
+    modal.style.display = 'block';
     this.currentModal = modalId;
 
     // 觸發打開事件
@@ -83,6 +84,7 @@ export const ModalManager = {
     if (!modal) return;
 
     modal.hidden = true;
+    modal.style.display = 'none';
 
     if (this.currentModal === modalId) {
       this.currentModal = null;
@@ -93,11 +95,21 @@ export const ModalManager = {
   },
 
   /**
+   * 關閉當前打開的模態窗口
+   */
+  closeCurrentModal() {
+    if (this.currentModal) {
+      this.closeModal(this.currentModal);
+    }
+  },
+
+  /**
    * 關閉所有模態窗口
    */
   closeAllModals() {
     document.querySelectorAll('.modal').forEach(modal => {
       modal.hidden = true;
+      modal.style.display = 'none';
     });
     this.currentModal = null;
   },
@@ -123,6 +135,51 @@ export const ModalManager = {
 
       resolve(confirmed);
     });
+  },
+
+  /**
+   * 顯示確認對話框（測試版本）
+   * @param {string} message - 訊息
+   * @param {Function} onConfirm - 確認回調
+   * @param {Function} onCancel - 取消回調
+   */
+  showConfirm(message, onConfirm, onCancel) {
+    const confirmModal = $('confirmModal');
+    if (confirmModal) {
+      // 更新訊息
+      const messageEl = confirmModal.querySelector('p');
+      if (messageEl) {
+        messageEl.textContent = message;
+      }
+
+      // 綁定按鈕事件
+      const yesBtn = confirmModal.querySelector('.confirm-yes');
+      const noBtn = confirmModal.querySelector('.confirm-no');
+      
+      if (yesBtn) {
+        yesBtn.onclick = () => {
+          if (onConfirm) onConfirm();
+          this.closeModal('confirmModal');
+        };
+      }
+      
+      if (noBtn) {
+        noBtn.onclick = () => {
+          if (onCancel) onCancel();
+          this.closeModal('confirmModal');
+        };
+      }
+
+      this.openModal('confirmModal');
+    } else {
+      // 後備方案：使用原生 confirm
+      const confirmed = window.confirm(message);
+      if (confirmed && onConfirm) {
+        onConfirm();
+      } else if (!confirmed && onCancel) {
+        onCancel();
+      }
+    }
   },
 
   /**
@@ -413,6 +470,42 @@ export const ModalManager = {
     }
 
     this.openModal('detailModal');
+  },
+
+  /**
+   * 顯示自訂模態窗口
+   * @param {string} title - 標題
+   * @param {string} content - 內容
+   */
+  showCustomModal(title, content) {
+    const modalId = 'customModal_' + Date.now();
+    const modal = this.createModal({
+      id: modalId,
+      title: title,
+      content: content,
+      buttons: [{ text: '關閉', className: 'btn btn-primary', action: 'close' }]
+    });
+    modal.setAttribute('data-custom', 'true');
+    this.openModal(modalId);
+    return modalId;
+  },
+
+  /**
+   * HTML 轉義函數（導出版本）
+   * @param {string} text - 需要轉義的字符串
+   * @returns {string} 轉義後的字符串
+   */
+  escapeHtml(text) {
+    return escapeHtml(text);
+  },
+
+  /**
+   * 格式化檔案大小（導出版本）
+   * @param {number} bytes - 字節數
+   * @returns {string} 格式化後的大小
+   */
+  formatFileSize(bytes) {
+    return formatFileSize(bytes);
   }
 };
 
@@ -420,8 +513,10 @@ export const ModalManager = {
 export const {
   openModal,
   closeModal,
+  closeCurrentModal,
   closeAllModals,
   confirm,
+  showConfirm,
   alert,
   createModal,
   destroyModal,
@@ -430,5 +525,6 @@ export const {
   onModalOpen,
   onModalClose,
   showClassDetail,
-  showRecordDetail
+  showRecordDetail,
+  showCustomModal
 } = ModalManager;

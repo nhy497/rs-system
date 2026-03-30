@@ -110,7 +110,7 @@ export const FormManager = {
       classDurationMins,
       notes: ($('notes')?.value || '').trim(),
       attachments: window._currentAttachments || [],
-      engagement: parseInt($('engagement')?.value || '3', 10),
+      engagement: ($('engagement')?.value || '3').trim(),
       atmosphere: $q('[data-name="atmosphere"] .selected')?.textContent?.trim() || '',
       tricks: this.tricks.map(t => ({
         name: t.name || '',
@@ -125,18 +125,18 @@ export const FormManager = {
       plannedTime: aggregatedPlannedTime,
       actualTime: aggregatedActualTime,
       skillLevel: aggregatedSkillLevel,
-      helpOthers: parseInt($('helpOthers')?.value || '50', 10),
-      interaction: parseInt($('interaction')?.value || '50', 10),
-      teamwork: parseInt($('teamwork')?.value || '50', 10),
-      selfPractice: parseInt($('selfPractice')?.value || '50', 10),
-      activeLearn: parseInt($('activeLearn')?.value || '50', 10),
-      positivity: parseInt($('positivity')?.value || '3', 10),
-      enthusiasm: parseInt($('enthusiasm')?.value || '3', 10),
-      teachScore: parseInt($('teachScore')?.value || '7', 10),
-      satisfaction: parseInt($('satisfaction')?.value || '3', 10),
+      helpOthers: ($('helpOthers')?.value || '50').trim(),
+      interaction: ($('interaction')?.value || '50').trim(),
+      teamwork: ($('teamwork')?.value || '50').trim(),
+      selfPractice: ($('selfPractice')?.value || '50').trim(),
+      activeLearn: ($('activeLearn')?.value || '50').trim(),
+      positivity: ($('positivity')?.value || '3').trim(),
+      enthusiasm: ($('enthusiasm')?.value || '3').trim(),
+      teachScore: ($('teachScore')?.value || '7').trim(),
+      satisfaction: ($('satisfaction')?.value || '3').trim(),
       disciplineCount: ($('disciplineCount')?.value || '').trim() ? parseInt($('disciplineCount').value, 10) : null,
-      flexibility: parseInt($('flexibility')?.value || '7', 10),
-      individual: parseInt($('individual')?.value || '50', 10)
+      flexibility: ($('flexibility')?.value || '7').trim(),
+      individual: ($('individual')?.value || '50').trim()
     };
   },
 
