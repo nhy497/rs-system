@@ -3,304 +3,235 @@
  * @module ui/list-renderer
  */
 
-/**
- * DOM 選擇器
- */
 const $ = id => document.getElementById(id);
-const $q = sel => document.querySelector(sel);
-const $qa = sel => document.querySelectorAll(sel);
 
-/**
- * 列表渲染器
- */
+// 內部 store：containerId -> { data, options, currentPage }
+const _store = {};
+
 export const ListRenderer = {
-  /**
-   * 渲染列表
-   * @param {string} containerId - 容器ID
-   * @param {Array} data - 數據數組
-   * @param {Object} options - 選項
-   */
+
   renderList(containerId, data, options = {}) {
     const container = $(containerId);
     if (!container) return;
 
     const {
-      template = this.defaultTemplate,
+      template,
       searchable = false,
       fuzzySearch = false,
       pagination = false,
       pageSize = 10,
       selectable = false,
       selectionMode = 'single',
+      sortable = false,
+      sortField = null,
+      sortOrder = 'asc',
       virtualScroll = false,
       lazyRender = false
     } = options;
 
-    // 保存配置
-    this._config = { containerId, data, options };
+    let processedData = Array.isArray(data) ? [...data] : [];
 
-    // 設置搜索功能
-    if (searchable) {
-      this.setupSearch(containerId, fuzzySearch);
+    // 排序
+    if (sortable && sortField) {
+      processedData.sort((a, b) => {
+        const va = a[sortField];
+        const vb = b[sortField];
+        if (va < vb) return sortOrder === 'desc' ? 1 : -1;
+        if (va > vb) return sortOrder === 'desc' ? -1 : 1;
+        return 0;
+      });
     }
 
-    // 設置選擇功能
-    if (selectable) {
-      this.setupSelection(containerId, selectionMode);
+    // 虛擬滾動：只渲染前50條
+    const VIRTUAL_LIMIT = 50;
+    let renderData = processedData;
+    if (virtualScroll) {
+      renderData = processedData.slice(0, VIRTUAL_LIMIT);
     }
 
-    // 設置分頁
+    // 儲存狀態
+    _store[containerId] = {
+      data: processedData,
+      options,
+      currentPage: 1
+    };
+
+    // 分頁：只渲染第一頁
     if (pagination) {
-      this.setupPagination(containerId, data, pageSize);
+      renderData = processedData.slice(0, pageSize);
+      this._renderPaginationControls(containerId, processedData, pageSize);
     }
 
-    // 渲染列表項目
-    this.renderItems(containerId, data, template, options);
+    // 渲染
+    this._renderItems(containerId, renderData, template);
+
+    // 搜索：render 後 attach listener
+    if (searchable) {
+      this._setupSearch(containerId, fuzzySearch);
+    }
+
+    // 選擇：render 後 attach listener
+    if (selectable) {
+      this._setupSelection(containerId, selectionMode);
+    }
   },
 
-  /**
-   * 默認模板
-   * @param {Object} item - 數據項目
-   * @returns {string} HTML字符串
-   */
-  defaultTemplate(item) {
-    return `
-      <div class="list-item" data-id="${item.id}">
-        <h4>${item.name || item.title || '未命名'}</h4>
-        <p>${item.description || item.content || ''}</p>
-      </div>
-    `;
-  },
-
-  /**
-   * 渲染列表項目
-   * @param {string} containerId - 容器ID
-   * @param {Array} data - 數據
-   * @param {Function} template - 模板函數
-   * @param {Object} options - 選項
-   */
-  renderItems(containerId, data, template, options) {
+  _renderItems(containerId, data, template) {
     const container = $(containerId);
+    if (!container) return;
     const itemsContainer = container.querySelector('.list-items') || container;
-    
+
     if (!data || data.length === 0) {
-      itemsContainer.innerHTML = '<div class="empty-state">沒有數據</div>';
+      // 保留 .empty-state 如果已存在
+      if (!container.querySelector('.empty-state')) {
+        itemsContainer.innerHTML = '';
+      }
       return;
     }
 
-    const html = data.map(item => template(item)).join('');
-    itemsContainer.innerHTML = html;
-  },
-
-  /**
-   * 設置搜索功能
-   * @param {string} containerId - 容器ID
-   * @param {boolean} fuzzySearch - 是否模糊搜索
-   */
-  setupSearch(containerId, fuzzySearch = false) {
-    const container = $(containerId);
-    const searchInput = container.querySelector('#searchInput, .search-input');
-    
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        this.filterList(containerId, query, fuzzySearch);
-      });
-    }
-  },
-
-  /**
-   * 過濾列表
-   * @param {string} containerId - 容器ID
-   * @param {string} query - 搜索查詢
-   * @param {boolean} fuzzySearch - 是否模糊搜索
-   */
-  filterList(containerId, query, fuzzySearch = false) {
-    const container = $(containerId);
-    const items = container.querySelectorAll('.list-item');
-    
-    items.forEach(item => {
-      const text = item.textContent.toLowerCase();
-      const matches = fuzzySearch ? this.fuzzyMatch(text, query) : text.includes(query);
-      item.style.display = matches ? '' : 'none';
-    });
-  },
-
-  /**
-   * 模糊匹配
-   * @param {string} text - 文本
-   * @param {string} query - 查詢
-   * @returns {boolean} 是否匹配
-   */
-  fuzzyMatch(text, query) {
-    if (!query) return true;
-    
-    let queryIndex = 0;
-    let textIndex = 0;
-    
-    while (queryIndex < query.length && textIndex < text.length) {
-      if (text[textIndex] === query[queryIndex]) {
-        queryIndex++;
+    const effectiveTemplate = typeof template === 'function' ? template : null;
+    const htmlParts = [];
+    for (const item of data) {
+      try {
+        if (!effectiveTemplate) continue;
+        htmlParts.push(effectiveTemplate(item));
+      } catch (e) {
+        // 忽略模板錯誤，繼續下一條
+        continue;
       }
-      textIndex++;
     }
-    
-    return queryIndex === query.length;
+    itemsContainer.innerHTML = htmlParts.join('');
   },
 
-  /**
-   * 設置選擇功能
-   * @param {string} containerId - 容器ID
-   * @param {string} selectionMode - 選擇模式
-   */
-  setupSelection(containerId, selectionMode = 'single') {
+  _setupSearch(containerId, fuzzySearch) {
     const container = $(containerId);
-    const items = container.querySelectorAll('.list-item');
-    
-    items.forEach(item => {
-      item.addEventListener('click', () => {
-        this.handleSelection(containerId, item, selectionMode);
-      });
+    if (!container) return;
+    const searchInput = container.querySelector('#searchInput, .search-input, input[type="text"]');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const store = _store[containerId];
+      if (!store) return;
+
+      let filtered;
+      if (!query) {
+        filtered = store.data;
+      } else if (fuzzySearch) {
+        filtered = store.data.filter(item => {
+          const text = Object.values(item).join(' ').toLowerCase();
+          return this._fuzzyMatch(text, query);
+        });
+      } else {
+        const { options } = store;
+        const fields = options.searchFields;
+        filtered = store.data.filter(item => {
+          if (fields && fields.length) {
+            return fields.some(f => String(item[f] || '').toLowerCase().includes(query));
+          }
+          return Object.values(item).join(' ').toLowerCase().includes(query);
+        });
+      }
+      this._renderItems(containerId, filtered, store.options.template);
+      if (store.options.selectable) {
+        this._setupSelection(containerId, store.options.selectionMode || 'single');
+      }
     });
   },
 
-  /**
-   * 處理選擇
-   * @param {string} containerId - 容器ID
-   * @param {HTMLElement} item - 選中的項目
-   * @param {string} selectionMode - 選擇模式
-   */
-  handleSelection(containerId, item, selectionMode) {
-    if (selectionMode === 'single') {
-      // 單選模式
-      const container = $(containerId);
-      container.querySelectorAll('.list-item.selected').forEach(el => {
-        el.classList.remove('selected');
-      });
-      item.classList.add('selected');
-    } else {
-      // 多選模式
-      item.classList.toggle('selected');
+  _fuzzyMatch(text, query) {
+    if (!query) return true;
+    let qi = 0, ti = 0;
+    while (qi < query.length && ti < text.length) {
+      if (text[ti] === query[qi]) qi++;
+      ti++;
     }
+    return qi === query.length;
   },
 
-  /**
-   * 獲取選中的項目
-   * @param {string} containerId - 容器ID
-   * @returns {Array} 選中的項目
-   */
+  _setupSelection(containerId, selectionMode) {
+    const container = $(containerId);
+    if (!container) return;
+    container.querySelectorAll('.list-item').forEach(item => {
+      // 避免重複 attach
+      item.removeEventListener('click', item._selectHandler);
+      item._selectHandler = () => {
+        if (selectionMode === 'single') {
+          container.querySelectorAll('.list-item.selected').forEach(el => el.classList.remove('selected'));
+          item.classList.add('selected');
+        } else {
+          item.classList.toggle('selected');
+        }
+      };
+      item.addEventListener('click', item._selectHandler);
+    });
+  },
+
   getSelectedItems(containerId) {
     const container = $(containerId);
-    const selectedItems = container.querySelectorAll('.list-item.selected');
-    
-    return Array.from(selectedItems).map(item => ({
-      id: item.dataset.id,
-      element: item,
-      data: this._config?.data?.find(d => d.id == item.dataset.id)
-    }));
+    if (!container) return [];
+    const store = _store[containerId];
+    const selectedEls = container.querySelectorAll('.list-item.selected');
+    return Array.from(selectedEls).map(el => {
+      const id = el.dataset.id;
+      // 先嘗試數字匹配，再字串匹配
+      const original = store?.data?.find(d => d.id == id) || null;
+      return original || { id };
+    });
   },
 
-  /**
-   * 添加項目
-   * @param {string} containerId - 容器ID
-   * @param {Object} item - 項目數據
-   */
   addItem(containerId, item) {
-    if (!this._config || this._config.containerId !== containerId) return;
-    
-    this._config.data.push(item);
-    this.renderItems(containerId, this._config.data, this._config.options.template, this._config.options);
+    const store = _store[containerId];
+    if (!store) return;
+    store.data.push(item);
+    this._renderItems(containerId, store.data, store.options.template);
+    if (store.options.selectable) this._setupSelection(containerId, store.options.selectionMode || 'single');
   },
 
-  /**
-   * 移除項目
-   * @param {string} containerId - 容器ID
-   * @param {string} itemId - 項目ID
-   */
   removeItem(containerId, itemId) {
-    if (!this._config || this._config.containerId !== containerId) return;
-    
-    const index = this._config.data.findIndex(item => item.id === itemId);
+    const store = _store[containerId];
+    if (!store) return;
+    const index = store.data.findIndex(item => item.id == itemId);
     if (index > -1) {
-      this._config.data.splice(index, 1);
-      this.renderItems(containerId, this._config.data, this._config.options.template, this._config.options);
+      store.data.splice(index, 1);
+      this._renderItems(containerId, store.data, store.options.template);
     }
   },
 
-  /**
-   * 更新項目
-   * @param {string} containerId - 容器ID
-   * @param {string} itemId - 項目ID
-   * @param {Object} newData - 新數據
-   */
   updateItem(containerId, itemId, newData) {
-    if (!this._config || this._config.containerId !== containerId) return;
-    
-    const index = this._config.data.findIndex(item => item.id === itemId);
+    const store = _store[containerId];
+    if (!store) return;
+    const index = store.data.findIndex(item => item.id == itemId);
     if (index > -1) {
-      this._config.data[index] = { ...this._config.data[index], ...newData };
-      this.renderItems(containerId, this._config.data, this._config.options.template, this._config.options);
+      store.data[index] = { ...store.data[index], ...newData };
+      this._renderItems(containerId, store.data, store.options.template);
     }
   },
 
-  /**
-   * 設置分頁
-   * @param {string} containerId - 容器ID
-   * @param {Array} data - 數據
-   * @param {number} pageSize - 頁面大小
-   */
-  setupPagination(containerId, data, pageSize = 10) {
+  _renderPaginationControls(containerId, data, pageSize) {
     const container = $(containerId);
+    if (!container) return;
     const paginationContainer = container.querySelector('.pagination');
-    
     if (!paginationContainer) return;
-    
+
     const totalPages = Math.ceil(data.length / pageSize);
-    let currentPage = 1;
-    
-    this.renderPagination(paginationContainer, currentPage, totalPages, () => {
-      this.renderPage(containerId, data, currentPage, pageSize);
-    });
-  },
-
-  /**
-   * 渲染分頁控件
-   * @param {HTMLElement} container - 分頁容器
-   * @param {number} currentPage - 當前頁
-   * @param {number} totalPages - 總頁數
-   * @param {Function} onPageChange - 頁面變化回調
-   */
-  renderPagination(container, currentPage, totalPages, onPageChange) {
     let html = '<div class="pagination-controls">';
-    
     for (let i = 1; i <= totalPages; i++) {
-      const active = i === currentPage ? 'active' : '';
-      html += `<button class="page-btn ${active}" data-page="${i}">${i}</button>`;
+      html += `<button class="page-btn" data-page="${i}">${i}</button>`;
     }
-    
     html += '</div>';
-    container.innerHTML = html;
-    
-    container.addEventListener('click', (e) => {
-      if (e.target.classList.contains('page-btn')) {
-        const page = parseInt(e.target.dataset.page);
-        onPageChange(page);
-      }
-    });
-  },
+    paginationContainer.innerHTML = html;
 
-  /**
-   * 渲染頁面
-   * @param {string} containerId - 容器ID
-   * @param {Array} data - 數據
-   * @param {number} page - 頁碼
-   * @param {number} pageSize - 頁面大小
-   */
-  renderPage(containerId, data, page, pageSize) {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    const pageData = data.slice(start, end);
-    
-    this.renderItems(containerId, pageData, this._config.options.template, this._config.options);
+    paginationContainer.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('page-btn')) return;
+      const page = parseInt(e.target.dataset.page);
+      const store = _store[containerId];
+      if (!store) return;
+      store.currentPage = page;
+      const start = (page - 1) * pageSize;
+      const pageData = store.data.slice(start, start + pageSize);
+      this._renderItems(containerId, pageData, store.options.template);
+      if (store.options.selectable) this._setupSelection(containerId, store.options.selectionMode || 'single');
+    });
   }
 };

@@ -9,33 +9,43 @@
  * @returns {string} 轉義後的文本
  */
 export function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+  if (text == null) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
 }
 
 /**
  * 顯示提示訊息
  * @param {string} message - 訊息內容
- * @param {('info'|'success'|'error')} [type='info'] - 訊息類型
+ * @param {('info'|'success'|'error'|'warning')} [type='info'] - 訊息類型
  */
 export function toast(message, type = 'info') {
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  toast.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 24px;
-    background: ${type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#2196f3'};
-    color: white;
-    border-radius: 4px;
-    z-index: 10000;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  // 清除舊 toast
+  document.querySelectorAll('.toast').forEach(el => el.remove());
+
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = message;
+  el.style.cssText = [
+    'position:fixed',
+    'top:20px',
+    'right:20px',
+    'padding:12px 24px',
+    type === 'error' ? 'background:#f44336' :
+    type === 'success' ? 'background:#4caf50' :
+    type === 'warning' ? 'background:#ff9800' : 'background:#2196f3',
+    'color:white',
+    'border-radius:4px',
+    'z-index:10000',
+    'box-shadow:0 2px 8px rgba(0,0,0,0.2)'
+  ].join(';');
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
 /**
