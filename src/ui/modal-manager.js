@@ -3,16 +3,7 @@
  * @module ui/modal-manager
  */
 
-import { escapeHtml } from '../utils/helpers.js';
-
-/**
- * 格式化檔案大小
- */
-function formatFileSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import { escapeHtml, formatFileSize } from '../utils/helpers.js';
 
 const $ = id => document.getElementById(id);
 
@@ -23,9 +14,20 @@ export const ModalManager = {
   openModal(modalId) {
     const modal = $(modalId);
     if (!modal) { console.warn(`Modal ${modalId} not found`); return; }
+    
+    // 設置ARIA屬性
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    
     modal.hidden = false;
     modal.style.display = 'block';
     this.currentModal = modalId;
+    
+    // 設置焦點
+    setTimeout(() => {
+      modal.focus();
+    }, 0);
+    
     this._triggerEvent('open', modalId);
   },
 
@@ -121,7 +123,7 @@ export const ModalManager = {
     return modal ? !modal.hidden : false;
   },
 
-  getCurrentModal() { return this.currentModal; },
+  getCurrentModal() { return this.currentModal || null; },
 
   onModalOpen(modalId, callback) {
     if (!this.listeners.open[modalId]) this.listeners.open[modalId] = [];

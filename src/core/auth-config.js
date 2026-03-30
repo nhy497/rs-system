@@ -59,8 +59,14 @@ export function hashPasswordCompat(password) {
  */
 export function loadUsersFromStorage() {
   try {
-    const rawNew = localStorage.getItem(USER_STORAGE_KEY);
-    const rawLegacy = localStorage.getItem(LEGACY_USER_KEY);
+    // 處理Node.js環境
+    const storage = typeof localStorage !== 'undefined' ? localStorage : {
+      getItem: (key) => global.localStorage?.getItem?.(key) || null,
+      setItem: (key, value) => { if (global.localStorage) global.localStorage.setItem(key, value); }
+    };
+    
+    const rawNew = storage.getItem(USER_STORAGE_KEY);
+    const rawLegacy = storage.getItem(LEGACY_USER_KEY);
     let users = rawNew ? JSON.parse(rawNew) : (rawLegacy ? JSON.parse(rawLegacy) : []);
 
     if (!Array.isArray(users)) {
@@ -70,7 +76,7 @@ export function loadUsersFromStorage() {
     let changed = false;
 
     // 在測試環境中添加測試用戶
-    if (typeof global !== 'undefined' && global.process && global.process.env.NODE_ENV === 'test') {
+    if (typeof global !== 'undefined' && global.process && global.process.env && global.process.env.NODE_ENV === 'test') {
       const testUserHash = hashPasswordCompat('test-password');
       const testUser2Hash = hashPasswordCompat('test-password2');
       
